@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Alpine : masque les blocs conditionnels avant l'initialisation. */
+[x-cloak] {
+    display: none !important;
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-mist font-sans text-brand-950 antialiased;
+        font-feature-settings: 'ss01', 'cv11';
+    }
+
+    h1, h2, h3, .font-display {
+        font-family: theme('fontFamily.display');
+        letter-spacing: -0.02em;
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+    }
+}
+
+@layer components {
+    /* Surface : panneau plat a bordure fine, sans ombre. */
+    .surface {
+        @apply rounded-xl border border-slate-200/80 bg-white;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    }
+
+    .btn-accent {
+        @apply btn bg-accent-500 text-brand-950 hover:bg-accent-400;
+    }
+
+    .btn-outline {
+        @apply btn border border-slate-300 bg-white text-brand-950 hover:bg-slate-50;
+    }
+
+    .btn-danger {
+        @apply btn bg-red-600 text-white hover:bg-red-500;
+    }
+
+    .field {
+        @apply mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500;
+    }
+}
+
+/* Motif de tissu wax : losanges emboites et points safran. Reserve aux grands aplats de la marque. */
+.wax {
+    background-color: #2340d9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.11' stroke-width='1.5'%3E%3Cpath d='M28 4 52 28 28 52 4 28Z'/%3E%3Cpath d='M28 16 40 28 28 40 16 28Z'/%3E%3C/g%3E%3Ccircle cx='28' cy='28' r='2.6' fill='%23ffb400' fill-opacity='.6'/%3E%3Cg fill='%23ffffff' fill-opacity='.16'%3E%3Ccircle cx='0' cy='0' r='2'/%3E%3Ccircle cx='56' cy='0' r='2'/%3E%3Ccircle cx='0' cy='56' r='2'/%3E%3Ccircle cx='56' cy='56' r='2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.wax-navy {
+    background-color: #101b5b;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.07' stroke-width='1.5'%3E%3Cpath d='M28 4 52 28 28 52 4 28Z'/%3E%3Cpath d='M28 16 40 28 28 40 16 28Z'/%3E%3C/g%3E%3Ccircle cx='28' cy='28' r='2.4' fill='%23ffb400' fill-opacity='.45'/%3E%3C/svg%3E");
+}
+
+/* Conversation du heros : une seule sequence d'entree, jouee une fois. */
+@media (prefers-reduced-motion: no-preference) {
+    .say {
+        opacity: 0;
+        transform: translateY(8px);
+        animation: say 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+    }
+
+    .say-1 { animation-delay: 0.5s; }
+    .say-2 { animation-delay: 1.8s; }
+    .say-3 { animation-delay: 3.4s; }
+    .say-4 { animation-delay: 4.8s; }
+    .say-5 { animation-delay: 6.6s; }
+    .say-6 { animation-delay: 8s; }
+
+    .dots i {
+        animation: dot 1s infinite ease-in-out;
+    }
+
+    .dots i:nth-child(2) { animation-delay: 0.15s; }
+    .dots i:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes say {
+        to { opacity: 1; transform: none; }
+    }
+
+    @keyframes dot {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-3px); }
+    }
+}
+
+details > summary {
+    list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+    display: none;
+}
