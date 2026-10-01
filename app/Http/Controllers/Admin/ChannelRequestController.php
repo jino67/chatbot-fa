@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Channels\WhatsApp\GatewayFactory;
+use App\Channels\WhatsApp\TemplateProvisioner;
 use App\Http\Controllers\Controller;
 use App\Models\Channel;
 use App\Models\ChannelRequest;
@@ -117,6 +118,23 @@ class ChannelRequestController extends Controller
             $channel->activated_at = now();
         }
         $channel->save();
+
+        // A l'activation d'un canal, les modeles de base partent a l'approbation sans rien demander au client.
+        // Apres l'envoi de la reponse : les appels au fournisseur peuvent prendre quelques secondes.
+        if ($channel->status === Channel::ACTIVE && ($channel->wasRecentlyCreated || $channel->wasChanged('status'))) {
+            app()->terminating(function () use ($channel) {
+                try {
+                    app(TemplateProvisioner::class)->autoProvision($channel);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            });
+
+            // Le client apprend que son assistant répond sur WhatsApp (centre de notifications, téléphone, e-mail).
+            if ($bot = $channel->bot()->withoutGlobalScopes()->first()) {
+                app(\App\Notify\Events::class)->whatsappActivated(\App\Models\Workspace::withoutGlobalScopes()->find($channel->workspace_id), $bot);
+            }
+        }
 
         $channelRequest->forceFill([
             'status' => $data['request_status'],

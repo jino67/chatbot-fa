@@ -186,6 +186,38 @@
                 </form>
             </section>
 
+            {{-- Activité dans l'application (mesure d'audience) --}}
+            <section class="surface p-6">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="font-display text-lg font-bold">Activité dans l'application</h2>
+                        <p class="mt-0.5 text-sm text-slate-600">30 derniers jours. Visible de l'équipe seulement.</p>
+                    </div>
+                    @php $tone = ['good' => 'green', 'ok' => 'blue', 'warn' => 'amber', 'bad' => 'red'][$activity['health']['tone']]; @endphp
+                    <x-badge :tone="$tone">Santé {{ $activity['health']['score'] }} sur 100 : {{ $activity['health']['label'] }}</x-badge>
+                </div>
+                <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                    <div><dt class="text-slate-500">Visites</dt><dd class="mt-1 font-display text-2xl font-bold text-brand-950">{{ $activity['sessions'] }}</dd></div>
+                    <div><dt class="text-slate-500">Jours actifs</dt><dd class="mt-1 font-display text-2xl font-bold text-brand-950">{{ $activity['active_days'] }}</dd></div>
+                    <div><dt class="text-slate-500">Temps passé</dt><dd class="mt-1 font-display text-2xl font-bold text-brand-950">{{ \App\Support\StatsFormat::duration($activity['seconds']) }}</dd></div>
+                    <div><dt class="text-slate-500">Dernière visite</dt><dd class="mt-1 text-base font-semibold text-brand-950">{{ $activity['last_seen'] ? $activity['last_seen']->locale('fr')->diffForHumans() : 'jamais' }}</dd></div>
+                </dl>
+                @if (count($activity['pages']) || count($activity['actions']))
+                    <div class="mt-5 grid gap-6 sm:grid-cols-2">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500">Pages les plus visitées</p>
+                            <ul class="mt-2 space-y-1 text-sm">@foreach ($activity['pages'] as $page)<li class="flex justify-between gap-3"><span class="truncate text-slate-700">{{ $page['name'] }}</span><span class="tabular-nums text-slate-500">{{ $page['count'] }}</span></li>@endforeach</ul>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500">Actions faites</p>
+                            <ul class="mt-2 space-y-1 text-sm">@forelse ($activity['actions'] as $action)<li class="flex justify-between gap-3"><span class="truncate text-slate-700">{{ $action['name'] }}</span><span class="tabular-nums text-slate-500">{{ $action['count'] }}</span></li>@empty<li class="text-slate-500">Aucune action enregistrée.</li>@endforelse</ul>
+                        </div>
+                    </div>
+                @else
+                    <p class="mt-4 text-sm text-slate-600">Aucune activité mesurée sur la période : ce client ne s'est pas connecté, ou la mesure n'existait pas encore.</p>
+                @endif
+            </section>
+
             {{-- Assistants --}}
             <section class="surface">
                 <div class="border-b border-slate-100 px-6 py-4"><h2 class="font-display text-lg font-bold">Assistants</h2></div>
@@ -211,6 +243,15 @@
                 <div><x-input-label for="ws-name" value="Nom" /><input id="ws-name" name="name" required class="field" value="{{ old('name', $workspace->name) }}"></div>
                 <div><x-input-label for="ws-country" value="Pays" /><input id="ws-country" name="country" class="field" value="{{ old('country', $workspace->country) }}"></div>
                 <div><x-input-label for="ws-phone" value="Téléphone" /><input id="ws-phone" name="phone" class="field" value="{{ old('phone', $workspace->phone) }}"></div>
+                <div>
+                    <x-input-label for="ws-currency" value="Devise du compte" />
+                    <select id="ws-currency" name="currency" class="field">
+                        @foreach (\App\Support\Currency::ALL as $code => $currency)
+                            <option value="{{ $code }}" @selected(old('currency', $workspace->currency) === $code)>{{ $currency['name'] }} ({{ $currency['symbol'] }})</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">Prix, paiements et facturation de ce client.</p>
+                </div>
                 <div class="sm:col-span-3"><x-input-label for="ws-notes" value="Notes internes" /><textarea id="ws-notes" name="notes" rows="3" class="field">{{ old('notes', $workspace->notes) }}</textarea></div>
                 <div class="sm:col-span-3"><button class="btn-outline">Enregistrer</button></div>
             </form>

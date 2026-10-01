@@ -54,6 +54,7 @@
                 'Solutions et guides' => array_merge($pageLinks(['chatbot-whatsapp', 'assistant-virtuel-site-web', 'reponse-automatique-whatsapp-business', 'combien-coute-un-chatbot-whatsapp', 'creer-un-chatbot-whatsapp-pour-son-entreprise']), [[route('seo.hub'), 'Toutes les ressources']]),
                 'Par métier et par pays' => $pageLinks(['chatbot-whatsapp-boutique', 'chatbot-whatsapp-restaurant', 'chatbot-whatsapp-clinique', 'chatbot-whatsapp-ecole', 'chatbot-whatsapp-immobilier', 'chatbot-whatsapp-burkina-faso', 'chatbot-whatsapp-cote-d-ivoire', 'chatbot-whatsapp-senegal']),
                 'Informations' => array_values(array_filter([
+                    [route('help.index'), 'Aide et guides'],
                     [route('register'), 'Créer un compte'],
                     [route('login'), 'Se connecter'],
                     [$landing ? '#questions' : route('home').'#questions', 'Questions fréquentes'],

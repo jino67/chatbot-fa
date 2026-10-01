@@ -53,16 +53,7 @@ class ChannelController extends Controller
             'requester_id' => $request->user()->id,
         ]);
 
-        if ($to = config('platform.admin_email') ?: $settings->get('brand.email')) {
-            try {
-                Mail::raw(
-                    "Nouvelle demande d'activation WhatsApp\n\nEntreprise : {$data['business_name']}\nNuméro : {$data['phone_number']}\nAssistant : {$bot->name}\n\n".route('admin.requests.show', $channelRequest),
-                    fn ($m) => $m->to($to)->subject("Demande WhatsApp : {$data['business_name']}")
-                );
-            } catch (\Throwable $e) {
-                report($e);
-            }
-        }
+        app(\App\Notify\Events::class)->whatsappRequested($channelRequest, $bot);
 
         return back()->with('status', "Demande envoyée. Notre équipe technique vous contactera pour finaliser l'activation.");
     }

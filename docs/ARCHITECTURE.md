@@ -87,7 +87,7 @@ Points de conception : le webhook ne fait **que** vérifier et mettre en file, c
 flowchart TD
     A["Source ajoutée<br/>(fichier, photo, site, texte, Q/R, Facebook)"] --> B["Job IngestSource"]
     B --> C{"Type ?"}
-    C -->|fichier| D["FileExtractor<br/>PDF · DOCX · CSV · HTML · texte"]
+    C -->|fichier| D["FileExtractor<br/>PDF · DOCX · XLSX · CSV · HTML · texte"]
     C -->|"PDF scanné"| E["Lecture native par Claude"]
     C -->|photo| F["Réduction GD puis lecture par Claude<br/>(OCR + description)"]
     C -->|site| G["SiteCrawler<br/>SSRF · robots.txt · sitemap"]
@@ -271,6 +271,34 @@ Toutes les tables « métier » portent `workspace_id`.
 **Décision.** Un assistant n'est plus muet hors de sa base de connaissances : salutations, prise de nouvelles, questions simples et bavardage reçoivent une réponse du modèle (`Bot::allowsFreeChat()`, réglage « Autoriser la conversation libre » stocké dans `bots.profile.open_chat`, actif par défaut, sans migration). Le prompt de la plateforme sépare deux régimes : la conversation générale est libre ; tout ce qui concerne l'entreprise (prix, horaires, adresses, délais, politiques) ne vient que des extraits, avec le marqueur `[[NO_ANSWER]]` quand l'information manque. L'assistant de la page d'accueil de la plateforme (`Bot::isShowcase()`) converse toujours librement. Tous les assistants des clients savent aussi dire **qui les a conçus** : « propulsé par Kouma », avec le site, l'e-mail et le lien WhatsApp des réglages de la marque (`PromptBuilder::originRule()`), et se présentent comme une intelligence artificielle, jamais comme une personne.
 
 **Contrepartie.** Sans extrait pertinent, le modèle est désormais appelé : plus de réponses, donc plus de volume consommé et de coût. Cocher la case la désactive et rétablit l'ancien comportement (réponse de repli sans appel au modèle). Le risque d'une réponse inventée sur l'entreprise est borné par le prompt, pas par un garde-fou déterministe : à surveiller sur le jeu de questions de référence. `meta.free_chat` marque ces réponses.
+
+### D23. Les tableaux sont lus comme des catalogues
+
+**Décision.** Un fichier Excel (`.xlsx`) ou CSV passe par `TableReader` : il repère l'en-tête, reconnaît les colonnes (français et anglais, export du Commerce Manager de Meta compris), normalise prix et disponibilités (`Money`), range les produits par catégorie et les écrit en texte (`CatalogFormatter`, une phrase par produit, une section par catégorie, un paragraphe d'ensemble). `XlsxReader` lit les classeurs sans dépendance (archive plafonnée, XML sans réseau). Le résumé (nombre de produits, constats) remonte par `ExtractedDocument::meta` jusqu'à `sources.stats` et s'affiche au client. Un tableau qui n'a pas de colonne « nom » avec « prix » ou « description » reste lu ligne par ligne comme avant.
+
+**Garde-fous.** Les colonnes d'achat, de marge et de fournisseur ne sont jamais lues, et le client en est averti. Les lignes d'exemple du modèle téléchargeable (« (à supprimer) ») sont ignorées. Un produit sans prix reste connu mais n'est pas chiffré. Le même `CatalogFormatter` servira à l'import direct du catalogue Meta (`docs/CATALOGUE.md`, étape 2).
+
+### D24. Les modèles WhatsApp viennent d'une bibliothèque et se créent tout seuls
+
+**Décision.** Les modèles de messages ne se rédigent plus un par un : `config/whatsapp_templates.php` en décrit 28 (français, 12 en anglais), `TemplateLibrary` les prépare (nom de l'entreprise inscrit, boutons retirés si l'adresse ou le numéro manque) et `TemplateProvisioner` les crée par paquets sur un canal, de façon rejouable (un modèle qui existe n'est jamais recréé, un refus n'arrête pas les suivants, trois refus de suite arrêtent tout). `MetaCloudGateway` crée par l'API Graph ; `TwilioGateway` crée désormais par l'API Content (contenu puis demande d'approbation, nettoyage si elle échoue). À l'activation d'un canal (`ChannelRequestController`), le paquet de base et celui du métier de l'assistant partent à l'approbation après l'envoi de la réponse, si l'offre inclut les modèles.
+
+**Garde-fous.** `WhatsAppTemplateLibraryTest` refuse tout modèle qui enfreint les règles de Meta (variables, exemples, longueurs, titre, promotion dans un modèle utilitaire, absence de mention STOP dans un modèle marketing). Les tests désactivent la création automatique (`phpunit.xml`) pour ne jamais appeler un fournisseur. Les envois automatiques déclenchés par un événement (commande confirmée) restent à faire.
+
+### D25. La mesure d'audience est maison, sans adresse IP, et lit ses chiffres dans deux tables
+
+**Décision.** Plutôt qu'un service tiers (données envoyées à l'étranger, cookies publicitaires, bannière de consentement), la plateforme compte elle-même : `resources/js/analytics.js` envoie des lots d'événements par `sendBeacon` à `POST /a/e` (`Tracker::collect`), et les actions de l'application sont enregistrées par le middleware `RecordActions` d'après une table de routes de `config/analytics.php`. Deux tables : `analytics_sessions` (une visite) et `analytics_events` (un geste), avec jour, heure et jour de la semaine déjà rangés pour que les cartes d'affluence tiennent en SQL portable (MySQL, SQLite). `Stats`, `ClientStats`, `Insights`, `ChatStats` lisent ; la page `/admin/statistiques` (super administrateur) affiche neuf onglets, l'export CSV et l'e-mail du lundi. Côté client, `CustomerRhythm` montre les heures d'affluence de ses propres clients sans rien emprunter à ces tables.
+
+**Garde-fous.** Aucune adresse IP stockée ; aucun texte saisi lu ; e-mails et numéros effacés des libellés ; « Ne pas suivre », Global Privacy Control et le refus du visiteur coupent tout ; les modèles n'utilisent pas `BelongsToWorkspace` mais aucune page cliente ne les lit (`AnalyticsTest`) ; la mesure ne casse jamais une requête (erreurs journalisées) ; purge nocturne au-delà de la durée de conservation. Détails et limites : `docs/ANALYTICS.md`.
+
+### D26. Notifications : un point d'entrée, Web Push sans bibliothèque, envoi par morceaux
+
+**Décision.** `Notifier` est l'unique point d'entrée : il applique les choix de la personne (catégories, heures calmes, plafond d'un message promo par jour, doublons), écrit dans le centre de notifications (`app_notifications`, cloche et compteur sur l'icône) et envoie sur les appareils par `PushGateway` (`WebPushGateway`). Le chiffrement Web Push (RFC 8291) et la signature VAPID (RFC 8292) sont écrits en PHP avec OpenSSL (`app/Push/WebPushCrypto.php`, validé contre l'annexe A de la RFC) : aucune bibliothèque de plus, car sur un hébergement sans SSH chaque paquet est un envoi de milliers de fichiers. Les campagnes de l'équipe (`push_campaigns`) s'envoient par morceaux (`CampaignSender`, curseur `cursor_user_id`) depuis `notifications:dispatch`, pour tenir dans la durée d'une requête ou d'un passage de cron mutualisé. Les textes des événements sont dans `Events`, une seule fois, e-mail compris.
+
+**Garde-fous.** Adresses d'abonnement filtrées (`PushEndpoint`), dix appareils par personne, appareil retiré après 404/410 ou cinq échecs, déconnexion qui détache l'appareil, clés VAPID chiffrées et jamais affichées, envoi après la réponse dans une requête web (le visiteur n'attend pas Google), tests sans réseau (`FakePushGateway`). Détails : `docs/NOTIFICATIONS.md`.
+
+### D27. Un seul gabarit d'e-mail, avec aperçu
+
+**Décision.** Les anciens `Mail::raw` (texte brut) sont remplacés par `App\Mail\Notice` et le gabarit `components/mail/*` (bandeau de la marque, filet safran, bouton, faits, signature, version texte). Les e-mails d'événements sont construits par `Events` ; `MailCatalog` les capture avec des données d'exemple pour l'aperçu (Administration, E-mails) et pour le test de rendu de chacun.
 
 ## 6. Sécurité : synthèse
 

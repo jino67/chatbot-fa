@@ -64,7 +64,7 @@ interface WhatsAppGateway
      */
     public function listTemplates(): array;
 
-    /** Le fournisseur permet-il de creer des modeles depuis l'application ? (Twilio : dans sa console.) */
+    /** Le fournisseur permet-il de creer des modeles depuis l'application ? (Meta : API Graph ; Twilio : API Content.) */
     public function supportsTemplateCreation(): bool;
 
     /**

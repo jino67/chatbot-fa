@@ -109,7 +109,8 @@ class PwaTest extends TestCase
         $this->assertEquals($first->timestamp, $owner->fresh()->pwa_installed_at->timestamp);
 
         // Plus d'invitation pour cette personne, sur aucun appareil.
-        $this->actingAs($owner->fresh())->get(route('dashboard'))->assertOk()->assertDontSee('installHint(', false)->assertDontSee('écran d\'accueil', false);
+        // (La carte des notifications garde ses propres étapes pour iPhone : on vérifie ici la carte d'invitation à installer.)
+        $this->actingAs($owner->fresh())->get(route('dashboard'))->assertOk()->assertDontSee('installHint(', false)->assertDontSee('kouma-install-card', false)->assertDontSee('Installez Kouma sur votre téléphone', false);
     }
 
     public function test_the_invitation_is_gentle_and_the_app_reports_itself_when_opened_as_an_app(): void

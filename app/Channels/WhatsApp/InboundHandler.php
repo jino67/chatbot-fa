@@ -181,15 +181,12 @@ class InboundHandler
     /** Une fois par jour, le proprietaire apprend que son assistant ne peut plus repondre sur WhatsApp. */
     private function warnQuota(Workspace $workspace): void
     {
-        if (! Cache::add('alert:wa-blocked:'.$workspace->id.':'.today()->format('Ymd'), 1, 86400) || ! ($to = $workspace->owner()?->email)) {
+        if (! Cache::add('alert:wa-blocked:'.$workspace->id.':'.today()->format('Ymd'), 1, 86400)) {
             return;
         }
 
-        try {
-            Mail::raw("Votre assistant n'a pas pu répondre à un client sur WhatsApp : le volume de messages de votre offre est atteint.\n\nRechargez des messages (Mobile Money accepté) ou changez d'offre depuis la page Abonnement. Vos clients continuent d'être servis sur votre site web.\n\nEspace : {$workspace->name}", fn ($m) => $m->to($to)->subject('Volume de messages WhatsApp atteint'));
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        // Centre de notifications, téléphone et e-mail au propriétaire (voir App\Notify\Events).
+        app(\App\Notify\Events::class)->whatsappBlocked($workspace);
     }
 
     /** @param  string|null  $voiceRefusal  raison du refus d'un message vocal (disabled, quota, engine, too_long, unclear) */

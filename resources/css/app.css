@@ -10,6 +10,48 @@
 :root {
     /* Permet d'animer la hauteur des <details> (FAQ) jusqu'a « auto ». */
     interpolate-size: allow-keywords;
+
+    /* Barres de défilement : une teinte discrète sur fond clair, plus claire sur fond sombre (menu latéral). */
+    --scroll-thumb: rgb(71 85 105 / 0.28);
+    --scroll-thumb-hover: rgb(71 85 105 / 0.5);
+}
+
+.sidebar-shell {
+    --scroll-thumb: rgb(255 255 255 / 0.2);
+    --scroll-thumb-hover: rgb(255 255 255 / 0.38);
+}
+
+/* Barres de défilement fines, arrondies et sans fond, au lieu de la grosse barre grise du système.
+   Chrome, Edge, Opera et Safari lisent les pseudo-éléments ; Firefox lit les propriétés standard (les deux ensemble,
+   Chrome ignorerait les pseudo-éléments). Les zones qui cachent leur barre (.demo-body, .pg-scroll) la gardent cachée. */
+@supports selector(::-webkit-scrollbar) {
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    ::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--scroll-thumb);
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--scroll-thumb-hover);
+    }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scroll-thumb) transparent;
+    }
 }
 
 @layer base {
@@ -1317,4 +1359,300 @@ details > summary::-webkit-details-marker {
     .page-arriving body::after {
         display: none;
     }
+}
+/* ------------------------------------------------------------------------------------------------
+   Guides (pages d'aide, guides du personnel) : le Markdown de resources/guides/ rendu en HTML.
+   Titres dans la police de la marque, texte aéré, encadrés colorés (À savoir, Astuce, Attention),
+   tableaux et blocs de code lisibles. Voir App\Support\Guides.
+   ------------------------------------------------------------------------------------------------ */
+.guide {
+    color: #334155;
+    font-size: 1.0625rem;
+    line-height: 1.75;
+}
+
+.guide > *:first-child {
+    margin-top: 0;
+}
+
+.guide h2 {
+    margin-top: 3.25rem;
+    padding-top: 0.5rem;
+    font-family: theme('fontFamily.display');
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: #0B1340;
+    scroll-margin-top: 6rem;
+    border-top: 1px solid #E2E8F0;
+}
+
+.guide h2:first-child {
+    border-top: 0;
+    margin-top: 0;
+}
+
+.guide h3 {
+    margin-top: 2rem;
+    font-family: theme('fontFamily.display');
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #101B5B;
+    scroll-margin-top: 6rem;
+}
+
+.guide h2 .guide-anchor,
+.guide h3 .guide-anchor {
+    margin-left: 0.4rem;
+    color: #8FA5F7;
+    font-weight: 500;
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.guide h2:hover .guide-anchor,
+.guide h3:hover .guide-anchor,
+.guide .guide-anchor:focus {
+    opacity: 1;
+}
+
+.guide p,
+.guide ul,
+.guide ol,
+.guide table,
+.guide pre,
+.guide blockquote {
+    margin-top: 1.1rem;
+}
+
+.guide a {
+    color: #1A32B0;
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: #B9C8FB;
+    text-underline-offset: 3px;
+}
+
+.guide a:hover {
+    text-decoration-color: currentColor;
+}
+
+.guide strong {
+    color: #0B1340;
+    font-weight: 600;
+}
+
+.guide ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.guide ul > li {
+    position: relative;
+    padding-left: 1.6rem;
+    margin-top: 0.45rem;
+}
+
+.guide ul > li::before {
+    content: '';
+    position: absolute;
+    left: 0.15rem;
+    top: 0.72em;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px 999px 999px 0;
+    background: #2340D9;
+}
+
+.guide ol {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: etape;
+}
+
+.guide ol > li {
+    position: relative;
+    padding-left: 2.6rem;
+    margin-top: 0.8rem;
+    counter-increment: etape;
+}
+
+.guide ol > li::before {
+    content: counter(etape);
+    position: absolute;
+    left: 0;
+    top: 0.1rem;
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 999px;
+    background: #2340D9;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.guide li > ul,
+.guide li > ol {
+    margin-top: 0.5rem;
+}
+
+.guide code {
+    padding: 0.12em 0.4em;
+    border-radius: 0.375rem;
+    background: #EDF1FE;
+    font-size: 0.9em;
+    color: #16298C;
+}
+
+.guide pre {
+    overflow-x: auto;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: #0B1340;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #E2E8F8;
+}
+
+.guide pre code {
+    padding: 0;
+    background: transparent;
+    font-size: inherit;
+    color: inherit;
+}
+
+.guide table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.guide th {
+    padding: 0.65rem 0.9rem;
+    border-bottom: 2px solid #B9C8FB;
+    background: #EDF1FE;
+    text-align: left;
+    font-weight: 600;
+    color: #0B1340;
+}
+
+.guide td {
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid #E2E8F0;
+    vertical-align: top;
+}
+
+.guide blockquote {
+    padding: 0.9rem 1.2rem;
+    border-left: 4px solid #8FA5F7;
+    border-radius: 0 1rem 1rem 0;
+    background: #F1F4FB;
+}
+
+.guide blockquote p {
+    margin-top: 0.5rem;
+}
+
+.guide blockquote p:first-child {
+    margin-top: 0;
+}
+
+.guide .callout-title {
+    display: block;
+    margin-bottom: 0.15rem;
+    font-family: theme('fontFamily.display');
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.guide .callout-tip {
+    border-left-color: #12A574;
+    background: #ECFBF5;
+}
+
+.guide .callout-tip .callout-title {
+    color: #0C8560;
+}
+
+.guide .callout-warning {
+    border-left-color: #E09A00;
+    background: #FFF9E5;
+}
+
+.guide .callout-warning .callout-title {
+    color: #B87800;
+}
+
+.guide .callout-help {
+    border-left-color: #FFB400;
+    background: #101B5B;
+    color: #E2E8F8;
+}
+
+.guide .callout-help strong {
+    color: #fff;
+}
+
+.guide .callout-help .callout-title {
+    color: #FFC533;
+}
+
+.guide .callout-help a {
+    color: #FFD466;
+}
+
+.guide .callout-example {
+    border-left-color: #E8336D;
+    background: #FEF2F6;
+}
+
+.guide .callout-example .callout-title {
+    color: #C9245A;
+}
+
+.guide hr {
+    margin: 2.5rem 0;
+    border: 0;
+    border-top: 1px solid #E2E8F0;
+}
+
+.guide img {
+    max-width: 100%;
+    border-radius: 1rem;
+}
+
+/* Sommaire des guides : la section lue s'allume (voir x-data dans help/guide.blade.php). */
+.guide-toc a {
+    display: block;
+    border-left: 2px solid transparent;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: #475569;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.guide-toc a:hover {
+    color: #1A32B0;
+}
+
+.guide-toc a[data-on='true'] {
+    border-left-color: #2340D9;
+    background: #EDF1FE;
+    font-weight: 600;
+    color: #16298C;
+}
+
+.guide-toc a[data-level='3'] {
+    padding-left: 1.5rem;
+    font-size: 0.8125rem;
 }

@@ -96,8 +96,9 @@ class IngestionTest extends TestCase
         ]);
 
         $content = $bot->sources()->firstOrFail()->documents()->firstOrFail()->content;
-        $this->assertStringContainsString('Article : Robe wax | Prix : 18000 | Taille : M', $content);
-        $this->assertStringContainsString('Article : Foulard | Prix : 6500', $content);
+        // Les colonnes Article et Prix sont reconnues : une phrase par produit, prix lisible, colonne en plus gardée.
+        $this->assertStringContainsString("Robe wax : 18\u{202F}000 FCFA. Taille : M.", $content);
+        $this->assertStringContainsString("Foulard : 6\u{202F}500 FCFA.", $content);
     }
 
     public function test_a_word_document_keeps_headings_and_tables(): void

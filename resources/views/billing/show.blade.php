@@ -63,7 +63,7 @@
         <section>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-display text-xl font-bold">Choisir une offre</h2>
-                <x-currency-switcher />
+                <x-account-currency />
             </div>
             <div class="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($plans as $p)

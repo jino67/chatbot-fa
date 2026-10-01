@@ -89,10 +89,15 @@
                 <form x-show="tab === 'file'" method="POST" action="{{ route('sources.store', $bot) }}" enctype="multipart/form-data" class="space-y-4">
                     @csrf <input type="hidden" name="type" value="file">
                     <div>
-                        <x-input-label for="file" value="Fichier (PDF, Word, texte, Markdown, CSV, HTML)" />
-                        <input id="file" type="file" name="file" required accept=".pdf,.docx,.txt,.md,.csv,.html,.htm"
+                        <x-input-label for="file" value="Fichier (PDF, Word, Excel, CSV, texte, Markdown, HTML)" />
+                        <input id="file" type="file" name="file" required accept=".pdf,.docx,.txt,.md,.csv,.tsv,.xlsx,.xls,.html,.htm"
                                class="mt-1 block w-full text-sm text-slate-700 file:me-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
-                        <p class="mt-1 text-xs text-slate-500">20 Mo maximum. Les PDF scannés sont lus automatiquement (OCR). Un fichier CSV (liste de prix, catalogue) est lu ligne par ligne.</p>
+                        <p class="mt-1 text-xs text-slate-500">20 Mo maximum. Les PDF scannés sont lus automatiquement (OCR).</p>
+                        <div class="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                            <p><strong class="text-brand-900">Un catalogue, une carte ou une liste de prix ?</strong> Envoyez-la en Excel (.xlsx) ou en CSV : l'assistant repère les colonnes (nom, prix, disponibilité, catégorie, description), lit les prix comme vous les écrivez (« 18 000 », « 18.000 FCFA », « à partir de 5000 ») et range les produits par catégorie.</p>
+                            <p class="mt-1">Les colonnes « prix d'achat », « marge » et « fournisseur » ne sont jamais lues. Un export du Commerce Manager de Meta (catalogue WhatsApp) est compris tel quel.</p>
+                            <p class="mt-1"><a href="{{ route('sources.template', $bot) }}" class="font-medium text-brand-600 underline">Télécharger un modèle de catalogue</a> (s'ouvre dans Excel).</p>
+                        </div>
                     </div>
                     <button class="{{ $btn }}">Envoyer le document</button>
                 </form>
@@ -223,12 +228,23 @@
                         </div>
                         <div class="mt-1 text-sm text-slate-600">
                             @if ($source->status === 'ready' && $source->stats)
-                                {{ $source->stats['pages'] }} page(s), {{ $source->stats['chunks'] }} extrait(s), environ {{ number_format($source->stats['tokens'], 0, ',', ' ') }} jetons
+                                @if (! empty($source->stats['products']))
+                                    <strong class="text-brand-900">{{ $source->stats['products'] }} produit(s) lu(s)</strong>, {{ $source->stats['chunks'] }} extrait(s)
+                                @else
+                                    {{ $source->stats['pages'] }} page(s), {{ $source->stats['chunks'] }} extrait(s), environ {{ number_format($source->stats['tokens'], 0, ',', ' ') }} jetons
+                                @endif
                                 @if ($source->last_synced_at) : mis à jour {{ $source->last_synced_at->diffForHumans() }} @endif
                             @elseif (in_array($source->type, ['url', 'facebook']) && ! empty($source->payload['url']))
                                 {{ $source->payload['url'] }}
                             @endif
                         </div>
+                        @if ($source->status === 'ready' && ! empty($source->stats['notes']))
+                            <ul class="mt-2 space-y-1 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                @foreach ($source->stats['notes'] as $note)
+                                    <li>{{ $note }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
                         @if ($source->status === 'failed' && $source->error)
                             <div class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{{ $source->error }}</div>
                         @endif

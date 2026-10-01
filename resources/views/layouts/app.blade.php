@@ -8,6 +8,7 @@
 
         <title>{{ $title ?? $brand['name'] }}</title>
         <x-pwa-meta />
+        <x-push-meta />
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=unbounded:500,600,700|instrument-sans:400,500,600&display=swap" rel="stylesheet" />
@@ -24,9 +25,12 @@
                 {{-- Barre mobile : logo et menu --}}
                 <div class="flex h-14 items-center justify-between border-b border-slate-200/80 bg-white px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}"><x-logo size="sm" /></a>
-                    <button type="button" @click="menu = true" class="rounded-lg p-2 text-brand-900 hover:bg-slate-100" aria-label="Ouvrir le menu">
-                        <x-icon name="menu" />
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <x-notification-bell tone="dark" />
+                        <button type="button" @click="menu = true" class="rounded-lg p-2 text-brand-900 hover:bg-slate-100" aria-label="Ouvrir le menu">
+                            <x-icon name="menu" />
+                        </button>
+                    </div>
                 </div>
 
                 @if ($user?->isActingAsClient())

@@ -27,6 +27,11 @@
             <a href="{{ route('channels.show', $bot) }}" class="btn-primary mt-5">Demander l'activation</a>
         </div>
     @else
+        @if ($library)
+            @include('templates._library')
+        @endif
+
+        <h3 class="mb-3 font-display text-lg font-bold">Vos modèles</h3>
         <div class="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <section class="surface divide-y divide-slate-100">
                 @forelse ($templates as $template)
@@ -55,14 +60,14 @@
                     </article>
                 @empty
                     <div class="px-6 py-12 text-center text-sm text-slate-600">
-                        Aucun modèle pour l'instant. @if ($canCreate) Créez le premier avec le formulaire. @else Créez vos modèles dans la console Twilio, puis cliquez sur « Actualiser les statuts ». @endif
+                        Aucun modèle pour l'instant. @if ($library) Ajoutez un paquet ou quelques modèles de la bibliothèque ci-dessus, ou créez le vôtre avec le formulaire. @elseif ($canCreate) Créez le premier avec le formulaire. @else Créez vos modèles chez votre fournisseur, puis cliquez sur « Actualiser les statuts ». @endif
                     </div>
                 @endforelse
             </section>
 
             @if ($canCreate)
                 <section class="surface h-fit p-6" x-data="{ body: @js(old('body', '')), vars: 0, sync() { const m = this.body.match(/\{\{\d+\}\}/g); this.vars = m ? new Set(m).size : 0 } }" x-init="sync()">
-                    <h3 class="font-display text-lg font-bold">Nouveau modèle</h3>
+                    <h3 class="font-display text-lg font-bold">Un modèle sur mesure</h3>
                     <form method="POST" action="{{ route('templates.store', $bot) }}" class="mt-4 space-y-4">
                         @csrf
                         <div>

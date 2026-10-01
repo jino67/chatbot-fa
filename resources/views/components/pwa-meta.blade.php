@@ -8,3 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="{{ \Illuminate\Support\Str::limit($brand['name'] ?? config('brand.name'), 12, '') }}">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+{{-- Mesure d'audience : active seulement si la plateforme l'a activée (Paramètres, Statistiques). Voir resources/js/analytics.js. --}}
+@if (app(\App\Services\Analytics\Tracker::class)->enabled())
+    <meta name="kouma-analytics" content="{{ route('analytics.collect', [], false) }}">
+@endif

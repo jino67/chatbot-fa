@@ -41,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(EmbeddingClient::class, fn ($app) => $app->make(EmbeddingFactory::class)->make());
 
         $this->app->singleton(HybridStore::class, SqlHybridStore::class);
+
+        // Notifications sur les appareils : l'envoi réel passe par Web Push ; les tests le remplacent par un faux.
+        $this->app->bind(\App\Push\PushGateway::class, \App\Push\WebPushGateway::class);
         $this->app->singleton(SpeechClient::class, fn ($app) => $app->make(SpeechFactory::class)->make());
         $this->app->singleton(VoiceService::class, fn ($app) => new VoiceService($app->make(SpeechFactory::class), $app->make(UsageService::class), $app->make(UsageMeter::class)));
     }
@@ -60,6 +63,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute((int) config('platform.widget.rate_per_minute_ip'))->by('ip:'.$request->ip()),
             Limit::perMinute((int) config('platform.widget.rate_per_minute_bot'))->by('bot:'.$request->route('publicKey')),
         ]);
+
+        // Mesure d'audience : 120 lots par minute et par adresse IP (l'adresse sert seulement à limiter le débit, jamais gardée).
+        RateLimiter::for('analytics', fn (Request $request) => Limit::perMinute(120)->by('ip:'.$request->ip()));
 
         // API des developpeurs : 60 requetes par minute et par cle, plus un plafond par adresse IP.
         RateLimiter::for('api', fn (Request $request) => [

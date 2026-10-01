@@ -95,13 +95,18 @@ return [
     'uploads' => [
         'disk' => 'local',
         'max_kb' => 20480,
-        'documents' => ['pdf', 'docx', 'txt', 'md', 'csv', 'html', 'htm'],
+        'documents' => ['pdf', 'docx', 'txt', 'md', 'csv', 'tsv', 'xlsx', 'xls', 'html', 'htm'],
         'images' => ['jpg', 'jpeg', 'png', 'webp', 'gif'],
     ],
 
     'whatsapp' => [
         // Fenetre de service : reponse libre autorisee 24 h apres le dernier message du client.
         'session_window_hours' => 24,
+
+        // Modeles : a l'activation d'un canal, le paquet de base et celui du metier sont soumis a approbation
+        // (WHATSAPP_AUTO_TEMPLATES=false pour couper) ; pause entre deux creations, en millisecondes.
+        'auto_templates' => (bool) env('WHATSAPP_AUTO_TEMPLATES', true),
+        'template_pause_ms' => (int) env('WHATSAPP_TEMPLATE_PAUSE_MS', 250),
 
         'meta' => [
             'graph_version' => env('META_GRAPH_VERSION', 'v23.0'),

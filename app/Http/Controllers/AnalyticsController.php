@@ -62,6 +62,7 @@ class AnalyticsController extends Controller
                 'latency' => (int) round((clone $assistant)->where('meta->llm', true)->get(['meta'])->avg(fn ($m) => $m->meta['latency_ms'] ?? 0)),
             ],
             'questions' => $questions,
+            'rhythm' => \App\Support\CustomerRhythm::forBot($bot),
         ]);
     }
 

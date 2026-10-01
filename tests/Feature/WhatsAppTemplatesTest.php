@@ -304,6 +304,9 @@ class WhatsAppTemplatesTest extends TestCase
     {
         $channel = $this->twilioChannel();
         Http::fake([
+            // Création : le contenu, puis la demande d'approbation WhatsApp (avant le motif général, le premier qui correspond gagne).
+            'content.twilio.com/v1/Content/*/ApprovalRequests/whatsapp' => Http::response(['status' => 'received'], 201),
+            'content.twilio.com/v1/Content' => Http::response(['sid' => 'HXnew'], 201),
             'content.twilio.com/*' => Http::response(['contents' => [[
                 'sid' => 'HX123', 'friendly_name' => 'suivi', 'language' => 'fr', 'types' => ['twilio/text' => ['body' => 'Bonjour {{1}}, colis {{2}} expédié.']],
                 'approval_requests' => ['whatsapp' => ['name' => 'suivi_colis', 'category' => 'utility', 'status' => 'approved']],
@@ -317,8 +320,11 @@ class WhatsAppTemplatesTest extends TestCase
         $this->assertSame('HX123', $template->external_id);
         $this->assertTrue($template->isApproved());
 
-        // La creation passe par la console Twilio : l'application l'explique au lieu d'echouer.
-        $this->actingAs($this->owner)->post(route('templates.store', $this->bot), $this->form())->assertSessionHas('error', fn ($m) => str_contains($m, 'console Twilio'));
+        // La creation passe par l'API Content de Twilio, puis une demande d'approbation WhatsApp.
+        $this->actingAs($this->owner)->post(route('templates.store', $this->bot), $this->form())->assertSessionHas('status');
+        $created = WhatsAppTemplate::withoutGlobalScopes()->where('channel_id', $channel->id)->where('external_id', 'HXnew')->firstOrFail();
+        $this->assertSame('PENDING', $created->status);
+        Http::assertSent(fn (HttpRequest $r) => str_contains($r->url(), '/Content/HXnew/ApprovalRequests/whatsapp') && $r['name'] === $created->name);
 
         $response = $this->actingAs($this->owner)->post(route('conversations.template', [$this->bot, $this->conversation()]), ['template_id' => $template->id, 'variables' => ['Awa', 'CMD-7']]);
         $this->assertNull(session('error'), (string) session('error'));

@@ -73,6 +73,7 @@ class IngestionPipeline
                 $this->path($payload),
                 pathinfo($payload['original_name'] ?? $payload['path'], PATHINFO_EXTENSION),
                 $source->name,
+                $source->workspace?->currency,
             )],
             Source::TYPE_IMAGE => [$this->images->read($this->path($payload), $source->name)],
             Source::TYPE_URL => $this->crawlSite($source),
@@ -151,7 +152,7 @@ class IngestionPipeline
                 }
                 $kept[] = $line;
             }
-            $clean[] = new ExtractedDocument($document->title, Text::clean(implode("\n", $kept)), $document->url);
+            $clean[] = new ExtractedDocument($document->title, Text::clean(implode("\n", $kept)), $document->url, $document->meta);
         }
 
         return array_values(array_filter($clean, fn ($d) => mb_strlen($d->text) >= 40));
@@ -170,7 +171,7 @@ class IngestionPipeline
 
     /**
      * @param  list<ExtractedDocument>  $documents
-     * @return array{pages:int, chunks:int, tokens:int, chars:int}
+     * @return array{pages:int, chunks:int, tokens:int, chars:int, products?:int, notes?:list<string>}
      */
     private function store(Source $source, array $documents): array
     {
@@ -251,11 +252,27 @@ class IngestionPipeline
             }
         });
 
-        return [
+        $stats = [
             'pages' => count($prepared),
             'chunks' => $totalChunks,
             'tokens' => $totalTokens,
             'chars' => $totalChars,
         ];
+
+        // Un tableau lu comme un catalogue : combien de produits, et ce qui mérite l'attention du client.
+        $products = array_sum(array_map(fn ($item) => (int) ($item['document']->meta['products'] ?? 0), $prepared));
+        $notes = [];
+        foreach ($prepared as $item) {
+            array_push($notes, ...($item['document']->meta['notes'] ?? []));
+        }
+        $notes = array_values(array_unique($notes));
+        if ($products > 0) {
+            $stats['products'] = $products;
+        }
+        if ($notes !== []) {
+            $stats['notes'] = array_slice($notes, 0, 8);
+        }
+
+        return $stats;
     }
 }

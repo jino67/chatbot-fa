@@ -38,7 +38,7 @@ class PaymentController extends Controller
         $start = ($workspace->plan === $data['plan'] && $workspace->plan_ends_at?->isFuture()) ? $workspace->plan_ends_at : now();
         $end = $start->copy()->addMonths((int) $data['period_months']);
 
-        Payment::create([
+        $payment = Payment::create([
             'workspace_id' => $workspace->id,
             'plan' => $plan->slug,
             'amount' => $data['amount'],
@@ -67,6 +67,9 @@ class PaymentController extends Controller
             ->update(['status' => PlanRequest::APPROVED, 'handled_by' => $request->user()->id]);
 
         AuditLog::record('payment.recorded', $workspace->name, ['plan' => $plan->slug, 'amount' => $data['amount'], 'currency' => $data['currency'] ?? $workspace->currency, 'method' => $data['method'], 'ref' => $data['reference'] ?? null], $workspace->id);
+
+        // Le client reçoit son reçu (centre de notifications, téléphone et e-mail).
+        app(\App\Notify\Events::class)->paymentReceived($workspace->fresh(), $payment, $plan);
 
         return back()->with('status', "Paiement enregistré : offre {$plan->name} active jusqu'au ".$end->format('d/m/Y').'.');
     }

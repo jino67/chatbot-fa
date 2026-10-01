@@ -7,7 +7,9 @@
         </x-page-header>
     </x-slot>
 
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <x-draft-card :draft="$draft" />
+
         <div class="surface divide-y divide-slate-100">
             @forelse ($bots as $bot)
                 <a href="{{ route('sources.index', $bot) }}" class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50">

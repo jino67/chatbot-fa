@@ -19,14 +19,17 @@
         ['Espaces clients', 'admin.workspaces.index', 'building', 'admin.workspaces.*'],
         ['Demandes WhatsApp', 'admin.requests.index', 'inbox', 'admin.requests.*'],
         ['Demandes d\'offre', 'admin.plan-requests.index', 'card', 'admin.plan-requests.*'],
+        ['Notifications', 'admin.notifications.index', 'megaphone', 'admin.notifications.*'],
     ];
 
     $superNav = [
+        ['Statistiques', 'admin.statistics.index', 'pulse', 'admin.statistics.*'],
         ['Consommation', 'admin.consumption.index', 'chart', 'admin.consumption.*'],
         ['Offres et tarifs', 'admin.plans.index', 'layers', 'admin.plans.*'],
         ['IA et fournisseurs', 'admin.ai.index', 'chip', 'admin.ai.*'],
         ['Équipe', 'admin.team.index', 'users', 'admin.team.*'],
         ['Paramètres', 'admin.settings.edit', 'cog', 'admin.settings.*'],
+        ['E-mails', 'admin.emails.index', 'inbox', 'admin.emails.*'],
         ['Journal', 'admin.audit.index', 'scroll', 'admin.audit.*'],
     ];
 
@@ -45,6 +48,7 @@
        class="sidebar-shell wax-navy fixed inset-y-0 left-0 z-40 flex w-64 flex-col text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0">
     <div class="flex h-16 items-center justify-between px-5">
         <a href="{{ route('dashboard') }}"><x-logo tone="light" /></a>
+        <div class="hidden lg:block"><x-notification-bell tone="light" /></div>
         <button type="button" @click="menu = false" class="rounded-lg p-1.5 text-white/70 hover:bg-white/10 lg:hidden" aria-label="Fermer le menu"><x-icon name="x" /></button>
     </div>
 
@@ -93,9 +97,35 @@
                 </ul>
             </div>
         @endif
+
+        <div>
+            <p class="px-3 pb-2 text-xs font-medium text-white/50">Ressources</p>
+            <ul class="space-y-0.5">
+                @php
+                    $resources = [['Aide et guides', route('help.index'), 'book', false]];
+                    if ($user?->isStaff()) {
+                        $resources[] = ['Guide de l\'équipe', route('staff.guide', 'admin'), 'scroll', false];
+                        if ($user->isSuperAdmin()) {
+                            $resources[] = ['Guide du super admin', route('staff.guide', 'super-admin'), 'scroll', false];
+                        }
+                    }
+                    $resources[] = ['Voir le site', url('/'), 'external', true];
+                @endphp
+                @foreach ($resources as [$label, $href, $icon, $external])
+                    <li>
+                        <a href="{{ $href }}" @if ($external) target="_blank" rel="noopener" @endif class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-white/75 transition-all duration-200 hover:translate-x-0.5 hover:bg-white/10 hover:text-white">
+                            <x-icon :name="$icon" class="h-[18px] w-[18px]" /> {{ $label }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
     </nav>
 
     <div class="border-t border-white/10 p-3">
+        @if ($workspace && ! $user->isStaff())
+            <x-help-card variant="sidebar" />
+        @endif
         @if ($workspace && ! $user->isStaff())
             @php
                 $plan = $workspace->planModel();

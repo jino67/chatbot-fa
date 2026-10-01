@@ -3,7 +3,7 @@
         <span class="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand-50 transition-all duration-300 group-hover:rounded-2xl group-hover:rounded-bl-sm"><x-illus name="phone" class="h-9 w-9" /></span>
         <div>
             <h2 class="font-display text-lg font-bold text-brand-950">Utiliser {{ $brand['name'] }} comme une application</h2>
-            <p class="mt-1 text-sm text-slate-600">Une icône sur l'écran d'accueil ouvre vos demandes et vos conversations en un geste, sans rien télécharger.</p>
+            <p class="mt-1 text-sm text-slate-600">Une icône sur l'écran d'accueil ouvre vos demandes et vos conversations en un geste, sans rien télécharger. Les notifications (commande à confirmer, client qui attend, nouveautés) arrivent directement sur votre téléphone, avec le nombre de messages à lire sur l'icône : installez l'application, puis activez-les ci-dessous.</p>
         </div>
     </header>
 
@@ -39,4 +39,8 @@
             <button type="button" class="btn-primary px-5 py-2.5" onclick="window.dispatchEvent(new Event('kouma-install-hint'))">Me guider sur cet appareil</button>
         </div>
     @endunless
+
+    {{-- Notifications : activation sur cet appareil et accès aux préférences --}}
+    <div class="mt-6"><x-push-card /></div>
+    <p class="mt-3 text-sm text-slate-600">Choisissez ce que vous recevez et à quelles heures dans <a href="{{ route('notifications.preferences') }}" class="font-semibold text-brand-700 hover:underline">les préférences de notifications</a>.</p>
 </section>

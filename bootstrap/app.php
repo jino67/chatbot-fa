@@ -4,6 +4,7 @@ use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnsureStaff;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureWorkspaceContext;
+use App\Http\Middleware\RecordActions;
 use App\Http\Middleware\ResolveWidgetBot;
 use App\Http\Middleware\SetCurrency;
 use Illuminate\Foundation\Application;
@@ -29,8 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Devise d'affichage choisie par le lien ?devise=EUR (pages de tarifs).
         $middleware->appendToGroup('web', SetCurrency::class);
 
+        // Mesure des actions importantes (voir config/analytics.php, « actions »).
+        $middleware->appendToGroup('web', RecordActions::class);
+
         // Les webhooks WhatsApp sont authentifies par signature, pas par session : pas de jeton CSRF.
-        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+        $middleware->validateCsrfTokens(except: ['webhooks/*', 'a/e']);
+
+        // Les identifiants de mesure d'audience sont aléatoires et lisibles par le serveur : ni chiffrés ni signés.
+        $middleware->encryptCookies(except: ['_kv', '_ks', '_ko']);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

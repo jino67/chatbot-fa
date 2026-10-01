@@ -1,0 +1,7 @@
+# Configuration OpenSSL minimale, utilisée seulement quand le serveur n'en a pas (PHP sous Windows sans openssl.cnf).
+# Elle ne change aucun réglage de sécurité : elle permet juste de créer une clé elliptique (la taille ci-dessous ne sert pas aux courbes).
+[ req ]
+default_bits = 2048
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]

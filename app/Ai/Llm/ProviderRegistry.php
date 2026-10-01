@@ -3,6 +3,7 @@
 namespace App\Ai\Llm;
 
 use App\Ai\LlmException;
+use App\Mail\Notice;
 use App\Models\AiProvider;
 use App\Services\PlatformSettings;
 use Illuminate\Support\Collection;
@@ -152,21 +153,36 @@ class ProviderRegistry
             return;
         }
 
+        $next = $this->all()->first(fn (AiProvider $p) => $p->id !== $provider->id && $p->isAvailable());
+
+        // Sur les téléphones de l'équipe aussi : une panne d'IA se voit tout de suite, pas au prochain e-mail ouvert.
+        try {
+            app(\App\Notify\Notifier::class)->toStaff('system', 'Alerte IA : '.$provider->name.' indisponible', $e->kindLabel().($next ? ". Bascule automatique sur {$next->name}." : '. Aucun autre fournisseur disponible.'), route('admin.ai.index', [], false), ['urgent' => true, 'tag' => 'alerte-ia-'.$provider->id]);
+        } catch (\Throwable $pushError) {
+            report($pushError);
+        }
+
         $to = config('platform.admin_email') ?: $this->settings->get('brand.email');
         if (! $to) {
             return;
         }
 
-        $next = $this->all()->first(fn (AiProvider $p) => $p->id !== $provider->id && $p->isAvailable());
-
         try {
-            Mail::raw(
-                "Le fournisseur IA « {$provider->name} » ne répond plus : {$e->kindLabel()}.\n\n"
-                .$e->getMessage()."\n\n"
-                .($next ? "Bascule automatique : les réponses passent par « {$next->name} ».\n" : "Aucun autre fournisseur n'est disponible : les assistants répondent avec leur message de repli.\n")
-                ."\nRechargez le compte ou remplacez la clé depuis le tableau de bord (IA et fournisseurs).",
-                fn ($m) => $m->to($to)->subject('Alerte IA : '.$provider->name.' indisponible')
-            );
+            Mail::to($to)->send(new Notice(
+                subjectLine: 'Alerte IA : '.$provider->name.' indisponible',
+                heading: "Un fournisseur d'IA ne répond plus",
+                paragraphs: [
+                    "Le fournisseur « {$provider->name} » ne répond plus : {$e->kindLabel()}.",
+                    $e->getMessage(),
+                    $next ? "Bascule automatique : les réponses passent par « {$next->name} »." : "Aucun autre fournisseur n'est disponible : les assistants répondent avec leur message de repli.",
+                    'Rechargez le compte ou remplacez la clé depuis le tableau de bord (IA et fournisseurs).',
+                ],
+                actionLabel: 'Ouvrir IA et fournisseurs',
+                actionUrl: route('admin.ai.index'),
+                tone: 'danger',
+                reason: 'Vous recevez cette alerte parce que vous administrez la plateforme.',
+                settings: false,
+            ));
         } catch (\Throwable $mailError) {
             report($mailError);
         }

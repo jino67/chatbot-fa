@@ -27,6 +27,7 @@ class SettingsController extends Controller
         'whatsapp.provider', 'whatsapp.meta.waba_id', 'whatsapp.twilio.account_sid', 'wallet.alert_below',
         'costs.twilio_fee', 'costs.meta_service', 'costs.meta_utility', 'costs.meta_marketing', 'costs.rate_usd', 'costs.rate_mad',
         'speech.stt_model', 'speech.tts_model', 'speech.local_url', 'speech.local_model',
+        'analytics.enabled', 'analytics.retention_days', 'analytics.digest',
     ];
 
     public function edit(PlatformSettings $settings, FacebookGraph $facebook)
@@ -81,6 +82,10 @@ class SettingsController extends Controller
             'speech_local_url' => ['nullable', 'url', 'max:200'],
             'speech_local_model' => ['nullable', 'string', 'max:80'],
             'speech_local_key' => ['nullable', 'string', 'max:300'],
+            // Statistiques : mesure d'audience maison (voir docs/ANALYTICS.md)
+            'analytics_enabled' => ['nullable', 'boolean'],
+            'analytics_digest' => ['nullable', 'boolean'],
+            'analytics_retention_days' => ['nullable', 'integer', 'min:30', 'max:1095'],
         ]);
 
         foreach ([
@@ -99,6 +104,16 @@ class SettingsController extends Controller
             'speech.local_url' => 'speech_local_url', 'speech.local_model' => 'speech_local_model',
         ] as $key => $field) {
             $settings->set($key, $data[$field] ?? null);
+        }
+
+        // Statistiques : ces champs ne sont envoyés que par la section dédiée du formulaire ; absents, les réglages restent.
+        foreach (['analytics.enabled' => 'analytics_enabled', 'analytics.digest' => 'analytics_digest'] as $key => $field) {
+            if ($request->has($field)) {
+                $settings->set($key, $request->boolean($field));
+            }
+        }
+        if ($request->has('analytics_retention_days')) {
+            $settings->set('analytics.retention_days', $data['analytics_retention_days'] ?? null);
         }
 
         // Secrets : laisses vides, ils restent tels quels et ne sont jamais reaffiches.

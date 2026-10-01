@@ -30,6 +30,16 @@
             </div>
         @endunless
 
+        <x-draft-card :draft="$draft" />
+
+        @if ($onboarding)
+            <x-onboarding-card :bot="$onboarding['bot']" :onboarding="$onboarding['progress']" />
+        @endif
+
+        <x-install-card />
+        {{-- Rappel d'activation des notifications : seulement s'il y a quelque chose à faire (jamais demandé, bloqué, iPhone sans l'application) --}}
+        <x-push-card :reminder="true" />
+
         <div class="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
             @foreach ([
                 ['Conversations, 30 jours', $stats['conversations'], null, 'chat'],
@@ -97,5 +107,7 @@
                 @endif
             </section>
         </div>
+
+        <x-help-card />
     </div>
 </x-app-layout>

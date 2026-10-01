@@ -6,11 +6,15 @@ use App\Services\PlatformSettings;
 
 /**
  * Les devises de la plateforme : FCFA (XOF), franc comorien (KMF), euro, dollar et dirham marocain (MAD).
- * Chaque offre a un prix par devise ; le visiteur en choisit une (mémorisée en session), le client
- * garde la sienne sur son espace.
+ * Chaque offre a un prix par devise. La devise est propre à chaque compte : un client connecté (ou le personnel entré
+ * dans son espace) a celle de son espace, FCFA par défaut, et la change sans rien changer pour les autres. Seul un
+ * visiteur non connecté a un choix mémorisé, en session et dans un cookie d'un an (il le retrouve à sa prochaine visite).
  */
 final class Currency
 {
+    /** Cookie du visiteur non connecté : son choix survit à la session. */
+    public const COOKIE = 'currency';
+
     /** @var array<string,array{name:string,symbol:string,short:string}> */
     public const ALL = [
         'XOF' => ['name' => 'Franc CFA', 'symbol' => 'FCFA', 'short' => 'FCFA'],
@@ -39,23 +43,36 @@ final class Currency
         return self::isValid($code) ? $code : 'XOF';
     }
 
-    /** Devise à afficher maintenant : celle de l'espace du client connecté, sinon le choix du visiteur, sinon le défaut. */
+    /**
+     * Devise à afficher maintenant : celle de l'espace dans lequel on se trouve (le client, ou l'espace où le personnel
+     * est entré), sinon le choix du visiteur, sinon le défaut. Jamais la session d'un autre compte.
+     */
     public static function current(): string
     {
-        $code = auth()->user()?->workspace?->currency ?: session('currency');
+        $workspace = auth()->user()?->currentWorkspace();
+        $code = $workspace ? $workspace->currency : (session('currency') ?: request()->cookie(self::COOKIE));
 
         return self::isValid($code) ? $code : self::default();
     }
 
-    /** Memorise la devise choisie : en session pour un visiteur, et sur l'espace pour un client connecte. */
+    /**
+     * Memorise la devise choisie : sur l'espace quand on est dans un espace (rien en session, pour qu'elle ne suive pas
+     * le navigateur d'un compte à l'autre), en session pour un visiteur.
+     */
     public static function remember(\Illuminate\Http\Request $request, string $code): void
     {
-        $request->session()->put('currency', $code);
+        $workspace = $request->user()?->currentWorkspace();
 
-        $workspace = $request->user()?->workspace;
-        if ($workspace && $workspace->currency !== $code) {
-            $workspace->update(['currency' => $code]);
+        if ($workspace) {
+            if ($workspace->currency !== $code) {
+                $workspace->update(['currency' => $code]);
+            }
+
+            return;
         }
+
+        $request->session()->put('currency', $code);
+        \Illuminate\Support\Facades\Cookie::queue(self::COOKIE, $code, 60 * 24 * 365);
     }
 
     /** @param  array<string,int|float>  $prices  montant par devise  @return array<string,string> le meme, formate (pour le selecteur de devise) */

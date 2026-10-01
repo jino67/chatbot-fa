@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Channels\WhatsApp\GatewayException;
+use App\Channels\WhatsApp\GatewayFactory;
 use App\Channels\WhatsApp\MetaCloudGateway;
+use App\Channels\WhatsApp\TemplateLibrary;
 use App\Channels\WhatsApp\TemplateManager;
+use App\Channels\WhatsApp\TemplateProvisioner;
+use App\Support\Runtime;
 use App\Models\AuditLog;
 use App\Models\Bot;
 use App\Models\Channel;
@@ -20,18 +24,86 @@ use Illuminate\Validation\ValidationException;
  */
 class TemplateController extends Controller
 {
-    public function index(Request $request, Bot $bot)
+    public function index(Request $request, Bot $bot, GatewayFactory $gateways, TemplateLibrary $library)
     {
         $workspace = $request->user()->currentWorkspace();
         $channel = $this->channel($bot);
+        $allowed = $workspace->hasFeature('templates');
+
+        // La langue de la bibliothèque : celle choisie sur l'écran, sinon celle de l'assistant.
+        $language = $request->query('langue');
+        $language = in_array($language, TemplateLibrary::LANGUAGES, true) ? $language : $library->languageFor($bot->language);
+        $context = $library->context($bot, $channel);
 
         return view('templates.index', [
             'bot' => $bot,
             'channel' => $channel,
-            'allowed' => $workspace->hasFeature('templates'),
+            'allowed' => $allowed,
             'templates' => $channel ? WhatsAppTemplate::where('channel_id', $channel->id)->orderBy('name')->get() : collect(),
-            'canCreate' => $channel && $channel->type === Channel::WHATSAPP_META,
+            'canCreate' => $channel && $gateways->for($channel)->supportsTemplateCreation(),
+            'library' => $allowed && $channel ? [
+                'items' => $library->items($language, $context),
+                'groups' => $library->groups(),
+                'packs' => $library->packs(),
+                'suggestedPack' => $library->packFor($bot->sector),
+                'packCounts' => collect($library->packs())->map(fn ($pack, $key) => count(array_filter($library->packKeys($key), fn ($k) => $library->has($k, $language))))->all(),
+                'existing' => $library->existing($channel, $language),
+                'language' => $language,
+                'languages' => TemplateLibrary::LANGUAGES,
+            ] : null,
         ]);
+    }
+
+    /** Ajoute au canal les modèles cochés dans la bibliothèque. */
+    public function add(Request $request, Bot $bot, TemplateLibrary $library, TemplateProvisioner $provisioner): RedirectResponse
+    {
+        $channel = $this->requireChannel($request, $bot);
+        $data = $request->validate([
+            'keys' => ['required', 'array', 'min:1', 'max:60'],
+            'keys.*' => ['string', Rule::in($library->keys())],
+            'language' => ['required', Rule::in(TemplateLibrary::LANGUAGES)],
+        ], ['keys.required' => 'Cochez au moins un modèle.']);
+
+        return $this->summarise($provisioner, $channel, $bot, $data['keys'], $data['language']);
+    }
+
+    /** Ajoute au canal un paquet complet (l'essentiel et ceux d'un métier). */
+    public function pack(Request $request, Bot $bot, TemplateLibrary $library, TemplateProvisioner $provisioner): RedirectResponse
+    {
+        $channel = $this->requireChannel($request, $bot);
+        $data = $request->validate([
+            'pack' => ['required', Rule::in(array_keys($library->packs()))],
+            'language' => ['required', Rule::in(TemplateLibrary::LANGUAGES)],
+        ]);
+
+        return $this->summarise($provisioner, $channel, $bot, $library->packKeys($data['pack']), $data['language']);
+    }
+
+    /** @param list<string> $keys */
+    private function summarise(TemplateProvisioner $provisioner, Channel $channel, Bot $bot, array $keys, string $language): RedirectResponse
+    {
+        Runtime::allowLongRequest();
+        $result = $provisioner->provision($channel, $bot, $keys, $language);
+
+        $parts = [];
+        if ($result['created'] !== []) {
+            $parts[] = count($result['created']).' modèle(s) envoyé(s) à WhatsApp pour approbation (quelques minutes à quelques heures : cliquez sur « Actualiser les statuts »).';
+        }
+        if ($result['existing'] !== []) {
+            $parts[] = count($result['existing']).' déjà présent(s), laissé(s) tel(s) quel(s).';
+        }
+        if ($result['skipped'] !== []) {
+            $parts[] = count($result['skipped']).' indisponible(s) dans cette langue.';
+        }
+
+        $redirect = back()->with('status', $parts !== [] ? implode(' ', $parts) : 'Rien à ajouter.');
+
+        if ($result['failed'] !== []) {
+            $first = array_key_first($result['failed']);
+            $redirect->with('error', count($result['failed']).' modèle(s) refusé(s) par le fournisseur. Premier motif ('.$first.') : '.$result['failed'][$first]);
+        }
+
+        return $redirect;
     }
 
     public function store(Request $request, Bot $bot, TemplateManager $manager): RedirectResponse

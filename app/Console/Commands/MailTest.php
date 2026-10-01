@@ -30,10 +30,21 @@ class MailTest extends Command
         }
 
         try {
-            Mail::raw(
-                "Ceci est un e-mail d'essai envoyé par ".config('app.name').".\n\nSi vous le lisez, l'envoi fonctionne : les alertes de demandes, les rappels et les réinitialisations de mot de passe partiront de cette adresse.",
-                fn ($message) => $message->to($to)->subject('Essai d\'envoi : '.config('app.name'))
-            );
+            // Le même gabarit que tous les e-mails de la plateforme : on voit tout de suite à quoi ils ressemblent dans une vraie boîte.
+            Mail::to($to)->send(new \App\Mail\Notice(
+                subjectLine: "Essai d'envoi : ".config('app.name'),
+                heading: "L'envoi d'e-mails fonctionne",
+                paragraphs: [
+                    "Ceci est un e-mail d'essai envoyé par ".config('app.name').'.',
+                    "Si vous le lisez, l'envoi fonctionne : les alertes de demandes, les rappels d'abonnement, les reçus de paiement et les réinitialisations de mot de passe partiront de cette adresse.",
+                    "Vérifiez aussi que ce message n'est pas arrivé dans les courriers indésirables : si c'est le cas, ajoutez l'adresse de l'expéditeur à vos contacts et demandez à votre hébergeur d'activer SPF et DKIM.",
+                ],
+                actionLabel: 'Ouvrir le site',
+                actionUrl: url('/'),
+                facts: ['Expéditeur' => $from, 'Pilote' => $driver],
+                tone: 'success',
+                settings: false,
+            ));
         } catch (\Throwable $e) {
             $this->error('Échec : '.$e->getMessage());
             $this->line($this->diagnose($e->getMessage()));

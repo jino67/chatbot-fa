@@ -7,7 +7,14 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\ChatImportController;
+use App\Http\Controllers\BotDraftController;
+use App\Http\Controllers\AnalyticsCollectController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushController;
+use App\Http\Controllers\StaffGuideController;
+use App\Http\Controllers\HelpController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\DemoController;
@@ -39,6 +46,14 @@ Route::get('/conditions', [LegalController::class, 'terms'])->name('legal.terms'
 Route::get('/confidentialite', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/robots.txt', [LandingController::class, 'robots']);
 Route::get('/llms.txt', [LandingController::class, 'llms']);
+
+// Mesure d'audience : lots d'événements du navigateur (voir resources/js/analytics.js et App\Services\Analytics).
+Route::post('/a/e', [AnalyticsCollectController::class, 'store'])->middleware('throttle:analytics')->name('analytics.collect');
+
+// Aide : les guides d'utilisation et du développeur, avec leur PDF.
+Route::get('/aide', [HelpController::class, 'index'])->name('help.index');
+Route::get('/aide/guide-client', [HelpController::class, 'show'])->defaults('guide', 'client')->name('help.client');
+Route::get('/aide/guide-developpeur', [HelpController::class, 'show'])->defaults('guide', 'developpeur')->name('help.developer');
 
 // Pages de contenu pour le référencement : une route par page de config/seo.php, plus la page « Ressources ».
 Route::get('/ressources', [SeoPageController::class, 'hub'])->name('seo.hub');
@@ -91,11 +106,14 @@ Route::middleware(['auth', 'workspace'])->group(function () {
     Route::match(['post', 'put'], 'alertes/modele', [AlertController::class, 'template'])->name('alerts.template');
     Route::post('import/option', [ChatImportController::class, 'requestOption'])->name('import.option');
 
+    Route::match(['post', 'put'], 'brouillon/assistant', [BotDraftController::class, 'save'])->name('bots.draft.save');
+    Route::delete('brouillon/assistant', [BotDraftController::class, 'discard'])->name('bots.draft.discard');
     Route::resource('bots', BotController::class)->except(['show']);
 
     Route::prefix('bots/{bot}')->scopeBindings()->group(function () {
         Route::get('sources', [SourceController::class, 'index'])->name('sources.index');
         Route::post('sources', [SourceController::class, 'store'])->name('sources.store');
+        Route::get('modele-catalogue', [SourceController::class, 'template'])->name('sources.template');
         Route::put('sources/{source}/content', [SourceController::class, 'content'])->name('sources.content');
         Route::delete('sources/{source}', [SourceController::class, 'destroy'])->name('sources.destroy');
         Route::post('sources/{source}/resync', [SourceController::class, 'resync'])->name('sources.resync');
@@ -135,6 +153,8 @@ Route::middleware(['auth', 'workspace'])->group(function () {
         Route::get('templates', [TemplateController::class, 'index'])->name('templates.index');
         Route::post('templates', [TemplateController::class, 'store'])->name('templates.store');
         Route::post('templates/sync', [TemplateController::class, 'sync'])->name('templates.sync');
+        Route::post('templates/bibliotheque', [TemplateController::class, 'add'])->name('templates.add');
+        Route::post('templates/paquet', [TemplateController::class, 'pack'])->name('templates.pack');
         Route::delete('templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
     });
 
@@ -152,6 +172,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/app/installed', [PwaController::class, 'installed'])->name('pwa.installed');
     Route::post('/profile/password-link', [ProfileController::class, 'sendPasswordLink'])->middleware('throttle:5,1')->name('profile.password-link');
     Route::post('/profile/sessions/logout-others', [ProfileController::class, 'logoutOthers'])->middleware('throttle:5,1')->name('profile.logout-others');
+    Route::put('/compte/devise', [CurrencyController::class, 'update'])->name('currency.update');
+
+    // Notifications : le centre (cloche, compteur sur l'icône), les préférences, et les appareils qui les reçoivent.
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/resume', [NotificationController::class, 'summary'])->name('notifications.summary');
+    Route::get('/notifications/preferences', [NotificationController::class, 'preferences'])->name('notifications.preferences');
+    Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences.update');
+    Route::post('/notifications/tout-lire', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::get('/notifications/{notification}/ouvrir', [NotificationController::class, 'open'])->whereNumber('notification')->name('notifications.open');
+    Route::post('/notifications/{notification}/lu', [NotificationController::class, 'read'])->whereNumber('notification')->name('notifications.read');
+    Route::post('/push/abonnement', [PushController::class, 'subscribe'])->middleware('throttle:30,1')->name('push.subscribe');
+    Route::delete('/push/abonnement', [PushController::class, 'unsubscribe'])->middleware('throttle:30,1')->name('push.unsubscribe');
+    Route::post('/push/essai', [PushController::class, 'test'])->middleware('throttle:6,1')->name('push.test');
+    Route::delete('/push/appareils/{subscription}', [PushController::class, 'destroy'])->whereNumber('subscription')->name('push.devices.destroy');
 });
 
 /*
@@ -159,6 +193,12 @@ Route::middleware('auth')->group(function () {
 | Espace du personnel : admin et super admin
 |--------------------------------------------------------------------------
 */
+// Guides internes du personnel (le guide du super admin est réservé au super admin).
+Route::middleware(['auth', 'staff'])->group(function () {
+    Route::get('/admin/guides/{guide}', [StaffGuideController::class, 'show'])->name('staff.guide');
+    Route::get('/admin/guides/{guide}/pdf', [StaffGuideController::class, 'pdf'])->name('staff.guide.pdf');
+});
+
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', Admin\OverviewController::class)->name('overview');
 
@@ -182,6 +222,17 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('channel-requests/{channelRequest}', [Admin\ChannelRequestController::class, 'show'])->name('requests.show');
     Route::put('channel-requests/{channelRequest}', [Admin\ChannelRequestController::class, 'update'])->name('requests.update');
     Route::post('channels/{channel}/test', [Admin\ChannelRequestController::class, 'test'])->name('channels.test');
+
+    // Notifications envoyées aux clients (promotions, nouveautés, messages importants) : ouvert à l'équipe, consigné dans le journal.
+    Route::get('notifications', [Admin\NotificationCampaignController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/nouvelle', [Admin\NotificationCampaignController::class, 'create'])->name('notifications.create');
+    Route::post('notifications', [Admin\NotificationCampaignController::class, 'store'])->name('notifications.store');
+    Route::post('notifications/audience', [Admin\NotificationCampaignController::class, 'estimate'])->name('notifications.estimate');
+    Route::post('notifications/essai', [Admin\NotificationCampaignController::class, 'test'])->middleware('throttle:10,1')->name('notifications.test');
+    Route::get('notifications/{campaign}', [Admin\NotificationCampaignController::class, 'show'])->whereNumber('campaign')->name('notifications.show');
+    Route::get('notifications/{campaign}/modifier', [Admin\NotificationCampaignController::class, 'edit'])->whereNumber('campaign')->name('notifications.edit');
+    Route::put('notifications/{campaign}', [Admin\NotificationCampaignController::class, 'update'])->whereNumber('campaign')->name('notifications.update');
+    Route::post('notifications/{campaign}/annuler', [Admin\NotificationCampaignController::class, 'cancel'])->whereNumber('campaign')->name('notifications.cancel');
 
     Route::get('plan-requests', [Admin\PlanRequestController::class, 'index'])->name('plan-requests.index');
     Route::put('plan-requests/{planRequest}', [Admin\PlanRequestController::class, 'update'])->name('plan-requests.update');
@@ -219,6 +270,16 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');
 
         Route::get('audit', [Admin\AuditController::class, 'index'])->name('audit.index');
+
+        // Aperçu de tous les e-mails de la plateforme, et essai d'envoi à soi-même.
+        Route::get('emails', [Admin\MailPreviewController::class, 'index'])->name('emails.index');
+        Route::get('emails/{key}', [Admin\MailPreviewController::class, 'show'])->where('key', '[A-Za-z-]+')->name('emails.show');
+        Route::post('emails/{key}/envoyer', [Admin\MailPreviewController::class, 'send'])->where('key', '[A-Za-z-]+')->middleware('throttle:10,1')->name('emails.send');
+
+        // Statistiques : visites, comportements, clients (voir docs/ANALYTICS.md).
+        Route::get('statistiques', [Admin\StatisticsController::class, 'index'])->name('statistics.index');
+        Route::get('statistiques/direct', [Admin\StatisticsController::class, 'live'])->name('statistics.live');
+        Route::get('statistiques/export/{table}', [Admin\StatisticsController::class, 'export'])->name('statistics.export');
     });
 });
 

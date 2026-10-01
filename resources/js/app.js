@@ -2,6 +2,8 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import { initMotion } from './motion';
+import { initAnalytics } from './analytics';
+import { initPush } from './push';
 
 window.Alpine = Alpine;
 
@@ -14,6 +16,18 @@ function start() {
         initMotion();
     } catch (error) {
         console.error(error);
+    }
+
+    try {
+        initAnalytics();
+    } catch (error) {
+        /* la mesure ne doit jamais gêner la page */
+    }
+
+    try {
+        initPush();
+    } catch (error) {
+        /* les notifications ne doivent jamais gêner la page */
     }
 
     // Les effets « eau » (GSAP, Lenis) se chargent apres le rendu : la page reste utilisable sans eux.

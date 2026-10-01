@@ -91,6 +91,7 @@ class WorkspaceController extends Controller
             'payments' => Payment::withoutGlobalScopes()->with('recorder')->where('workspace_id', $workspace->id)->latest('paid_at')->limit(20)->get(),
             'plans' => Plan::orderBy('sort')->get(),
             'methods' => Payment::METHODS,
+            'activity' => \App\Services\Analytics\ClientStats::today(30)->workspace($workspace->id),
         ]);
     }
 
@@ -101,7 +102,9 @@ class WorkspaceController extends Controller
             'country' => ['nullable', 'string', 'max:60'],
             'phone' => ['nullable', 'string', 'max:40'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'currency' => ['nullable', Rule::in(Currency::codes())],
         ]);
+        $data['currency'] ??= $workspace->currency;
 
         $workspace->update($data);
         AuditLog::record('workspace.updated', $workspace->name, [], $workspace->id);

@@ -98,6 +98,14 @@ class Bot extends Model
      * L'assistant de la page d'accueil de la plateforme (réglage « marketing.landing_bot_key »). Il parle de la
      * plateforme elle-même et ne peut pas être cantonné : sa conversation libre est toujours active.
      */
+    /** L'assistant de la page d'accueil lui-même, ou null s'il n'est pas encore choisi dans les paramètres. */
+    public static function landing(): ?self
+    {
+        $key = (string) app(\App\Services\PlatformSettings::class)->get('marketing.landing_bot_key');
+
+        return $key === '' ? null : static::withoutGlobalScopes()->where('public_key', $key)->first();
+    }
+
     public function isShowcase(): bool
     {
         $key = (string) app(\App\Services\PlatformSettings::class)->get('marketing.landing_bot_key');

@@ -33,6 +33,9 @@ class LandingController extends Controller
             'Disallow: /profile',
             'Disallow: /demandes',
             'Disallow: /alertes',
+            'Disallow: /notifications',
+            'Disallow: /push/',
+            'Disallow: /a/',
             'Disallow: /import',
             'Disallow: /developers/keys',
             'Disallow: /demo/',
@@ -54,6 +57,9 @@ class LandingController extends Controller
             [route('seo.hub'), $modified],
             [route('register'), $this->viewDate('auth.register')],
             [route('developers'), $this->viewDate('developers')],
+            [route('help.index'), $this->viewDate('help.index')],
+            [route('help.client'), date('Y-m-d', min(filemtime(\App\Support\Guides::path('client')), time()))],
+            [route('help.developer'), date('Y-m-d', min(filemtime(\App\Support\Guides::path('developpeur')), time()))],
             [route('legal.terms'), $this->viewDate('legal.terms')],
             [route('legal.privacy'), $this->viewDate('legal.privacy')],
         ];
@@ -83,6 +89,7 @@ class LandingController extends Controller
             '- ['.$brand['name'].' : accueil]('.url('/').') : présentation, tarifs et questions fréquentes',
             '- [Ressources]('.route('seo.hub').') : tous les guides, solutions, métiers et pays',
             '- [API pour développeurs]('.route('developers').') : appeler l\'assistant depuis une application',
+            '- [Aide et guides]('.route('help.index').') : guide d\'utilisation pour les entreprises et guide du développeur, avec leur PDF',
         ];
         foreach ($pages->hub()['groups'] as $group) {
             $lines[] = '';

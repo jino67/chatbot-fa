@@ -47,7 +47,7 @@
                 @forelse ($stats['revenue'] as $code => $total)
                     <p class="font-display text-3xl font-bold text-brand-950">{{ \App\Support\Currency::format($total, $code) }}</p>
                 @empty
-                    <p class="font-display text-3xl font-bold text-brand-950">0</p>
+                    <p class="font-display text-3xl font-bold text-brand-950">{{ \App\Support\Currency::format(0, \App\Support\Currency::default()) }}</p>
                 @endforelse
             </div>
             <p class="max-w-md text-sm text-slate-600">Somme des paiements enregistrés depuis le début du mois. Le détail se trouve dans la fiche de chaque espace.</p>

@@ -209,13 +209,7 @@ class ChatImportController extends Controller
         if (! PlanRequest::where('workspace_id', $workspace->id)->where('status', PlanRequest::REQUESTED)->where('plan', $plan)->exists()) {
             PlanRequest::create(['workspace_id' => $workspace->id, 'requester_id' => $request->user()->id, 'plan' => $plan, 'message' => 'Option : import des discussions WhatsApp']);
 
-            if ($to = config('platform.admin_email') ?: $settings->get('brand.email')) {
-                try {
-                    Mail::raw("Demande d'option à la carte\n\nEspace : {$workspace->name}\nOption : import des discussions WhatsApp\nDemandeur : {$request->user()->name} ({$request->user()->email})\n\n".route('admin.plan-requests.index'), fn ($m) => $m->to($to)->subject("Demande d'option : {$workspace->name}"));
-                } catch (\Throwable $e) {
-                    report($e);
-                }
-            }
+            app(\App\Notify\Events::class)->optionRequested($workspace, 'Import des discussions WhatsApp', $request->user());
         }
 
         return back()->with('status', 'Demande enregistrée. Payez l\'option selon les indications de la page Abonnement : elle est activée dès réception du paiement.');

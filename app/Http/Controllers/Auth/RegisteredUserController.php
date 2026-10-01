@@ -64,6 +64,9 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        // Message de bienvenue (centre de notifications et e-mail) : il n'empêche jamais l'inscription d'aboutir.
+        app(\App\Notify\Events::class)->welcome($user, $workspace);
+
         return redirect(route('dashboard', absolute: false));
     }
 }

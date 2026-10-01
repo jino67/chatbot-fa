@@ -41,6 +41,7 @@ class AlertController extends Controller
 
         $data = $request->validate([
             'email' => ['nullable', 'boolean'],
+            'push' => ['nullable', 'boolean'],
             'email_to' => ['nullable', 'email', 'max:190'],
             'whatsapp' => ['nullable', 'boolean'],
             'whatsapp_number' => ['nullable', 'regex:/^\+?[0-9 ()\-\.]{8,20}$/'],
@@ -91,6 +92,7 @@ class AlertController extends Controller
 
         $workspace->settings = array_merge($workspace->settings ?? [], ['alerts' => [
             'email' => $request->boolean('email'),
+            'push' => $request->boolean('push'),
             'email_to' => $data['email_to'] ?? null,
             'email_members' => $emailMembers,
             'email_extra' => $emailExtra->all(),

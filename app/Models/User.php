@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -65,6 +66,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
             'pwa_installed_at' => 'datetime',
+            'notification_prefs' => 'array',
         ];
     }
 
@@ -73,6 +75,49 @@ class User extends Authenticatable
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** Les appareils de cette personne qui acceptent les notifications. */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /** Le centre de notifications de cette personne (la table Laravel « notifications » n'est pas utilisée). */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(AppNotification::class);
+    }
+
+    public function unreadNotificationCount(): int
+    {
+        return $this->appNotifications()->whereNull('read_at')->count();
+    }
+
+    /**
+     * Ce que la personne accepte de recevoir : une case par catégorie, le push (téléphone) en bloc, et ses heures calmes.
+     * Les catégories verrouillées (messages importants) sont toujours reçues.
+     *
+     * @return array{push:bool, cats:array<string,bool>, quiet:array{on:bool,from:int,to:int}}
+     */
+    public function notificationPrefs(): array
+    {
+        $saved = (array) ($this->notification_prefs ?? []);
+        $cats = [];
+
+        foreach (config('notifications.categories') as $key => $def) {
+            $cats[$key] = ($def['locked'] ?? false) ? true : (bool) (($saved['cats'] ?? [])[$key] ?? true);
+        }
+
+        return [
+            'push' => (bool) ($saved['push'] ?? true),
+            'cats' => $cats,
+            'quiet' => [
+                'on' => (bool) (($saved['quiet'] ?? [])['on'] ?? true),
+                'from' => (int) (($saved['quiet'] ?? [])['from'] ?? config('notifications.quiet_hours.from')),
+                'to' => (int) (($saved['quiet'] ?? [])['to'] ?? config('notifications.quiet_hours.to')),
+            ],
+        ];
     }
 
     public function isSuperAdmin(): bool

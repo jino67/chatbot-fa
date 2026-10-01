@@ -28,6 +28,29 @@
             </div>
         </div>
 
+        {{-- Quand vos clients écrivent : pour être présent aux bons moments et répondre vite --}}
+        <div class="surface">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h3 class="font-medium text-slate-900">Quand vos clients écrivent</h3>
+                @if ($rhythm['peak'])
+                    <p class="mt-1 text-sm text-slate-500">Le plus chargé : <strong class="text-slate-800">{{ mb_strtolower($rhythm['peak']['day']) }} vers {{ $rhythm['peak']['hour'] }} h</strong>. Soyez joignable à ces heures si un client demande un humain. Heures de la plateforme, 30 derniers jours.</p>
+                @else
+                    <p class="mt-1 text-sm text-slate-500">Les heures d'affluence apparaîtront dès que vos clients auront écrit à l'assistant.</p>
+                @endif
+            </div>
+            @if ($rhythm['total'] > 0)
+                <x-stats.heatmap :heat="$rhythm" unit="messages" />
+                @if (count($rhythm['channels']) > 1)
+                    <div class="flex flex-wrap gap-x-6 gap-y-1 border-t border-slate-100 px-6 py-4 text-sm text-slate-600">
+                        <span class="text-slate-500">Par où ils arrivent :</span>
+                        @foreach ($rhythm['channels'] as $channel => $n)
+                            <span><strong class="text-slate-900">{{ $n }}</strong> {{ $channel }}</span>
+                        @endforeach
+                    </div>
+                @endif
+            @endif
+        </div>
+
         <div class="surface">
             <div class="px-6 py-4 border-b border-slate-100">
                 <h3 class="font-medium text-slate-900">Questions restées sans réponse</h3>

@@ -9,8 +9,10 @@
  * Par défaut : ../kouma-lws/mise-a-jour.zip. À extraire à la racine du dossier du domaine kouma.site, en écrasant :
  * les fichiers du projet vont dans kouma/, ceux de public/ à la racine. Le .env, storage/ et vendor/ ne sont jamais touchés.
  *
- * Ne contient AUCUN secret (ni .env, ni mot de passe), mais il se supprime du serveur une fois extrait, comme tout zip. Les migrations de base de données ne passent pas par ce zip :
- * le script s'arrête et le dit, car sans accès SSH il faut les appliquer à la main dans phpMyAdmin.
+ * Ne contient AUCUN secret (ni .env, ni mot de passe), mais il se supprime du serveur une fois extrait, comme tout zip.
+ *
+ * Les migrations de base de données ne s'appliquent pas toutes seules (pas d'accès SSH) : quand une migration a changé, le script
+ * écrit à côté du zip un fichier « <nom>-base-de-donnees.sql » (voir scripts/migration-sql.php) à importer dans phpMyAdmin.
  */
 
 $racine = dirname(__DIR__);
@@ -40,12 +42,19 @@ foreach ($lignes as $ligne) {
 $exclus = '#^(tests/|docs/|scripts/|deploiement/|node_modules/|\.git|\.env|README|CLAUDE\.md|phpunit|package|vite\.config|composer\.(json|lock)$|storage/|vendor/)#';
 $retenus = array_values(array_filter($fichiers, fn ($f) => ! preg_match($exclus, $f)));
 
-foreach ($retenus as $f) {
-    if (str_starts_with($f, 'database/migrations/')) {
-        fwrite(STDERR, "ARRÊT : la migration {$f} change la base de données. Ce zip ne peut pas l'appliquer : générez un nouveau .sql\n"
-            ."(scripts/build-lws-package.php) ou exécutez le SQL équivalent dans phpMyAdmin.\n");
+// Les migrations ne s'appliquent pas toutes seules (pas de SSH) : on en écrit le SQL MySQL à importer dans phpMyAdmin.
+$migrations = array_values(array_filter($retenus, fn ($f) => str_starts_with($f, 'database/migrations/')));
+$fichierSql = null;
+if ($migrations !== []) {
+    sort($migrations);
+    $fichierSql = rtrim($sortie, '/').'/'.preg_replace('/\.zip$/', '', $nom).'-base-de-donnees.sql';
+    $commande = escapeshellarg(PHP_BINARY).' '.escapeshellarg(__DIR__.'/migration-sql.php').' '.implode(' ', array_map('escapeshellarg', $migrations));
+    exec($commande.' 2>&1', $sql, $code);
+    if ($code !== 0 || ! str_contains(implode("\n", $sql), 'create table') && ! str_contains(implode("\n", $sql), 'alter table')) {
+        fwrite(STDERR, "ARRÊT : impossible d'écrire le SQL des migrations.\n".implode("\n", $sql)."\n");
         exit(1);
     }
+    file_put_contents($fichierSql, implode("\n", $sql)."\n");
 }
 
 // build/ : le manifeste et les fichiers qu'il référence, toujours inclus (petit, et toujours cohérent).
@@ -89,4 +98,9 @@ $zip->close();
 echo count($liste)." fichiers dans {$chemin}\n";
 foreach ($liste as $f) {
     echo "  {$f}\n";
+}
+
+if ($fichierSql) {
+    echo "\nBASE DE DONNÉES : ".count($migrations)." migration(s) à appliquer. Importez {$fichierSql} dans phpMyAdmin\n"
+        ."(cliquez d'abord sur votre base, puis Importer) AVANT d'ouvrir le site mis à jour. Ce fichier contient la structure, jamais de mot de passe.\n";
 }

@@ -142,4 +142,57 @@ class TenantIsolationTest extends TestCase
         $this->assertSame(0, WhatsAppTemplate::count());
         $this->assertSame(0, FacebookConnection::count());
     }
+
+    public function test_the_peak_hours_card_only_counts_the_authenticated_workspaces_messages(): void
+    {
+        [, $userA, $botA] = $this->tenant('Client A');
+        [$workspaceB, , $botB] = $this->tenant('Client B');
+
+        $conversationB = Conversation::withoutGlobalScopes()->create(['workspace_id' => $workspaceB->id, 'bot_id' => $botB->id, 'channel' => 'web']);
+        \App\Models\Message::withoutGlobalScopes()->create(['workspace_id' => $workspaceB->id, 'conversation_id' => $conversationB->id, 'role' => 'user', 'content' => 'Bonjour']);
+
+        $this->actingAs($userA);
+
+        $this->assertSame(0, \App\Support\CustomerRhythm::forBot($botA)['total']);
+        // L'assistant d'une autre entreprise reste introuvable, et ses heures d'affluence avec.
+        $this->get(route('analytics.show', $botB))->assertNotFound();
+    }
+
+    public function test_notifications_and_devices_belong_to_the_signed_in_person_only(): void
+    {
+        [, $userA] = $this->tenant('Client A');
+        [, $userB] = $this->tenant('Client B');
+        $item = \App\Models\AppNotification::create(['user_id' => $userB->id, 'category' => 'leads', 'title' => 'Commande secrète de B', 'created_at' => now()]);
+        $device = \App\Models\PushSubscription::create([
+            'user_id' => $userB->id, 'endpoint' => 'https://fcm.googleapis.com/fcm/send/b', 'endpoint_hash' => hash('sha256', 'https://fcm.googleapis.com/fcm/send/b'), 'p256dh' => 'x', 'auth' => 'y',
+        ]);
+
+        $this->actingAs($userA);
+
+        $this->assertSame(0, $userA->unreadNotificationCount());
+        $this->get(route('notifications.index'))->assertDontSee('Commande secrète de B');
+        $this->get(route('notifications.open', $item->id))->assertNotFound();
+        $this->delete(route('push.devices.destroy', $device->id))->assertRedirect();
+        $this->assertNotNull(\App\Models\PushSubscription::find($device->id), 'l\'appareil de B n\'est pas retiré par A');
+        $this->get(route('notifications.preferences'))->assertOk()->assertDontSee('fcm.googleapis.com');
+    }
+
+    public function test_campaign_pages_and_mail_previews_are_closed_to_every_client_account(): void
+    {
+        [, $userA] = $this->tenant('Client A');
+
+        $this->actingAs($userA);
+        $this->get(route('admin.notifications.index'))->assertForbidden();
+        $this->get(route('admin.emails.index'))->assertForbidden();
+    }
+
+    public function test_platform_statistics_are_closed_to_every_client_account(): void
+    {
+        [, $userA] = $this->tenant('Client A');
+
+        $this->actingAs($userA);
+        $this->get(route('admin.statistics.index'))->assertForbidden();
+        $this->get(route('admin.statistics.live'))->assertForbidden();
+        $this->get(route('admin.statistics.export', ['table' => 'clients']))->assertForbidden();
+    }
 }

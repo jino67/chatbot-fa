@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use App\Models\AuditLog;
 use App\Models\Plan;
 use App\Models\Workspace;
+use App\Notify\Events;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Cycle de vie des abonnements, a executer chaque jour :
@@ -20,6 +20,11 @@ class ManageSubscriptions extends Command
     protected $signature = 'platform:subscriptions';
 
     protected $description = 'Rappels d\'échéance, période de grâce, fin des essais gratuits et retour à l\'offre gratuite des abonnements échus';
+
+    public function __construct(private readonly Events $events)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -41,17 +46,15 @@ class ManageSubscriptions extends Command
                     'subscription_status' => Workspace::CANCELED,
                 ]);
                 AuditLog::record('subscription.expired', $workspace->name, ['from' => $from], $workspace->id);
-                $this->notify($workspace, 'Votre abonnement est arrivé à échéance', $default->hasTrial()
-                    ? "Votre abonnement est arrivé à échéance et votre assistant est en pause. Vos assistants et vos données sont conservés ; pour le réactiver, renouvelez depuis la page Abonnement."
-                    : "Votre espace est revenu à l'offre {$default->name}. Vos assistants et vos données sont conservés ; pour retrouver votre offre, renouvelez depuis la page Abonnement.");
+                $this->events->subscriptionEnded($workspace, $default->hasTrial(), $default->name);
                 $counts['downgraded']++;
             } elseif ($days !== null && $days < 0 && $workspace->subscription_status !== Workspace::PAST_DUE) {
                 $workspace->update(['subscription_status' => Workspace::PAST_DUE]);
-                $this->notify($workspace, 'Votre abonnement est arrivé à échéance', "Vous avez {$grace} jours pour le renouveler sans rien perdre. Renouvelez depuis la page Abonnement.");
+                $this->events->subscriptionLate($workspace, $grace);
                 $counts['late']++;
             } elseif ($days !== null && $days >= 0 && $days <= $reminder && ! $this->reminded($workspace)) {
                 $this->markReminded($workspace);
-                $this->notify($workspace, "Votre abonnement se termine dans {$days} jour(s)", 'Pensez à le renouveler depuis la page Abonnement pour ne pas interrompre vos assistants.');
+                $this->events->subscriptionEnding($workspace, $days);
                 $counts['reminders']++;
             }
         });
@@ -66,11 +69,11 @@ class ManageSubscriptions extends Command
                     if ($days !== null && $days < 0) {
                         $workspace->update(['subscription_status' => Workspace::EXPIRED]);
                         AuditLog::record('trial.expired', $workspace->name, [], $workspace->id);
-                        $this->notify($workspace, 'Votre essai gratuit est terminé', "Votre assistant est en pause : il ne répond plus à vos visiteurs. Vos assistants et vos données sont conservés. Choisissez une offre depuis la page Abonnement pour le réactiver.");
+                        $this->events->trialEnded($workspace);
                         $counts['trial_ended']++;
                     } elseif ($days !== null && $days <= $reminder && ! $this->reminded($workspace)) {
                         $this->markReminded($workspace);
-                        $this->notify($workspace, "Votre essai gratuit se termine dans {$days} jour(s)", 'Choisissez une offre depuis la page Abonnement avant cette date pour que votre assistant continue de répondre à vos visiteurs.');
+                        $this->events->trialEnding($workspace, $days);
                         $counts['trial_reminders']++;
                     }
                 });
@@ -93,17 +96,4 @@ class ManageSubscriptions extends Command
         $workspace->update(['settings' => $settings]);
     }
 
-    private function notify(Workspace $workspace, string $subject, string $body): void
-    {
-        $to = $workspace->owner()?->email;
-        if (! $to) {
-            return;
-        }
-
-        try {
-            Mail::raw("Bonjour,\n\n{$body}\n\nEspace : {$workspace->name}", fn ($m) => $m->to($to)->subject($subject));
-        } catch (\Throwable $e) {
-            report($e);
-        }
-    }
 }

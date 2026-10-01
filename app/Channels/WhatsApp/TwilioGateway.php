@@ -56,10 +56,10 @@ class TwilioGateway implements WhatsAppGateway
 
     // ---- Modeles (Twilio : « Content Templates ») -------------------------------------------------
 
-    /** La creation se fait dans la console Twilio (Content Template Builder) ; l'application les synchronise ensuite. */
+    /** Creation par l'API « Content » de Twilio, puis demande d'approbation WhatsApp (la console reste possible). */
     public function supportsTemplateCreation(): bool
     {
-        return false;
+        return true;
     }
 
     public function listTemplates(): array
@@ -92,9 +92,97 @@ class TwilioGateway implements WhatsAppGateway
         return $templates;
     }
 
+    /**
+     * Cree le contenu (« Content Template ») puis demande son approbation par WhatsApp. Si la demande d'approbation
+     * echoue, le contenu cree est supprime : on ne laisse pas de modeles orphelins dans le compte Twilio.
+     */
     public function createTemplate(array $definition): array
     {
-        throw new GatewayException('Avec Twilio, créez le modèle dans la console Twilio (Content Template Builder) puis cliquez sur « Actualiser les statuts ».');
+        $count = MetaCloudGateway::countVariables($definition['body']);
+        $examples = array_slice(array_pad(array_values($definition['body_examples'] ?? []), $count, 'exemple'), 0, $count);
+        $variables = [];
+        foreach ($examples as $i => $example) {
+            $variables[(string) ($i + 1)] = (string) $example;
+        }
+
+        $payload = [
+            'friendly_name' => $definition['name'],
+            'language' => $definition['language'],
+            'types' => $this->contentTypes($definition),
+        ];
+        if ($variables !== []) {
+            $payload['variables'] = $variables;
+        }
+
+        $content = $this->request()->asJson()->post('https://content.twilio.com/v1/Content', $payload);
+        if (! $content->successful() || ! $content->json('sid')) {
+            throw new GatewayException('Twilio HTTP '.$content->status().' : '.$content->json('message', 'création du modèle impossible'));
+        }
+        $sid = (string) $content->json('sid');
+
+        $approval = $this->request()->asJson()->post("https://content.twilio.com/v1/Content/{$sid}/ApprovalRequests/whatsapp", [
+            'name' => $definition['name'],
+            'category' => $definition['category'],
+        ]);
+
+        if (! $approval->successful()) {
+            $this->request()->delete('https://content.twilio.com/v1/Content/'.$sid);
+
+            throw new GatewayException('Twilio HTTP '.$approval->status().' : '.$approval->json('message', "demande d'approbation WhatsApp refusée"));
+        }
+
+        return ['external_id' => $sid, 'status' => 'PENDING'];
+    }
+
+    /**
+     * Les types de contenu Twilio. Twilio n'a ni titre ni pied de message pour un texte : ils sont ecrits dans le corps
+     * (titre en gras en tete, pied en italique a la fin). Reponses rapides OU boutons lien/appel, pas les deux.
+     *
+     * @param  array<string,mixed>  $definition
+     * @return array<string,array<string,mixed>>
+     */
+    private function contentTypes(array $definition): array
+    {
+        $body = (string) $definition['body'];
+        if (! empty($definition['header'])) {
+            $body = '*'.$definition['header']."*\n\n".$body;
+        }
+        if (! empty($definition['footer'])) {
+            $body .= "\n\n_".$definition['footer'].'_';
+        }
+
+        $buttons = $definition['buttons'] ?? [];
+        $quick = array_values(array_filter($buttons, fn ($b) => $b['type'] === 'QUICK_REPLY'));
+        $actions = array_values(array_filter($buttons, fn ($b) => $b['type'] !== 'QUICK_REPLY'));
+
+        if ($quick !== [] && $actions !== []) {
+            throw new GatewayException('Twilio ne permet pas de mélanger boutons de réponse rapide et boutons lien ou appel dans un même modèle : gardez l\'un ou l\'autre.');
+        }
+
+        if ($quick !== []) {
+            $ids = [];
+
+            return ['twilio/quick-reply' => [
+                'body' => $body,
+                'actions' => array_map(function ($b) use (&$ids) {
+                    $id = trim((string) preg_replace('/[^a-z0-9]+/', '_', strtolower(\App\Support\Text::fold($b['text']))), '_') ?: 'reponse';
+                    $ids[$id] = ($ids[$id] ?? 0) + 1;
+
+                    return ['title' => $b['text'], 'id' => $ids[$id] > 1 ? $id.'_'.$ids[$id] : $id];
+                }, array_slice($quick, 0, 3)),
+            ]];
+        }
+
+        if ($actions !== []) {
+            return ['twilio/call-to-action' => [
+                'body' => $body,
+                'actions' => array_map(fn ($b) => $b['type'] === 'URL'
+                    ? ['type' => 'URL', 'title' => $b['text'], 'url' => $b['url']]
+                    : ['type' => 'PHONE_NUMBER', 'title' => $b['text'], 'phone' => $b['phone_number']], array_slice($actions, 0, 2)),
+            ]];
+        }
+
+        return ['twilio/text' => ['body' => $body]];
     }
 
     public function deleteTemplate(string $name, ?string $externalId = null): void

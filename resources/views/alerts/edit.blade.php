@@ -33,6 +33,15 @@
                     </div>
                 </div>
 
+                <div class="flex items-start gap-3 rounded-xl border border-slate-200 p-4">
+                    <input type="checkbox" name="push" value="1" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('push', $alerts['push']))>
+                    <div class="min-w-0 flex-1">
+                        <span class="block font-semibold text-brand-950">Notification sur le téléphone <x-badge tone="brand">le plus rapide</x-badge></span>
+                        <span class="block text-sm text-slate-600">Une notification sur l'écran de chaque membre de l'équipe qui a activé les notifications, avec le nombre de demandes en attente sur l'icône de l'application.</span>
+                        <a href="{{ route('notifications.preferences') }}" class="mt-1 inline-block text-sm font-semibold text-brand-700 hover:underline">Activer sur mon téléphone</a>
+                    </div>
+                </div>
+
                 <div class="space-y-3 rounded-xl border border-slate-200 p-4">
                     <label class="flex items-start gap-3">
                         <input type="checkbox" name="email" value="1" x-model="email" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500">

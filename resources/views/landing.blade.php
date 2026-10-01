@@ -63,7 +63,7 @@
 
 <main>
 {{-- ================================ Heros ================================ --}}
-<section class="wax relative overflow-x-clip text-white" data-parallax data-ripple-field>
+<section data-track-view="accueil" class="wax relative overflow-x-clip text-white" data-parallax data-ripple-field>
     <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-28 pt-28 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-36 lg:pt-36">
         <div>
             <h1 class="font-display text-[1.85rem] font-bold leading-[1.12] sm:text-[2.5rem] lg:text-[2.75rem]">
@@ -109,7 +109,7 @@
 </section>
 
 {{-- ====================== Ce qu'il lit : vos supports ====================== --}}
-<section class="mx-auto max-w-6xl px-4 pb-16 pt-20 sm:px-6 lg:pb-24 lg:pt-28">
+<section data-track-view="presentation" class="mx-auto max-w-6xl px-4 pb-16 pt-20 sm:px-6 lg:pb-24 lg:pt-28">
     <div class="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         <div>
             <h2 data-emerge class="font-display text-2xl font-bold leading-tight sm:text-3xl">Il lit ce que vous avez déjà.</h2>
@@ -119,7 +119,7 @@
 
         <ul class="divide-y divide-slate-200 border-y border-slate-200">
             @foreach ([
-                ['doc', 'Votre tarif en PDF ou en Word', 'PDF, Word, texte, tableurs CSV. Les PDF scannés sont lus aussi.'],
+                ['doc', 'Votre tarif en PDF ou en Word', 'PDF, Word, Excel, CSV, texte. Catalogues et listes de prix compris. Les PDF scannés sont lus aussi.'],
                 ['photo', 'La photo de votre affiche, de votre menu ou de votre vitrine', 'Les prix et les horaires écrits sur l\'image sont retrouvés.'],
                 ['globe', 'Votre site web, page par page', 'Lu poliment, et relu automatiquement pour rester à jour.'],
                 ['link', 'Votre page Facebook', 'Collez le lien : nous vous guidons pour copier le contenu, ou pour connecter la page.'],
@@ -178,7 +178,7 @@
 </section>
 
 {{-- ============================ Fonctionnement ============================ --}}
-<section id="fonctionnement" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+<section data-track-view="fonctionnement" id="fonctionnement" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
     <h2 data-emerge class="font-display text-2xl font-bold leading-tight sm:text-3xl">Prêt en dix minutes.</h2>
 
     <div class="relative mt-12">
@@ -206,7 +206,7 @@
 </section>
 
 {{-- ================================ Metiers ================================ --}}
-<section id="metiers" class="relative scroll-mt-20 bg-brand-950 text-white">
+<section data-track-view="metiers" id="metiers" class="relative scroll-mt-20 bg-brand-950 text-white">
     <x-wave fill="#ffffff" position="top" size="sm" :layers="1" />
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <h2 data-emerge class="font-display text-2xl font-bold leading-tight sm:text-3xl">Configuré pour votre métier dès le départ.</h2>
@@ -231,7 +231,7 @@
 </section>
 
 {{-- ================================ WhatsApp ================================ --}}
-<section id="whatsapp" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+<section data-track-view="whatsapp" id="whatsapp" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
     <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
             <h2 data-emerge class="font-display text-2xl font-bold leading-tight sm:text-3xl">WhatsApp : on s'en occupe.</h2>
@@ -262,7 +262,7 @@
 </section>
 
 {{-- ================================= Tarifs ================================= --}}
-<section id="tarifs" class="relative scroll-mt-20 overflow-hidden bg-mist">
+<section data-track-view="tarifs" id="tarifs" class="relative scroll-mt-20 overflow-hidden bg-mist">
     {{-- Un demi-cercle qui tourne doucement pendant le defilement (navigateurs compatibles). --}}
     <svg viewBox="0 0 100 50" class="scroll-spin pointer-events-none absolute -right-24 top-10 hidden w-96 opacity-60 lg:block" aria-hidden="true"><path d="M0 50a50 50 0 0 1 100 0Z" fill="#FFE38A"/></svg>
 
@@ -395,7 +395,7 @@
     </div>
 </section>
 {{-- ================================== FAQ ================================== --}}
-<section id="questions" class="mx-auto max-w-3xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+<section data-track-view="questions" id="questions" class="mx-auto max-w-3xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
     <h2 data-emerge class="font-display text-2xl font-bold leading-tight sm:text-3xl">Questions fréquentes</h2>
     <div class="mt-8 divide-y divide-slate-200 border-y border-slate-200">
         @foreach ($faq as [$q, $a])
@@ -411,7 +411,7 @@
 </section>
 
 {{-- ============================ Appel final ============================ --}}
-<section class="wax relative overflow-hidden text-white" data-parallax data-ripple-field>
+<section data-track-view="appel-final" class="wax relative overflow-hidden text-white" data-parallax data-ripple-field>
     <x-wave fill="#ffffff" position="top" size="sm" :layers="1" />
     <div class="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
         <svg viewBox="0 0 100 50" class="drift parallax absolute -left-10 top-6 w-52" style="--dx: 12px; --dy: -12px; --t: 10s; --depth: 18px; --r0: 6deg; --r1: -4deg"><path d="M0 50a50 50 0 0 1 100 0Z" fill="#FFB400"/></svg>

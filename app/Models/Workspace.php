@@ -181,6 +181,7 @@ class Workspace extends Model
 
         return [
             'email' => (bool) ($saved['email'] ?? true),
+            'push' => (bool) ($saved['push'] ?? true),
             'email_to' => $saved['email_to'] ?? null,
             'email_members' => array_map('intval', $saved['email_members'] ?? []),
             'email_extra' => array_values($saved['email_extra'] ?? []),

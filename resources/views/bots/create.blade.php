@@ -10,18 +10,30 @@
         $emojis = \App\Chat\InstructionGenerator::EMOJIS;
         $lengths = \App\Chat\InstructionGenerator::LENGTHS;
 
-        $old = fn ($k) => old($k, $defaults[$k] ?? '');
+        $saved = $draft['fields'] ?? [];
+        $old = fn ($k) => old($k, $saved[$k] ?? ($defaults[$k] ?? ''));
     @endphp
 
     <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <form method="POST" action="{{ route('bots.store') }}" class="space-y-6" x-data="{ sector: '{{ old('sector', 'commerce') }}' }">
+        @if ($draft)
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl rounded-bl-md border border-brand-200 bg-brand-50 px-5 py-3 text-sm">
+                <p><strong class="text-brand-950">Brouillon repris.</strong> Enregistré {{ \Carbon\Carbon::parse($draft['saved_at'])->diffForHumans() }} : vous retrouvez ce que vous aviez saisi.</p>
+                <form method="POST" action="{{ route('bots.draft.discard') }}" onsubmit="return confirm('Repartir de zéro et supprimer ce brouillon ?')">@csrf @method('DELETE')
+                    <button class="font-medium text-brand-700 underline">Repartir de zéro</button>
+                </form>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('bots.store') }}" class="space-y-6"
+              x-data="botDraft(@js(['url' => route('bots.draft.save'), 'sector' => old('sector', $saved['sector'] ?? 'commerce')]))"
+              @input.debounce.1500ms="save()" @change.debounce.400ms="save()">
             @csrf
 
             <section class="surface p-6">
                 <h2 class="font-display text-lg font-bold">1. Votre assistant</h2>
                 <div class="mt-4">
                     <x-input-label for="name" value="Nom de l'assistant" />
-                    <input id="name" name="name" class="field" value="{{ old('name') }}" placeholder="Ex. Assistante Boutique Awa" required autofocus>
+                    <input id="name" name="name" class="field" value="{{ old('name', $saved['name'] ?? '') }}" placeholder="Ex. Assistante Boutique Awa" required autofocus>
                     <p class="mt-1 text-xs text-slate-500">Visible par vos clients dans la discussion.</p>
                 </div>
 
@@ -91,14 +103,43 @@
                 <fieldset class="mt-5">
                     <legend class="text-sm font-medium text-brand-900">Langues de vos clients</legend>
                     <p class="mb-3 text-xs text-slate-500">Cochez toutes les langues que doit parler l'assistant. Vous pourrez les changer à tout moment dans ses paramètres.</p>
-                    <x-language-picker :selected="old('languages', ['fr'])" :primary="old('language', 'fr')" />
+                    <x-language-picker :selected="old('languages', $saved['languages'] ?? ['fr'])" :primary="old('language', $saved['language'] ?? 'fr')" />
                 </fieldset>
             </section>
 
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <a href="{{ route('bots.index') }}" class="text-sm text-slate-600 hover:text-brand-700">Annuler</a>
-                <button class="btn-primary px-6 py-3 text-base">Créer mon assistant</button>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-xs text-slate-500" x-text="label" aria-live="polite">Votre saisie est enregistrée automatiquement.</span>
+                    <button type="submit" name="leave" value="1" formaction="{{ route('bots.draft.save') }}" class="btn-outline px-5 py-3">Enregistrer et continuer plus tard</button>
+                    <button class="btn-primary px-6 py-3 text-base">Créer mon assistant</button>
+                </div>
             </div>
         </form>
+
+        <script>
+            // Enregistre la saisie au fil de l'eau (côté serveur : on la retrouve sur un autre appareil).
+            function botDraft(config) {
+                return {
+                    sector: config.sector,
+                    label: 'Votre saisie est enregistrée automatiquement.',
+                    async save() {
+                        this.label = 'Enregistrement…';
+                        const data = new FormData(this.$root);
+                        data.delete('_token');
+                        try {
+                            const response = await fetch(config.url, {
+                                method: 'POST', body: data, credentials: 'same-origin', keepalive: true,
+                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                            });
+                            if (!response.ok) throw new Error();
+                            this.label = (await response.json()).label;
+                        } catch (e) {
+                            this.label = 'Non enregistré (connexion perdue) : réessai à la prochaine saisie.';
+                        }
+                    },
+                };
+            }
+        </script>
     </div>
 </x-app-layout>

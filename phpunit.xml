@@ -42,5 +42,7 @@
         <env name="META_APP_SECRET" value="test-app-secret"/>
         <env name="META_VERIFY_TOKEN" value="test-verify-token"/>
         <env name="PLATFORM_ADMIN_EMAIL" value=""/>
+        <env name="WHATSAPP_AUTO_TEMPLATES" value="false"/>
+        <env name="WHATSAPP_TEMPLATE_PAUSE_MS" value="0"/>
     </php>
 </phpunit>

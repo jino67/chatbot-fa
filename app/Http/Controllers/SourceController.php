@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SourceController extends Controller
 {
@@ -104,6 +105,26 @@ class SourceController extends Controller
         IngestSource::dispatch($source->id);
 
         return back()->with('status', 'Nouvelle indexation lancée.');
+    }
+
+    /**
+     * Modèle de catalogue (CSV, séparateur point-virgule et BOM UTF-8 : s'ouvre bien dans Excel en français).
+     * Les lignes d'exemple portent « (à supprimer) » : si elles sont oubliées, la lecture les ignore.
+     */
+    public function template(Bot $bot): StreamedResponse
+    {
+        $rows = [
+            ['Nom', 'Catégorie', 'Prix', 'Disponibilité', 'Description'],
+            ['Exemple : produit 1 (à supprimer)', 'Catégorie A', '5000 FCFA', 'En stock', 'Décrivez le produit en une ou deux phrases'],
+            ['Exemple : produit 2 (à supprimer)', 'Catégorie A', '12000 FCFA', 'Sur commande', ''],
+        ];
+
+        return response()->streamDownload(function () use ($rows) {
+            echo "\xEF\xBB\xBF";
+            foreach ($rows as $row) {
+                echo implode(';', array_map(fn ($cell) => '"'.str_replace('"', '""', $cell).'"', $row))."\r\n";
+            }
+        }, 'modele-catalogue.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function destroy(Bot $bot, Source $source): RedirectResponse

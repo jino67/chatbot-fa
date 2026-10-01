@@ -1,20 +1,22 @@
-<div style="font-family: Arial, Helvetica, sans-serif; color: #1f2937; max-width: 560px;">
-    <h2 style="margin: 0 0 8px;">{{ $reminder ? 'Rappel : ' : '' }}{{ $lead->label() }}</h2>
-    <p style="margin: 0 0 16px; color: #6b7280;">
+<x-mail.layout :preheader="$lead->title" tone="warning" reason="Vous recevez ce message parce que vous avez choisi d'être prévenu des demandes de vos clients (page Alertes de votre espace).">
+    <x-mail.title tone="warning">{{ $reminder ? 'Rappel : ' : '' }}{{ $lead->label() }}</x-mail.title>
+
+    <p>
         Assistant : <strong>{{ $lead->bot?->name }}</strong>
-        @if ($lead->contact_name || $lead->contact_phone) · Client : {{ trim($lead->contact_name.' '.$lead->contact_phone) }} @endif
+        @if ($lead->contact_name || $lead->contact_phone)<br>Client : <strong>{{ trim($lead->contact_name.' '.$lead->contact_phone) }}</strong>@endif
     </p>
 
-    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; background: #f9fafb;">
-        <p style="margin: 0 0 6px;"><strong>{{ $lead->title }}</strong></p>
-        @if ($lead->summary && $lead->summary !== $lead->title)
-            <p style="margin: 0;">{{ $lead->summary }}</p>
-        @endif
+    <x-mail.box>
+        <strong>{{ $lead->title }}</strong>
+        @if ($lead->summary && $lead->summary !== $lead->title)<br>{{ $lead->summary }}@endif
+    </x-mail.box>
+
+    @if ($reminder)
+        <p>Cette demande attend toujours une réponse de votre part. Votre client compte sur vous.</p>
+    @endif
+
+    <div style="margin:10px 0 0;">
+        <x-mail.button :url="$conversationUrl">Voir la conversation</x-mail.button>
+        <x-mail.button :url="$url" tone="light">Toutes les demandes</x-mail.button>
     </div>
-
-    <p style="margin: 20px 0;">
-        <a href="{{ $conversationUrl }}" style="background: #2340D9; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Voir la conversation</a>
-        <a href="{{ $url }}" style="margin-left: 8px; color: #2340D9;">Toutes les demandes</a>
-    </p>
-    <p style="color: #9ca3af; font-size: 12px;">Vous choisissez comment être prévenu dans « Alertes », depuis votre espace.</p>
-</div>
+</x-mail.layout>

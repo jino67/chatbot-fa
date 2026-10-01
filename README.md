@@ -7,7 +7,7 @@ Plateforme d'assistants conversationnels pour entreprises, à la manière d'un B
 ## Ce que fait le prototype
 
 - Espaces clients isolés, offres et quotas.
-- Sources : PDF, Word, texte, Markdown, CSV, HTML, **photos** (lues par IA), **site web** (exploration sécurisée), texte, questions/réponses, contenu Facebook collé.
+- Sources : PDF, Word, Excel et CSV (catalogues de produits, cartes, listes de prix comprises), texte, Markdown, HTML, **photos** (lues par IA), **site web** (exploration sécurisée), texte, questions/réponses, contenu Facebook collé.
 - Recherche hybride (vecteurs + BM25) avec seuil de pertinence : l'assistant avoue quand il ne sait pas.
 - Widget web en une ligne de code (Shadow DOM, liste blanche de domaines).
 - WhatsApp : adaptateurs Meta et Twilio derrière une interface unique, signatures vérifiées, doublons ignorés.
@@ -17,7 +17,11 @@ Plateforme d'assistants conversationnels pour entreprises, à la manière d'un B
 - **Messages vocaux** : écoute et réponses en audio (WhatsApp Meta et Twilio, widget), selon l'offre.
 - **Import des discussions WhatsApp** : l'assistant apprend le style et les réponses habituelles du client (option).
 - **API pour développeurs** (`/developpeurs`) et widget riche (micro, écoute, copie, avis, langue, nouvelle conversation).
-- Analytique et liste des « questions sans réponse ».
+- Analytique et liste des « questions sans réponse », heures d'affluence des clients de chaque assistant.
+- **Notifications** sur les téléphones (application installée, compteur sur l'icône, rappels si bloquées), centre de notifications, préférences par catégorie et heures calmes ; l'équipe envoie promotions, nouveautés et messages importants (audience, programmation, résultats).
+- **E-mails** de marque (gabarit unique, version texte, aperçu et essai d'envoi dans l'administration).
+- **Statistiques** maison (visiteurs, clics, heures d'affluence, provenance, parcours, santé des clients), sans service tiers ni adresse IP.
+- **Aide et guides** : pages publiques (client, développeur) avec PDF, guides internes de l'équipe, boutons « Besoin d'aide ».
 - Back-office de l'équipe technique : canaux, **consommation en temps réel** de chaque client, portefeuille Twilio, offres en plusieurs devises.
 
 ## Démarrage local (Windows, PHP 8.2, Node 20)
@@ -85,6 +89,9 @@ Renseigner les domaines autorisés dans *Réglages* de l'assistant avant la mise
 | [docs/LANGUES.md](docs/LANGUES.md) | Langues, niveaux de fiabilité, voix, modèles libres pour les langues locales |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Mise en production (hébergement mutualisé, e-mail, tâches planifiées) |
 | [docs/SEO.md](docs/SEO.md) | Référencement : Search Console, pages de contenu, plan du site, ajout d'une page |
+| [docs/ANALYTICS.md](docs/ANALYTICS.md) | Statistiques maison : ce qui est mesuré, vie privée, onglets, entretien |
+| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notifications sur les téléphones (Web Push, compteur sur l'icône), centre de notifications, e-mails de marque, envois de l'équipe |
+| [docs/CATALOGUE.md](docs/CATALOGUE.md) | Catalogues Excel et CSV, étude des catalogues WhatsApp Business |
 | [docs/RECHERCHE.md](docs/RECHERCHE.md) | Recherche web, idées d'organisation, sources |
 
 ## Structure

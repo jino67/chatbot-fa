@@ -55,6 +55,8 @@ class ChatService
         ])->save();
 
         if ($conversation->isHandledByHuman()) {
+            $this->tellTeamOfNewMessage($conversation, $text);
+
             return null;
         }
 
@@ -224,6 +226,31 @@ class ChatService
         $conversation->forceFill(['last_message_at' => now()])->save();
 
         return $message;
+    }
+
+    /**
+     * Un client écrit pendant qu'une personne a la main : l'assistant se tait, donc personne ne le saurait sans cette alerte.
+     * Une seule notification toutes les cinq minutes par conversation : un client qui écrit trois phrases de suite n'en déclenche qu'une.
+     */
+    private function tellTeamOfNewMessage(Conversation $conversation, string $text): void
+    {
+        try {
+            $workspace = \App\Models\Workspace::withoutGlobalScopes()->find($conversation->workspace_id);
+            if (! $workspace) {
+                return;
+            }
+
+            app(\App\Notify\Notifier::class)->toWorkspace(
+                $workspace,
+                'handoffs',
+                'Nouveau message de '.$conversation->displayName(),
+                Text::limit($text, 140),
+                route('conversations.show', [$conversation->bot_id, $conversation->id], false),
+                ['tag' => 'conversation-'.$conversation->id, 'dedupe_minutes' => 5, 'data' => ['conversation' => $conversation->id]],
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function requestHuman(Conversation $conversation, string $reason): void

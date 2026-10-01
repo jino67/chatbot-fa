@@ -122,6 +122,29 @@
                     </div>
                 </div>
             </section>
+            <section id="statistiques" class="surface space-y-5 p-6">
+                <div>
+                    <h2 class="font-display text-lg font-bold">Statistiques : mesure des visites</h2>
+                    <p class="mt-1 text-sm text-slate-600">La plateforme compte elle-même les visites, les clics et l'activité des clients, sans service tiers et sans garder d'adresse IP. Un visiteur qui active « Ne pas suivre » dans son navigateur, ou qui refuse sur la page Confidentialité, n'est jamais mesuré.</p>
+                </div>
+                <label class="flex items-start gap-3 text-sm">
+                    <input type="hidden" name="analytics_enabled" value="0">
+                    <input type="checkbox" name="analytics_enabled" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('analytics_enabled', $values['analytics.enabled'] ?? true))>
+                    <span><strong class="font-semibold">Mesurer les visites</strong><br><span class="text-slate-600">Décochée, plus rien n'est enregistré et le script de mesure n'est plus chargé.</span></span>
+                </label>
+                <label class="flex items-start gap-3 text-sm">
+                    <input type="hidden" name="analytics_digest" value="0">
+                    <input type="checkbox" name="analytics_digest" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('analytics_digest', $values['analytics.digest'] ?? true))>
+                    <span><strong class="font-semibold">Recevoir le résumé du lundi par e-mail</strong><br><span class="text-slate-600">Visites, heures de pointe, clients à relancer. Envoyé à l'adresse d'administration.</span></span>
+                </label>
+                <div>
+                    <x-input-label for="analytics_retention_days" value="Durée de conservation des données (jours)" />
+                    <input id="analytics_retention_days" name="analytics_retention_days" type="number" min="30" max="1095" class="field sm:w-48" value="{{ old('analytics_retention_days', $values['analytics.retention_days'] ?? config('analytics.retention_days')) }}">
+                    <p class="mt-1 text-xs text-slate-500">Au-delà, les données sont effacées chaque nuit. 400 jours permettent de comparer une année à la précédente.</p>
+                </div>
+                <p class="text-sm"><a href="{{ route('admin.statistics.index') }}" class="font-semibold text-brand-700 underline">Ouvrir les statistiques</a></p>
+            </section>
+
             <section id="voix" class="surface space-y-5 p-6">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="font-display text-lg font-bold">Voix : messages vocaux et langues locales</h2>

@@ -138,3 +138,33 @@ Meta fournit un numéro d'essai et une liste de destinataires autorisés : suffi
 **Fait dans le code** : signatures vérifiées (HMAC-SHA256 pour Meta, HMAC-SHA1 pour Twilio, refus si le secret est absent) ; comparaison en temps constant ; identifiants chiffrés ; doublons ignorés ; un webhook Twilio ne peut pas viser un canal Meta ; réponse rapide au fournisseur.
 
 **À votre charge** : servir l'application en HTTPS ; limiter l'accès au back-office ; sauvegarder `APP_KEY` (sans elle, les identifiants chiffrés sont illisibles) ; faire tourner les jetons en cas de départ d'un membre de l'équipe ; suivre la note de qualité des numéros.
+
+
+## 9. Modèles de messages : bibliothèque et création automatique
+
+Un modèle est un message approuvé par WhatsApp, indispensable pour écrire à un client au-delà de 24 heures sans réponse de sa part (rappel de rendez-vous, suivi de commande, relance). Kouma les crée **sans passer par la console du fournisseur**.
+
+**Ce qui existe**
+- Une **bibliothèque de 28 modèles** (`config/whatsapp_templates.php`), écrits pour des petites entreprises : relation client, commandes et livraisons, paiements, rendez-vous et réservations, devis et interventions, promotions. 12 existent aussi en anglais. Le nom de l'entreprise y est déjà inscrit ; un bouton « appeler » ou « site » disparaît si l'entreprise n'a pas de numéro ou de site.
+- Des **paquets par métier** (essentiel, boutique, restaurant, rendez-vous, hôtel, services). Le paquet conseillé suit le secteur de l'assistant (`pack_by_sector`).
+- L'écran **Canaux, Modèles** : aperçu en bulle WhatsApp, ajout d'un modèle, de plusieurs, ou d'un paquet entier ; statut de chacun (en attente, approuvé, refusé). Réservé aux offres qui incluent les modèles (Pro, Business).
+- **Création automatique à l'activation d'un canal** : le paquet « essentiel » et celui du métier partent à l'approbation, sans rien demander au client (`WHATSAPP_AUTO_TEMPLATES=false` pour couper).
+- Meta : création par l'API Graph. **Twilio : création par l'API Content** (le contenu, puis la demande d'approbation WhatsApp). Si l'approbation échoue, le contenu créé est supprimé.
+- En ligne de commande (essai de bout en bout) : `php artisan whatsapp:templates --liste`, puis `php artisan whatsapp:templates {id de l'assistant} --pack=essentiel` ou `--cle=rdv_rappel`.
+
+**Règles de Meta respectées par chaque modèle** (vérifiées par `WhatsAppTemplateLibraryTest`) : variables numérotées, jamais en première ni en dernière position ; un exemple par variable ; corps de 1024 caractères, pied de 60, bouton de 25 ; pas de titre ; un modèle « utilitaire » parle d'une commande, d'un rendez-vous ou d'un paiement et jamais d'une promotion ; un modèle « marketing » rappelle comment ne plus recevoir d'offres.
+
+**Ce qu'il faut savoir**
+- L'approbation prend de quelques minutes à quelques heures. Meta peut reclasser un modèle « utilitaire » en « marketing » (plus cher) ou le refuser : le motif s'affiche après « Actualiser les statuts ». Corriger le texte, puis recréer sous un autre nom.
+- Un modèle « marketing » ne s'envoie qu'à un client qui a accepté de recevoir des offres.
+- Twilio ne permet pas de mélanger boutons de réponse rapide et boutons lien ou appel dans un même modèle. Il n'a ni titre ni pied de message : Kouma écrit le pied en italique à la fin du texte.
+- Les envois **automatiques** (par exemple « commande confirmée » qui part dès qu'une demande est traitée) ne sont pas encore branchés : aujourd'hui, un agent envoie le modèle depuis la conversation.
+
+### 9.1 Essai de l'assistant Kouma avec un sous-compte Twilio
+
+1. Console Twilio : créer un **sous-compte** (par exemple « Kouma essai »). Noter son Account SID et son Auth Token.
+2. Enregistrer l'expéditeur WhatsApp du sous-compte (menu Messaging, Senders, WhatsApp senders) : numéro, compte Meta Business, **nom d'affichage** (par exemple « Kouma ») que Meta doit approuver. Le bac à sable suffit pour tester les conversations, mais pas pour faire approuver des modèles : il faut un vrai expéditeur.
+3. Administration Kouma, Paramètres, WhatsApp : saisir le SID et le jeton **du sous-compte**.
+4. Entrer dans l'espace « Kouma (vitrine) », Canaux de l'assistant, demander WhatsApp, puis dans Administration, Demandes WhatsApp : fournisseur Twilio, numéro expéditeur, **Tester la connexion**, activer. Les modèles de base partent alors à l'approbation d'eux-mêmes.
+5. Copier l'adresse du webhook affichée (`https://kouma.site/webhooks/whatsapp/twilio/{id}`) dans le champ « When a message comes in » de l'expéditeur, en POST.
+6. Quelques minutes plus tard, **Actualiser les statuts** sur l'écran des modèles, puis écrire au numéro pour essayer l'assistant.

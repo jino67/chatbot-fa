@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Mail;
  *  - WhatsApp : un message au numéro du propriétaire, par le canal de l'assistant. Hors des 24 h de la fenêtre de
  *    service, WhatsApp n'accepte qu'un modèle approuvé : celui de la page Alertes (sinon, l'alerte n'part pas et le
  *    journal de la demande le dit).
+ *  - le téléphone : une notification (Web Push) aux membres de l'espace qui l'ont activée, avec le compteur sur l'icône ;
  * Le résultat de chaque envoi est gardé dans `alert_log` pour comprendre pourquoi une alerte n'est pas arrivée.
  */
 class LeadNotifier
@@ -30,6 +31,7 @@ class LeadNotifier
         private readonly GatewayFactory $gateways,
         private readonly UsageService $usage,
         private readonly UsageMeter $meter,
+        private readonly \App\Notify\Notifier $notifier,
     ) {}
 
     public function notify(Lead $lead, bool $reminder = false): void
@@ -52,10 +54,37 @@ class LeadNotifier
             $result['whatsapp'] = $this->whatsapp($lead, $workspace, $alerts, $reminder);
         }
 
+        if ($alerts['push']) {
+            $result['push'] = $this->push($lead, $workspace, $reminder);
+        }
+
         $log = $lead->alert_log ?? [];
         $log[] = ['at' => now()->toIso8601String(), 'reminder' => $reminder] + $result;
 
         $lead->forceFill(['alerted_at' => now(), 'alert_log' => array_slice($log, -10)])->save();
+    }
+
+    /** Notification sur les téléphones des membres de l'espace : la plus rapide, et le compteur de l'icône suit les demandes en attente. */
+    private function push(Lead $lead, Workspace $workspace, bool $reminder): string
+    {
+        try {
+            $title = ($reminder ? 'Rappel : ' : '').$lead->label();
+            $who = trim($lead->contact_name.' '.$lead->contact_phone);
+            $body = Text::limit(($who !== '' ? $who.' : ' : '').($lead->summary ?: $lead->title), 160);
+
+            $count = $this->notifier->toWorkspace($workspace, $lead->kind === Lead::HUMAN ? 'handoffs' : 'leads', $title, $body, route('leads.index', [], false), [
+                'tag' => 'lead-'.$lead->id,
+                'data' => ['lead' => $lead->id],
+                // Un rappel remplace la notification précédente de la même demande au lieu de s'empiler.
+                'dedupe_minutes' => $reminder ? 0 : 1,
+            ]);
+
+            return $count > 0 ? 'sent' : 'no_device';
+        } catch (\Throwable $e) {
+            report($e);
+
+            return 'error';
+        }
     }
 
     /** @param  array<string,mixed>  $alerts */

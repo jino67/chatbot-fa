@@ -20,6 +20,7 @@
         <li><strong>Conversations</strong> : messages échangés avec l'assistant, et, si l'entreprise l'a activé, le nom, le téléphone ou l'e-mail donnés par le visiteur. Sur WhatsApp, le numéro de téléphone du client.</li>
         <li><strong>Facturation</strong> : offre, montants, moyen et référence de paiement Mobile Money ou virement. Nous ne stockons aucun numéro de carte bancaire.</li>
         <li><strong>Technique</strong> : journaux de sécurité et d'utilisation (adresse IP, dates, erreurs), nécessaires à la protection du service.</li>
+        <li><strong>Notifications</strong> : si vous activez les notifications sur un appareil, nous gardons l'adresse technique que le navigateur nous donne pour vous écrire (jamais votre numéro), le type d'appareil et la date d'activation, ainsi que vos préférences. Vous les retirez à tout moment depuis « Préférences de notifications » ou en bloquant les notifications dans votre navigateur ; elles cessent aussi à la déconnexion. Les e-mails que nous envoyons sont des messages de service (alertes, échéances, reçus, mot de passe) ; les promotions peuvent être refusées dans vos préférences.</li>
     </ul>
 
     <h2>3. Finalités</h2>
@@ -63,5 +64,44 @@
     </p>
 
     <h2>9. Cookies</h2>
-    <p>Nous utilisons uniquement des cookies techniques nécessaires à la connexion et à la sécurité (session, protection contre les requêtes frauduleuses). Aucun cookie publicitaire.</p>
+    <p>
+        Nous utilisons des cookies techniques nécessaires à la connexion et à la sécurité (session, protection contre les requêtes frauduleuses),
+        et trois petits cookies de mesure d'audience décrits ci-dessous. Aucun cookie publicitaire, aucun pistage d'un site à l'autre.
+    </p>
+
+    <h2 id="mesure">10. Mesure d'audience</h2>
+    <p>
+        Pour savoir combien de personnes visitent {{ $brand['name'] }}, quelles pages elles lisent, sur quoi elles cliquent et à quelle heure,
+        nous mesurons nous-mêmes les visites, sans service tiers et sans transmettre ces données à qui que ce soit. L'objectif est d'améliorer le site et l'application.
+    </p>
+    <ul>
+        <li><strong>Ce qui est enregistré</strong> : les pages vues, les clics sur les liens et boutons (leur libellé, jamais ce que vous écrivez), jusqu'où vous faites défiler la page, le temps passé, le type d'appareil, de navigateur et de système, la langue, le site d'où vous venez, un pays estimé d'après le fuseau horaire de votre navigateur, et les erreurs rencontrées.</li>
+        <li><strong>Ce qui n'est jamais enregistré</strong> : votre adresse IP, ce que vous saisissez dans un champ, le contenu de vos conversations avec un assistant, votre nom, votre e-mail ou votre numéro (s'ils apparaissent dans un libellé, ils sont effacés avant l'enregistrement).</li>
+        <li><strong>Les cookies de mesure</strong> : <code>_kv</code> (un identifiant aléatoire, 13 mois, pour compter les visiteurs qui reviennent), <code>_ks</code> (un identifiant de visite, effacé à la fermeture du navigateur) et <code>_ko</code> (votre refus, s'il y en a un). Ils ne servent à rien d'autre et ne sont lus par aucun autre site.</li>
+        <li><strong>Pour un compte client connecté</strong> : les actions faites dans l'application (créer un assistant, ajouter une source, répondre à un client...) sont rattachées à l'espace pour que nous sachions quelles fonctions servent et où aider. Seule l'équipe de {{ $brand['name'] }} les voit, jamais les autres clients.</li>
+        <li><strong>Conservation</strong> : les données de mesure sont effacées automatiquement au bout de {{ app(\App\Services\Analytics\Tracker::class)->retentionDays() }} jours.</li>
+    </ul>
+    <p>
+        Votre navigateur peut aussi vous protéger : si « Ne pas suivre » ou « Global Privacy Control » est activé, nous ne mesurons rien.
+        Vous pouvez de plus refuser ici, à tout moment :
+    </p>
+    <div x-data="{ off: false, signal: false }"
+         x-init="signal = navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.globalPrivacyControl === true; off = !!(window.koumaOptedOut && window.koumaOptedOut())"
+         class="not-prose my-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+        <template x-if="signal">
+            <p>Votre navigateur envoie déjà le signal « Ne pas suivre » : <strong>aucune mesure n'est faite pour vous</strong>.</p>
+        </template>
+        <template x-if="!signal && !off">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>La mesure est <strong>active</strong> sur ce navigateur.</p>
+                <button type="button" class="btn-outline" @click="window.koumaOptOut(true); off = true">Ne plus me mesurer</button>
+            </div>
+        </template>
+        <template x-if="!signal && off">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>Votre refus est enregistré : <strong>vous n'êtes plus mesuré</strong> sur ce navigateur.</p>
+                <button type="button" class="btn-outline" @click="window.koumaOptOut(false); off = false">Accepter à nouveau</button>
+            </div>
+        </template>
+    </div>
 </x-legal-layout>

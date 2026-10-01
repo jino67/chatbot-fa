@@ -18,7 +18,7 @@
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-600"><x-mark tone="light" class="h-7 w-7" /></span>
             <div class="min-w-0 flex-1">
                 <p class="font-display text-sm font-bold">Installez {{ $brand['name'] ?? 'Kouma' }} sur votre écran d'accueil</p>
-                <p class="mt-0.5 text-xs text-white/70">Ouvrez vos demandes et vos conversations en un geste, comme une application, sans rien télécharger.</p>
+                <p class="mt-0.5 text-xs text-white/70">Ouvrez vos demandes en un geste, sans rien télécharger. Une fois installée, activez les notifications : vous serez alerté à la seconde d'une commande, même application fermée.</p>
             </div>
             <button type="button" @click="later()" class="rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label="Fermer"><x-icon name="x" class="h-4 w-4" /></button>
         </div>

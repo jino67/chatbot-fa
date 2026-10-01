@@ -61,16 +61,8 @@ class BillingController extends Controller
 
         AuditLog::record('billing.plan_requested', $data['plan'], [], $workspace->id);
 
-        if ($to = config('platform.admin_email') ?: $settings->get('brand.email')) {
-            try {
-                Mail::raw(
-                    "Demande de changement d'offre\n\nEspace : {$workspace->name}\nOffre demandée : {$data['plan']}\nDemandeur : {$request->user()->name} ({$request->user()->email})\n\n".route('admin.plan-requests.index'),
-                    fn ($m) => $m->to($to)->subject("Demande d'offre : {$workspace->name}")
-                );
-            } catch (\Throwable $e) {
-                report($e);
-            }
-        }
+        // L'équipe est prévenue sur son téléphone et par e-mail (voir App\Notify\Events).
+        app(\App\Notify\Events::class)->planRequested($workspace, (string) (\App\Models\Plan::bySlug($data['plan'])?->name ?? $data['plan']), $request->user(), $data['message'] ?? null);
 
         return back()->with('status', 'Demande enregistrée. Payez selon les indications ci-dessous et envoyez-nous la référence : votre offre est activée dès réception.');
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Chat\InstructionGenerator;
 use App\Models\AuditLog;
 use App\Models\Bot;
+use App\Support\BotDraft;
 use App\Support\Languages;
 use App\Services\UsageService;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,14 @@ use Illuminate\Validation\Rule;
 
 class BotController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('bots.index', ['bots' => Bot::withCount('sources')->orderBy('name')->get()]);
+        $workspace = $request->user()->currentWorkspace();
+
+        return view('bots.index', [
+            'bots' => Bot::withCount('sources')->orderBy('name')->get(),
+            'draft' => BotDraft::get($request->user(), $workspace),
+        ]);
     }
 
     public function create(Request $request, UsageService $usage, InstructionGenerator $generator)
@@ -28,6 +34,7 @@ class BotController extends Controller
             'sectors' => $generator->sectors(),
             'defaults' => $generator->defaultProfile(),
             'company' => $request->user()->currentWorkspace()->name,
+            'draft' => BotDraft::get($request->user(), $request->user()->currentWorkspace()),
         ]);
     }
 
@@ -65,6 +72,7 @@ class BotController extends Controller
         ]);
 
         AuditLog::record('bot.created', $bot->name, ['sector' => $data['sector']], $workspace->id);
+        BotDraft::forget($request->user(), $workspace);
 
         return redirect()->route('instructions.edit', $bot)->with('status', 'Assistant créé. Voici la consigne préparée pour votre entreprise : relisez-la, ajustez-la si besoin, puis ajoutez vos documents.');
     }

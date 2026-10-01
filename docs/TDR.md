@@ -41,7 +41,7 @@ Mettre en place une plateforme multi-entreprises permettant à chaque client de 
 ### 3.1 Inclus dans la V1
 
 - Espaces clients isolés (workspaces), comptes, offres avec quotas.
-- Base de connaissances : documents (PDF, Word, texte, Markdown, CSV, HTML), **photos** (lecture par IA), **site web** (exploration), texte libre, questions/réponses, contenu de page Facebook collé.
+- Base de connaissances : documents (PDF, Word, Excel, texte, Markdown, CSV, HTML ; catalogues de produits compris), **photos** (lecture par IA), **site web** (exploration), texte libre, questions/réponses, contenu de page Facebook collé.
 - Assistant configurable : consignes, ton, messages, langue, apparence.
 - Test intégré avec affichage des extraits utilisés.
 - Widget web à installer par une ligne de code, avec liste blanche de domaines.
@@ -82,7 +82,7 @@ Priorités selon la méthode MoSCoW : **M** indispensable, **S** important, **C*
 
 | Réf. | Fonction | Prio | Critère d'acceptation |
 |---|---|---|---|
-| F1.1 | Import de documents PDF, Word, texte, Markdown, CSV, HTML (20 Mo max) | M | Le contenu est interrogeable en moins de 2 minutes ; un fichier non pris en charge est refusé avec un message clair |
+| F1.1 | Import de documents PDF, Word, Excel, texte, Markdown, CSV, HTML (20 Mo max) | M | Le contenu est interrogeable en moins de 2 minutes ; un fichier non pris en charge est refusé avec un message clair |
 | F1.2 | PDF scannés | S | Un PDF image est lu automatiquement ; sinon message explicite |
 | F1.3 | **Photos** (affiches, menus, tarifs) | M | Le texte et les prix visibles sont retrouvés par l'assistant |
 | F1.4 | Site web : page seule ou tout le site (limite selon l'offre) | M | Respect de robots.txt, aucune adresse interne atteignable, pages dupliquées (menus, pieds de page) filtrées |
@@ -127,6 +127,11 @@ Priorités selon la méthode MoSCoW : **M** indispensable, **S** important, **C*
 | F4.4 | Quotas par offre (assistants, sources, réponses par mois) | M | Dépassement : service dégradé proprement, jamais d'erreur brute |
 | F4.5 | Back-office : demandes, canaux, test de connexion, offres | M | Identifiants chiffrés et jamais réaffichés |
 | F4.6 | Suivi du coût IA par réponse | S | Jetons stockés avec chaque réponse |
+| F4.7 | **Notifications** : sur les téléphones (application installée, compteur sur l'icône), centre de notifications, préférences par catégorie et heures calmes, rappels d'activation | S | Une commande ou un client qui attend arrive sur le téléphone en quelques secondes ; un client peut tout refuser sauf les messages importants |
+| F4.8 | **Envois de l'équipe** : promotions, nouveautés, messages importants (audience, aperçu, essai, programmation, résultats) | S | Un client qui refuse les promotions n'en reçoit pas ; un message par jour au plus ; journal d'audit |
+| F4.9 | **E-mails de marque** : un gabarit, une version texte, aperçu et essai d'envoi dans l'administration | S | Aucun e-mail en texte brut ; chacun se voit avant d'être envoyé |
+| F4.10 | **Statistiques** maison (visiteurs, clics, affluence, provenance, parcours, santé des clients) | S | Aucune adresse IP gardée ; « Ne pas suivre » respecté ; refus possible en un clic |
+| F4.11 | **Aide et guides** (public : client, développeur avec PDF ; interne : équipe, super administrateur) | S | Chaque guide est à jour de l'application ; aucune adresse locale dans les PDF |
 
 ## 6. Exigences non fonctionnelles
 
