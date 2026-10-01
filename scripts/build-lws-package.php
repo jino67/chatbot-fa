@@ -636,6 +636,8 @@ Ne l'envoyez à personne et ne le mettez pas dans un dépôt.
    l'hébergeur), envoyer kouma.site-lws.zip, puis « Extraire » à cet endroit. Après extraction, ce dossier contient
    .htaccess, index.php, build/, widget/ et le dossier kouma/. La page d'attente de l'hébergeur (index.html) peut être
    supprimée ; sinon .htaccess la contourne.
+   SUPPRIMER ENSUITE kouma.site-lws.zip du serveur : il contient les mots de passe (kouma/.env) et, laissé dans le
+   dossier du domaine, il serait téléchargeable par n'importe qui. Pareil pour kouma-base.sql après l'import.
 3. phpMyAdmin (lien reçu par e-mail de LWS) : cliquer la base {$cfg['db_nom']}, onglet « Importer », choisir
    kouma-base.sql, valider. Elle crée les tables, les offres, le compte administrateur et l'assistant de la page d'accueil.
    (Le fichier commence par « USE {$cfg['db_nom']} » : il marche même importé depuis l'onglet du serveur, sans base

@@ -50,9 +50,10 @@ DirectoryIndex index.php
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# Ceinture et bretelles, hors du bloc de réécriture : même si la règle ci-dessus venait à manquer, le .env
-# et les journaux ne sont jamais servis.
-<FilesMatch "(^\.env|\.sqlite$|\.log$|\.sql$)">
+# Ceinture et bretelles, hors du bloc de réécriture : même si la règle ci-dessus venait à manquer, le .env, les
+# journaux et les archives (un zip du site contient le .env) ne sont jamais servis. Ne jamais laisser un zip dans ce
+# dossier : supprimez-le dès qu'il est extrait.
+<FilesMatch "(^\.env|\.sqlite$|\.log$|\.sql$|\.zip$|\.bak$|\.tar$|\.gz$)">
     Require all denied
 </FilesMatch>
 
@@ -84,8 +85,7 @@ DirectoryIndex index.php
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Permissions-Policy "camera=(), geolocation=()"
 
-    # À NE DÉCOMMENTER QU'APRÈS AVOIR VÉRIFIÉ QUE LE HTTPS FONCTIONNE sur kouma.site.
-    # Posé avant que le certificat soit en place, cet en-tête rendrait le site inaccessible
-    # pendant un an à tous ceux qui l'ont visité une fois.
-    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # Actif : le HTTPS de kouma.site est vérifié. Posé avant que le certificat soit en place, cet en-tête rendrait le
+    # site inaccessible pendant un an à tous ceux qui l'ont visité une fois.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>

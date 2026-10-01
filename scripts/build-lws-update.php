@@ -9,7 +9,7 @@
  * Par défaut : ../kouma-lws/mise-a-jour.zip. À extraire à la racine du dossier du domaine kouma.site, en écrasant :
  * les fichiers du projet vont dans kouma/, ceux de public/ à la racine. Le .env, storage/ et vendor/ ne sont jamais touchés.
  *
- * Ne contient AUCUN secret (ni .env, ni mot de passe). Les migrations de base de données ne passent pas par ce zip :
+ * Ne contient AUCUN secret (ni .env, ni mot de passe), mais il se supprime du serveur une fois extrait, comme tout zip. Les migrations de base de données ne passent pas par ce zip :
  * le script s'arrête et le dit, car sans accès SSH il faut les appliquer à la main dans phpMyAdmin.
  */
 
