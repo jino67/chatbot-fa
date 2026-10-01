@@ -98,8 +98,11 @@ class ChatService
         $chunks = $smallTalk ? [] : $this->retriever->retrieve($bot, $this->searchQuery($conversation, $userMessage));
 
         // Hors salutation, sans extrait pertinent : on ne depense pas un appel LLM, on avoue ne pas savoir.
-        // Exception : une reclamation ou une urgence merite une reponse empathique et un possible transfert.
-        if (! $smallTalk && $chunks === [] && ! Text::isSensitive($text)) {
+        // Exceptions : une reclamation ou une urgence merite une reponse empathique et un possible transfert ;
+        // la conversation libre (réglage de l'assistant, active par défaut) laisse le modèle répondre, le prompt gardant
+        // les informations de l'entreprise tirées des seuls extraits.
+        $open = $bot->allowsFreeChat();
+        if (! $smallTalk && ! $open && $chunks === [] && ! Text::isSensitive($text)) {
             return $this->miss($conversation, $bot->fallback(), ['llm' => false, 'top_score' => 0.0, 'reason' => 'no_context']);
         }
 
@@ -125,7 +128,7 @@ class ChatService
 
         $parsed = $this->prompts->parse($response->text);
         $answer = $parsed['text'] !== '' ? $parsed['text'] : $bot->fallback();
-        $grounded = ! $parsed['no_answer'] && ($smallTalk || $chunks !== []);
+        $grounded = ! $parsed['no_answer'] && ($smallTalk || $open || $chunks !== []);
 
         $meta = [
             'grounded' => $grounded,
@@ -134,6 +137,7 @@ class ChatService
             'provider' => $response->provider ?? $this->llm->name(),
             'model' => $response->model,
             'top_score' => $chunks ? round($chunks[0]->score, 3) : 0.0,
+            'free_chat' => $open && ! $smallTalk && $chunks === [],
             'retrieved' => count($chunks),
             'tokens' => ['in' => $response->inputTokens, 'out' => $response->outputTokens, 'cache_read' => $response->cacheReadTokens],
             'latency_ms' => (int) ((microtime(true) - $started) * 1000),

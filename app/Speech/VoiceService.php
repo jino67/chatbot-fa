@@ -122,9 +122,29 @@ class VoiceService
             throw new VoiceRefused('unclear', $e->getMessage());
         }
 
+        // Du bruit ou une voix lointaine ressort parfois en cyrillique, en chinois... : mieux vaut demander de répéter
+        // que répondre à un texte que le visiteur n'a jamais dit.
+        if ($this->foreignScript($transcript->text, $bot)) {
+            throw new VoiceRefused('unclear', 'Transcription dans une écriture que l\'assistant ne parle pas.');
+        }
+
         $this->meter->voice($workspace->id, $bot->id, 'in', $transcript->seconds, explode(':', $transcript->engine)[0]);
 
         return $transcript;
+    }
+
+    /** Plus de la moitié des lettres sont dans une écriture qu'aucune langue de l'assistant n'utilise (latin toujours admis, arabe si une langue s'écrit de droite à gauche). */
+    private function foreignScript(string $text, Bot $bot): bool
+    {
+        $letters = preg_match_all('/\p{L}/u', $text);
+        if (! $letters) {
+            return false;
+        }
+
+        $rtl = array_filter($bot->spokenLanguages(), fn ($code) => Languages::isRtl($code)) !== [];
+        $foreign = '\p{Cyrillic}|\p{Han}|\p{Hangul}|\p{Hiragana}|\p{Katakana}|\p{Thai}|\p{Devanagari}|\p{Greek}|\p{Hebrew}'.($rtl ? '' : '|\p{Arabic}');
+
+        return preg_match_all('/(?:'.$foreign.')/u', $text) / $letters > 0.5;
     }
 
     /** L'assistant doit-il repondre en audio, compte tenu de son reglage et du message recu ? */

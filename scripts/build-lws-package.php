@@ -327,6 +327,8 @@ try {
     foreach (FICHIERS_PROJET as $fichier) {
         copy($racine.'/'.$fichier, $projet.'/'.$fichier);
     }
+    // Tâche planifiée pour un panneau qui n'accepte qu'un fichier PHP (équivaut à « php artisan schedule:run »).
+    copy($racine.'/deploiement/lws/cron.php', $projet.'/cron.php');
     // bootstrap/cache et storage/ partent vides : ce qu'ils contiennent en local porte des chemins de cette machine.
     vider_dossier($projet.'/bootstrap/cache');
     foreach (SQUELETTE_STORAGE as $sous) {
@@ -649,7 +651,8 @@ Ne l'envoyez à personne et ne le mettez pas dans un dépôt.
    sites et les abonnements :
      /usr/local/bin/php  CHEMIN_DU_DOSSIER/kouma/artisan schedule:run
    (le chemin complet du dossier est indiqué dans le gestionnaire de fichiers LWS ; la commande php peut s'appeler
-   différemment, voir l'aide LWS « Tâches CRON »).
+   différemment, voir l'aide LWS « Tâches CRON »). Si le panneau n'accepte qu'un fichier à exécuter, sans arguments,
+   choisir kouma/cron.php : il fait la même chose. Toutes les minutes, ou toutes les 5 minutes si c'est le minimum.
 7. Connexion : https://{$domaine}/login avec {$boite} et le mot de passe de identifiants-admin.txt. Changer ce mot de
    passe dans « Mon profil ».
 8. Essai de l'e-mail : « Mot de passe oublié » sur la page de connexion avec {$boite}. Le message arrive dans le

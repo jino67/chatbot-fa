@@ -79,6 +79,16 @@
                 <x-input-label for="suggested_questions" value="Questions suggérées à l'ouverture (une par ligne, 4 maximum)" />
                 <textarea id="suggested_questions" name="suggested_questions" rows="4" class="field">{{ old('suggested_questions', implode("\n", $bot->suggested_questions ?? [])) }}</textarea>
             </div>
+            <div>
+                <input type="hidden" name="open_chat_shown" value="1">
+                <label class="flex items-start gap-2 text-sm">
+                    <input type="checkbox" name="open_chat" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('open_chat', $bot->allowsFreeChat()))>
+                    <span>
+                        <span class="font-medium">Autoriser la conversation libre</span>
+                        <span class="block text-xs text-slate-500">L'assistant peut échanger aimablement sur autre chose que vos documents (salutations, nouvelles, questions simples) et dit qui l'a conçu quand on le lui demande. Vos prix, horaires et adresses ne viennent toujours que de vos sources. Chaque réponse compte dans votre volume mensuel ; décochez pour qu'il ne réponde qu'à partir de vos sources.</span>
+                    </span>
+                </label>
+            </div>
         </section>
 
         <section class="surface space-y-5 p-6">

@@ -76,6 +76,8 @@ class InstructionController extends Controller
         // Les langues se règlent dans les paramètres de l'assistant : le profil en garde la liste, sans la changer ici.
         $profile = self::profileFrom($data);
         $profile['languages'] = $bot->spokenLanguages();
+        // Le style importé du WhatsApp et le réglage de conversation libre se règlent ailleurs : on les garde.
+        $profile += array_intersect_key($bot->profile ?? [], array_flip(['imported', 'open_chat']));
         $updates = ['sector' => $data['sector'], 'profile' => $profile];
 
         if ($request->boolean('regenerate')) {

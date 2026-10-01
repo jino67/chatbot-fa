@@ -64,13 +64,71 @@ class ChatTest extends TestCase
         $this->assertNotEmpty($reply->meta['tokens']);
     }
 
-    public function test_an_unknown_question_gets_the_fallback_without_spending_an_llm_call(): void
+    public function test_with_free_chat_off_an_unknown_question_gets_the_fallback_without_spending_an_llm_call(): void
     {
+        $this->bot->update(['profile' => array_replace($this->bot->profile ?? [], ['open_chat' => false])]);
+
         $reply = $this->ask($this->conversation(), 'Quelle est la capitale du Japon ?');
 
         $this->assertFalse($reply->meta['grounded']);
         $this->assertFalse($reply->meta['llm'], 'aucun appel IA quand aucun extrait pertinent');
         $this->assertSame($this->bot->fallback(), $reply->content);
+    }
+
+    public function test_free_chat_is_on_by_default_and_the_prompt_keeps_business_facts_on_the_extracts(): void
+    {
+        $llm = new class implements LlmClient
+        {
+            /** @var list<LlmRequest> */
+            public array $requests = [];
+
+            public function name(): string
+            {
+                return 'enregistreur';
+            }
+
+            public function complete(LlmRequest $request): LlmResponse
+            {
+                $this->requests[] = $request;
+
+                return new LlmResponse('Le Japon a pour capitale Tokyo. Et pour la livraison, que puis-je vous dire ?', model: 'stub');
+            }
+
+            public function transcribe(string $binary, string $mimeType, string $instruction): string
+            {
+                return '';
+            }
+        };
+        $this->app->instance(LlmClient::class, $llm);
+
+        $reply = $this->ask($this->conversation(), 'Quelle est la capitale du Japon ?');
+
+        $this->assertTrue($this->bot->allowsFreeChat());
+        $this->assertCount(1, $llm->requests, 'sans extrait, le modèle répond quand même');
+        $this->assertTrue($reply->meta['grounded']);
+        $this->assertTrue($reply->meta['free_chat']);
+        $this->assertStringContainsString('Tokyo', $reply->content);
+        $system = $llm->requests[0]->system;
+        $this->assertStringContainsString('discuter de tout et de rien', $system);
+        $this->assertStringContainsString("N'invente jamais un prix, un quota, un horaire, une adresse", $system);
+    }
+
+    public function test_the_assistant_says_who_built_it_with_the_platform_contacts(): void
+    {
+        app(\App\Services\PlatformSettings::class)->set('brand.email', 'contac@kouma.site');
+        app(\App\Services\PlatformSettings::class)->set('brand.whatsapp', '+226 70 00 00 00');
+        app(\App\Services\PlatformSettings::class)->set('brand.url', 'https://kouma.site');
+
+        foreach ([[], ['open_chat' => false]] as $profile) {
+            $this->bot->update(['profile' => $profile]);
+            $system = app(PromptBuilder::class)->system($this->bot->fresh());
+
+            $this->assertStringContainsString("Origine de l'assistant", $system);
+            $this->assertStringContainsString('site https://kouma.site', $system);
+            $this->assertStringContainsString('e-mail contac@kouma.site', $system);
+            $this->assertStringContainsString('WhatsApp https://wa.me/22670000000', $system);
+            $this->assertStringContainsString('jamais une personne', $system);
+        }
     }
 
     public function test_greetings_are_answered_without_searching_the_knowledge_base(): void

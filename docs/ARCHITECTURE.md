@@ -266,6 +266,12 @@ Toutes les tables « métier » portent `workspace_id`.
 
 **Décision.** L'assistant qui répond aux visiteurs (la « vitrine ») n'a pas de texte écrit à la main : `App\Services\LandingBot` rédige ses sources à partir de la table des offres, de `config/languages.php` et des réglages de la marque, puis les fait lire par le pipeline d'ingestion habituel. Une source inchangée n'est pas relue ; une source qui disparaît des textes est supprimée ; la consigne suit les règles sauf si elle a été modifiée à la main. Chaque source répond à une question courte (« Combien ça coûte ? », « Comment payer ? ») : les recherches courtes des visiteurs tombent ainsi sur la bonne réponse. `platform:landing-bot` le crée ou le met à jour (indispensable en production, où il n'existe pas encore) ; l'administration le relance après chaque enregistrement d'offre, une fois la réponse envoyée.
 
+### D22. Conversation libre pour tous les assistants, informations de l'entreprise tirées des seuls extraits
+
+**Décision.** Un assistant n'est plus muet hors de sa base de connaissances : salutations, prise de nouvelles, questions simples et bavardage reçoivent une réponse du modèle (`Bot::allowsFreeChat()`, réglage « Autoriser la conversation libre » stocké dans `bots.profile.open_chat`, actif par défaut, sans migration). Le prompt de la plateforme sépare deux régimes : la conversation générale est libre ; tout ce qui concerne l'entreprise (prix, horaires, adresses, délais, politiques) ne vient que des extraits, avec le marqueur `[[NO_ANSWER]]` quand l'information manque. L'assistant de la page d'accueil de la plateforme (`Bot::isShowcase()`) converse toujours librement. Tous les assistants des clients savent aussi dire **qui les a conçus** : « propulsé par Kouma », avec le site, l'e-mail et le lien WhatsApp des réglages de la marque (`PromptBuilder::originRule()`), et se présentent comme une intelligence artificielle, jamais comme une personne.
+
+**Contrepartie.** Sans extrait pertinent, le modèle est désormais appelé : plus de réponses, donc plus de volume consommé et de coût. Cocher la case la désactive et rétablit l'ancien comportement (réponse de repli sans appel au modèle). Le risque d'une réponse inventée sur l'entreprise est borné par le prompt, pas par un garde-fou déterministe : à surveiller sur le jeu de questions de référence. `meta.free_chat` marque ces réponses.
+
 ## 6. Sécurité : synthèse
 
 | Menace | Mesure | Où |

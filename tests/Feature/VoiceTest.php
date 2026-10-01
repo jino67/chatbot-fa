@@ -261,6 +261,32 @@ class VoiceTest extends TestCase
         $this->assertStringContainsString('pas bien compris', Message::withoutGlobalScopes()->where('role', 'assistant')->firstOrFail()->content);
     }
 
+    public function test_a_transcript_in_a_script_the_assistant_does_not_speak_is_treated_as_noise(): void
+    {
+        $this->metaChannel();
+        $this->fakeMeta('по помощу');
+
+        $this->postMeta($this->metaAudio())->assertOk();
+
+        $reply = Message::withoutGlobalScopes()->where('role', 'assistant')->firstOrFail();
+        $this->assertStringContainsString('pas bien compris', $reply->content);
+        $this->assertSame(0, Message::withoutGlobalScopes()->where('role', 'user')->where('content', 'like', '%помощу%')->count(), 'le texte inventé n\'est pas pris pour la parole du client');
+        $this->assertSame(0, UsageEvent::withoutGlobalScopes()->where('kind', 'voice_in')->count(), 'un vocal inaudible n\'est pas décompté');
+    }
+
+    public function test_arabic_is_accepted_when_the_assistant_speaks_arabic_and_refused_otherwise(): void
+    {
+        $voice = app(\App\Speech\VoiceService::class);
+        $audio = FakeSpeech::voiceNote('مرحبا كيف الحال');
+
+        $this->bot->update(['language' => 'ar', 'languages' => ['ar', 'fr']]);
+        $this->assertSame('مرحبا كيف الحال', $voice->listen($this->bot->fresh(), $audio, 'audio/ogg')->text);
+
+        $this->bot->update(['language' => 'fr', 'languages' => ['fr']]);
+        $this->expectException(\App\Speech\VoiceRefused::class);
+        $voice->listen($this->bot->fresh(), $audio, 'audio/ogg');
+    }
+
     public function test_a_speech_engine_failure_never_loses_the_written_answer(): void
     {
         $this->metaChannel();

@@ -164,6 +164,79 @@ class LandingBotTest extends TestCase
         $this->assertStringNotContainsString("\u{2014}", implode("\n", app(LandingBot::class)->knowledge()), 'aucun tiret cadratin');
     }
 
+    /** LLM de substitution : garde les requêtes reçues pour vérifier ce qui part vers le modèle. */
+    private function recordingLlm(): object
+    {
+        $llm = new class implements \App\Ai\Llm\LlmClient
+        {
+            /** @var list<\App\Ai\Llm\LlmRequest> */
+            public array $requests = [];
+
+            public function name(): string
+            {
+                return 'enregistreur';
+            }
+
+            public function complete(\App\Ai\Llm\LlmRequest $request): \App\Ai\Llm\LlmResponse
+            {
+                $this->requests[] = $request;
+
+                return new \App\Ai\Llm\LlmResponse('Ha ! Les chats dorment environ quinze heures par jour. Et vous, une question sur Kouma ?', model: 'stub');
+            }
+
+            public function transcribe(string $binary, string $mimeType, string $instruction): string
+            {
+                return '';
+            }
+        };
+        $this->app->instance(\App\Ai\Llm\LlmClient::class, $llm);
+
+        return $llm;
+    }
+
+    private function visitorConversation(Bot $bot, string $visitor): \App\Models\Conversation
+    {
+        return \App\Models\Conversation::withoutGlobalScopes()->create(['workspace_id' => $bot->workspace_id, 'bot_id' => $bot->id, 'channel' => 'web', 'external_id' => $visitor]);
+    }
+
+    public function test_the_landing_assistant_always_chats_freely_while_a_customer_can_keep_its_assistant_on_its_knowledge(): void
+    {
+        $landing = app(LandingBot::class)->sync();
+        $this->assertTrue($landing->isShowcase());
+
+        $llm = $this->recordingLlm();
+        $reply = app(\App\Chat\ChatService::class)->handleUserMessage($this->visitorConversation($landing, 'visiteur-accueil-1'), 'Raconte-moi une blague sur les chats');
+
+        $this->assertCount(1, $llm->requests, 'la conversation libre appelle le modèle même sans extrait');
+        $this->assertTrue($reply->meta['grounded']);
+        $this->assertStringContainsString('chats dorment', $reply->content);
+        $this->assertStringContainsString('discuter de tout et de rien', $llm->requests[0]->system);
+        $this->assertStringContainsString("N'invente jamais un prix", $llm->requests[0]->system, 'le produit reste décrit par les seuls extraits');
+
+        // Un assistant de client, lui, avoue ne pas savoir sans appeler le modèle, et son prompt reste strict.
+        [, , $shop] = $this->tenant();
+        $shop->update(['profile' => ['open_chat' => false]]);
+        $this->assertFalse($shop->isShowcase());
+        $this->assertFalse($shop->allowsFreeChat());
+
+        $miss = app(\App\Chat\ChatService::class)->handleUserMessage($this->visitorConversation($shop, 'visiteur-boutique-1'), 'Raconte-moi une blague sur les chats');
+
+        $this->assertCount(1, $llm->requests, "aucun appel supplémentaire pour l'assistant du client");
+        $this->assertFalse($miss->meta['grounded']);
+        $this->assertSame($shop->fallback(), $miss->content);
+        $this->assertStringNotContainsString('discuter de tout et de rien', app(\App\Chat\PromptBuilder::class)->system($shop));
+    }
+
+    public function test_a_greeting_with_news_is_not_answered_by_the_fallback(): void
+    {
+        $landing = app(LandingBot::class)->sync();
+
+        $reply = app(\App\Chat\ChatService::class)->handleUserMessage($this->visitorConversation($landing, 'visiteur-accueil-2'), 'Bonsoir comment tu vas ?');
+
+        $this->assertTrue($reply->meta['grounded']);
+        $this->assertNotSame($landing->fallback(), $reply->content);
+    }
+
     public function test_saving_a_plan_in_the_admin_refreshes_the_landing_assistant_only_when_it_exists(): void
     {
         $super = \App\Models\User::factory()->create(['role' => \App\Models\User::SUPER_ADMIN]);

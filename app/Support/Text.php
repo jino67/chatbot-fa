@@ -75,17 +75,24 @@ final class Text
         return max(1, (int) ceil(mb_strlen($text) / 4));
     }
 
-    /** Salutation ou remerciement : pas la peine d'aller chercher dans la base de connaissances. */
+    /**
+     * Salutation, remerciement ou prise de nouvelles (« Bonsoir, comment tu vas ? ») : pas la peine d'aller chercher
+     * dans la base de connaissances, et surtout pas de répondre « je n'ai pas cette information » à un bonsoir.
+     */
     public static function isSmallTalk(string $text): bool
     {
-        $folded = trim(self::fold($text));
+        $folded = str_replace(['’', '-'], ["'", ' '], trim(self::fold($text)));
 
         if (mb_strlen($folded) > 40) {
             return false;
         }
 
+        $greeting = 'bonjour|bonsoir|salut|coucou|hello|hi|hey|salam|assalam\S*|marhaba|merci|thanks?|thank you|ok|okay|d\'accord|super|parfait|au revoir|bye|a bientot|bonne journee|bonne soiree';
+        $news = '(?:comment (?:tu vas|vas tu|ca va|allez vous|vous allez|vous portez vous|tu te portes)|ca va|tu vas bien|vous allez bien|how are you)(?: bien| aujourd\'hui)?';
+        $filler = 'a tous|tout le monde|monsieur|madame|beaucoup|bien|vous';
+
         return (bool) preg_match(
-            '/^(bonjour|bonsoir|salut|coucou|hello|hi|hey|salam|assalam\S*|marhaba|merci|thanks?|thank you|ok|okay|d\'accord|super|parfait|au revoir|bye|a bientot|bonne journee|bonne soiree)([\s!.,?]+(a tous|tout le monde|monsieur|madame|beaucoup|bien|vous))*[\s!.,?]*$/u',
+            "/^(?=[\\s!.,?]*[a-z])(?:(?:{$greeting})(?:[\\s!.,?]+(?:{$filler}))*)?[\\s!.,?]*(?:{$news})?[\\s!.,?]*$/u",
             $folded
         );
     }

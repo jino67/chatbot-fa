@@ -84,6 +84,27 @@ class Bot extends Model
         return Languages::normalize((array) $this->languages, $this->language);
     }
 
+    /**
+     * Conversation libre (salutations, bavardage, culture générale) en plus de la base de connaissances. Active par
+     * défaut ; le client peut la couper dans les réglages de l'assistant, auquel cas il reste cantonné à ses sources.
+     * Le prompt garde les informations de l'entreprise (prix, horaires, adresses) tirées des seuls extraits.
+     */
+    public function allowsFreeChat(): bool
+    {
+        return $this->isShowcase() || (bool) $this->profile('open_chat', true);
+    }
+
+    /**
+     * L'assistant de la page d'accueil de la plateforme (réglage « marketing.landing_bot_key »). Il parle de la
+     * plateforme elle-même et ne peut pas être cantonné : sa conversation libre est toujours active.
+     */
+    public function isShowcase(): bool
+    {
+        $key = (string) app(\App\Services\PlatformSettings::class)->get('marketing.landing_bot_key');
+
+        return $key !== '' && hash_equals($key, (string) $this->public_key);
+    }
+
     public function welcome(): string
     {
         return $this->welcome_message

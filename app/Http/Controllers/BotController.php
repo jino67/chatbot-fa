@@ -95,6 +95,7 @@ class BotController extends Controller
             'handoff_email' => ['nullable', 'email', 'max:190'],
             'collect_contact' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'open_chat' => ['nullable', 'boolean'],
         ]);
 
         // La liste envoyée est la liste voulue ; sans liste (ancien formulaire), la langue principale reste seule choisie.
@@ -106,7 +107,10 @@ class BotController extends Controller
             'voice_style' => $data['voice_style'] ?? $bot->voice_style,
         ] : [];
 
-        $bot->update($voice + [
+        // La conversation libre vit dans le profil (JSON) ; elle ne bouge que si la case était dans le formulaire.
+        $chat = $request->has('open_chat_shown') ? ['profile' => array_replace($bot->profile ?? [], ['open_chat' => $request->boolean('open_chat')])] : [];
+
+        $bot->update($chat + $voice + [
             'name' => $data['name'],
             'language' => $languages[0],
             'languages' => $languages,
