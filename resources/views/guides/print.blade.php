@@ -18,8 +18,8 @@
     ];
     $brandName = $brand['name'] ?? 'Kouma';
     $site = preg_replace('#^https?://#', '', rtrim($siteUrl, '/'));
-    $email = \App\Support\Contact::email();
-    $whatsapp = \App\Support\Contact::whatsapp();
+    $email = $contactEmail ?? \App\Support\Contact::email();
+    $whatsapp = $contactWhatsapp ?? \App\Support\Contact::whatsapp();
     $css = fn (string $text) => json_encode($text, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $toc = array_values(array_filter($data['toc'], fn ($h) => $h['level'] === 2));
 @endphp

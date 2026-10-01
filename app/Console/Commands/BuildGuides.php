@@ -15,11 +15,15 @@ use Symfony\Component\Process\Process;
  */
 class BuildGuides extends Command
 {
-    protected $signature = 'guides:build {guide? : client, developpeur, admin ou super-admin (tous par défaut)} {--url= : adresse publique du site, ex. https://kouma.site} {--browser= : chemin de Chrome ou Edge}';
+    protected $signature = 'guides:build {guide? : client, developpeur, admin ou super-admin (tous par défaut)} {--url= : adresse publique du site, ex. https://kouma.site} {--email= : e-mail de contact à imprimer (sinon celui des Paramètres)} {--whatsapp= : numéro WhatsApp à imprimer (sinon celui des Paramètres)} {--browser= : chemin de Chrome ou Edge}';
 
     protected $description = 'Fabrique les PDF des guides (client, développeur, équipe, super admin)';
 
     private string $siteUrl = '';
+
+    private string $email = '';
+
+    private string $whatsapp = '';
 
     public function handle(): int
     {
@@ -38,7 +42,11 @@ class BuildGuides extends Command
             return self::FAILURE;
         }
         $this->siteUrl = $url;
-        $this->line('Adresse du site inscrite dans les PDF : '.$url.' | e-mail : '.(\App\Support\Contact::email() ?: 'aucun').' | WhatsApp : '.(\App\Support\Contact::whatsapp() ?: 'aucun'));
+        // Les PDF se fabriquent sur un poste local, dont les Paramètres ne sont pas ceux du site en ligne : on peut donc imposer les coordonnées.
+        $this->email = trim((string) ($this->option('email') ?: \App\Support\Contact::email()));
+        $whatsapp = preg_replace('/\D/', '', (string) ($this->option('whatsapp') ?: \App\Support\Contact::whatsapp()));
+        $this->whatsapp = $whatsapp !== '' ? '+'.$whatsapp : '';
+        $this->line('Coordonnées inscrites dans les PDF : '.$url.' | e-mail : '.($this->email ?: 'aucun').' | WhatsApp : '.($this->whatsapp ?: 'aucun'));
 
         $keys = $this->argument('guide') ? [$this->argument('guide')] : array_keys(Guides::all());
         foreach ($keys as $key) {
@@ -72,6 +80,8 @@ class BuildGuides extends Command
             'data' => $data,
             'fontBase' => $this->fileUrl(resource_path('guides/fonts')).'/',
             'siteUrl' => $this->siteUrl,
+            'contactEmail' => $this->email,
+            'contactWhatsapp' => $this->whatsapp,
             'edition' => Carbon::parse($data['updated'])->locale('fr')->isoFormat('D MMMM YYYY'),
         ])->render();
 
