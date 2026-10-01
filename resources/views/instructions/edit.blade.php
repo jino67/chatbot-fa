@@ -4,7 +4,7 @@
         $formal = \App\Chat\InstructionGenerator::FORMALITY;
         $emojis = \App\Chat\InstructionGenerator::EMOJIS;
         $lengths = \App\Chat\InstructionGenerator::LENGTHS;
-        $langs = \App\Chat\InstructionGenerator::LANGUAGES;
+
         $p = fn ($k) => old($k, $profile[$k] ?? '');
     @endphp
 
@@ -82,14 +82,11 @@
                     <div><x-input-label for="emojis" value="Émojis" /><select id="emojis" name="emojis" class="field">@foreach ($emojis as $k => $l)<option value="{{ $k }}" @selected($p('emojis') === $k)>{{ $l }}</option>@endforeach</select></div>
                     <div><x-input-label for="length" value="Longueur des réponses" /><select id="length" name="length" class="field">@foreach ($lengths as $k => $l)<option value="{{ $k }}" @selected($p('length') === $k)>{{ $l }}</option>@endforeach</select></div>
                 </div>
-                <fieldset>
-                    <legend class="text-sm font-medium text-brand-900">Langues de vos clients</legend>
-                    <div class="mt-2 flex flex-wrap gap-4">
-                        @foreach ($langs as $code => $label)
-                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="languages[]" value="{{ $code }}" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(in_array($code, (array) ($profile['languages'] ?? ['fr'])))> {{ ucfirst($label) }}</label>
-                        @endforeach
-                    </div>
-                </fieldset>
+                {{-- Les langues se règlent dans les paramètres : elles restent envoyées pour garder le profil à jour. --}}
+                @foreach ($bot->spokenLanguages() as $code)
+                    <input type="hidden" name="languages[]" value="{{ $code }}">
+                @endforeach
+                <p class="text-sm text-slate-600">Langues parlées : <strong class="text-brand-950">{{ collect($bot->spokenLanguages())->map(fn ($c) => \App\Support\Languages::name($c))->implode(', ') }}</strong>. <a class="font-medium text-brand-600 underline" href="{{ route('bots.edit', $bot) }}#langues">Modifier dans les paramètres</a>.</p>
 
                 <label class="flex items-start gap-2 rounded-lg bg-accent-50 p-3 text-sm">
                     <input type="checkbox" name="regenerate" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500">

@@ -12,6 +12,8 @@ final class InboundMessage
         public readonly string $type,          // text | image | audio | document | location | other
         public readonly ?string $text,
         public readonly ?string $channelRef = null, // Meta : phone_number_id du destinataire
+        public readonly ?string $mediaRef = null,   // audio : identifiant du media chez Meta, ou URL du media chez Twilio
+        public readonly ?string $mediaMime = null,
     ) {}
 
     /** @return array<string,mixed> */
@@ -30,6 +32,8 @@ final class InboundMessage
             $data['type'],
             $data['text'] ?? null,
             $data['channelRef'] ?? null,
+            $data['mediaRef'] ?? null,
+            $data['mediaMime'] ?? null,
         );
     }
 }

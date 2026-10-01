@@ -43,8 +43,12 @@
 
         <div class="surface flex flex-wrap items-center justify-between gap-4 p-5">
             <div>
-                <p class="text-sm text-slate-600">Encaissé ce mois-ci (FCFA)</p>
-                <p class="font-display text-3xl font-bold text-brand-950">{{ number_format($stats['revenue'], 0, ',', "\u{202F}") }}</p>
+                <p class="text-sm text-slate-600">Encaissé ce mois-ci</p>
+                @forelse ($stats['revenue'] as $code => $total)
+                    <p class="font-display text-3xl font-bold text-brand-950">{{ \App\Support\Currency::format($total, $code) }}</p>
+                @empty
+                    <p class="font-display text-3xl font-bold text-brand-950">0</p>
+                @endforelse
             </div>
             <p class="max-w-md text-sm text-slate-600">Somme des paiements enregistrés depuis le début du mois. Le détail se trouve dans la fiche de chaque espace.</p>
         </div>
@@ -60,7 +64,7 @@
                     <a href="{{ route('admin.workspaces.show', $req->workspace_id) }}" class="flex items-center justify-between gap-3 px-6 py-4 hover:bg-slate-50 {{ ! $loop->last ? 'border-b border-slate-100' : '' }}">
                         <div>
                             <p class="font-medium text-brand-950">{{ $req->workspace?->name }}</p>
-                            <p class="text-sm text-slate-600">souhaite l'offre {{ $req->plan }}, {{ $req->created_at->diffForHumans() }}</p>
+                            <p class="text-sm text-slate-600">souhaite : {{ $req->label() }}, {{ $req->created_at->diffForHumans() }}</p>
                         </div>
                         <x-badge tone="amber">À encaisser</x-badge>
                     </a>

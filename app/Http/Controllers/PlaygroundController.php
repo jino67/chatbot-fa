@@ -30,7 +30,7 @@ class PlaygroundController extends Controller
         $data = $request->validate(['message' => ['required', 'string', 'max:2000']]);
         $conversation = $this->conversation($request, $bot);
 
-        @set_time_limit(120);
+        \App\Support\Runtime::allowLongRequest();
         $reply = $chat->handleUserMessage($conversation, $data['message']);
 
         return response()->json([

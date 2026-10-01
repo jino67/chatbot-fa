@@ -22,6 +22,9 @@
                         <span class="font-medium text-slate-900">{{ $conversation->displayName() }}</span>
                         <x-badge :tone="$tone">{{ $label }}</x-badge>
                         <x-badge>{{ $conversation->channel === 'whatsapp' ? 'WhatsApp' : 'Site web' }}</x-badge>
+                        @foreach ($conversation->openLeads->unique('kind') as $lead)
+                            <x-badge tone="amber">{{ $lead->label() }}</x-badge>
+                        @endforeach
                     </div>
                     <div class="mt-1 truncate text-sm text-slate-500">{{ \Illuminate\Support\Str::limit($conversation->last_text, 110) }}</div>
                 </div>

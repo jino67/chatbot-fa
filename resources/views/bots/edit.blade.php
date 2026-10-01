@@ -5,21 +5,64 @@
 
         <section class="surface space-y-5 p-6">
             <h2 class="font-display text-lg font-bold">Identité</h2>
-            <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                    <x-input-label for="name" value="Nom de l'assistant" />
-                    <input id="name" name="name" class="field" value="{{ old('name', $bot->name) }}" required>
-                </div>
-                <div>
-                    <x-input-label for="language" value="Langue principale" />
-                    <select id="language" name="language" class="field">
-                        @foreach (['fr' => 'Français', 'en' => 'English', 'ar' => 'العربية'] as $code => $label)
-                            <option value="{{ $code }}" @selected(old('language', $bot->language) === $code)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <div>
+                <x-input-label for="name" value="Nom de l'assistant" />
+                <input id="name" name="name" class="field max-w-md" value="{{ old('name', $bot->name) }}" required>
             </div>
             <p class="text-sm text-slate-600">Le ton, le métier et les règles de votre assistant se règlent dans l'onglet <a class="font-medium text-brand-600 underline" href="{{ route('instructions.edit', $bot) }}">Personnalité</a>.</p>
+        </section>
+
+        @php
+            $workspace = auth()->user()->currentWorkspace();
+            $voiceOn = $workspace->hasFeature('voice');
+            $usage = app(\App\Services\UsageService::class);
+        @endphp
+        <section id="langues" class="surface space-y-5 p-6">
+            <div>
+                <h2 class="font-display text-lg font-bold">Langues et voix</h2>
+                <p class="mt-1 text-sm text-slate-600">Choisissez les langues que parle votre assistant, et si vos clients peuvent lui parler avec des messages vocaux. Vous pouvez tout changer à tout moment.</p>
+            </div>
+
+            <x-language-picker :selected="old('languages', $bot->spokenLanguages())" :primary="old('language', $bot->language)" />
+
+            <div class="space-y-4 border-t border-slate-100 pt-5">
+                <h3 class="flex items-center gap-2 font-semibold text-brand-950"><x-illus name="mic" class="h-6 w-6" /> Messages vocaux</h3>
+
+                @unless ($voiceOn)
+                    <p class="rounded-xl bg-accent-50 px-3 py-2 text-sm text-accent-900">Les messages vocaux sont compris dans les offres Pro et Business. <a class="font-semibold underline" href="{{ route('billing.show') }}">Voir les offres</a>. Vos réglages sont conservés et s'appliqueront dès que l'option sera active.</p>
+                @else
+                    <p class="text-sm text-slate-600">Ce mois-ci : <strong class="text-brand-950">{{ number_format($usage->voiceUsed($workspace), 0, ',', "\u{202F}") }}</strong> sur {{ number_format($usage->voiceAllowance($workspace), 0, ',', "\u{202F}") }} messages vocaux (écoutés ou envoyés).</p>
+                @endunless
+
+                <label class="flex items-start gap-3">
+                    <input type="checkbox" name="voice_in" value="1" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('voice_in', $bot->voice_in))>
+                    <span>
+                        <span class="block text-sm font-medium text-brand-900">Comprendre les messages vocaux</span>
+                        <span class="block text-xs text-slate-500">Sur WhatsApp et sur votre site, le vocal du client est transcrit, puis traité comme un message écrit.</span>
+                    </span>
+                </label>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div>
+                        <x-input-label for="voice_out" value="Répondre en audio" />
+                        <select id="voice_out" name="voice_out" class="field">
+                            @foreach (['never' => 'Jamais : texte seulement', 'mirror' => 'Quand le client m\'envoie un vocal', 'always' => 'Toujours, en plus du texte'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('voice_out', $bot->voice_out) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Le texte de la réponse part toujours : l'audio s'y ajoute. Les réponses longues sont dites en résumé.</p>
+                    </div>
+                    <div>
+                        <x-input-label for="voice_style" value="Voix" />
+                        <select id="voice_style" name="voice_style" class="field">
+                            @foreach (['feminine' => 'Féminine', 'masculine' => 'Masculine', 'neutral' => 'Neutre'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('voice_style', $bot->voice_style) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">La voix parle français, anglais et arabe. Dans les autres langues, l'assistant répond par écrit.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section class="surface space-y-5 p-6">

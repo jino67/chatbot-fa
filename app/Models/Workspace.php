@@ -16,13 +16,18 @@ class Workspace extends Model
 
     public const CANCELED = 'canceled';
 
+    /** Essai gratuit terminé : l'assistant ne répond plus tant que le client n'a pas choisi une offre. */
+    public const EXPIRED = 'expired';
+
     protected $fillable = [
-        'name', 'slug', 'plan', 'subscription_status', 'plan_started_at', 'plan_ends_at',
+        'name', 'slug', 'plan', 'currency', 'wa_credit', 'subscription_status', 'plan_started_at', 'plan_ends_at',
         'is_suspended', 'suspended_reason', 'country', 'phone', 'notes', 'settings',
     ];
 
     protected $attributes = [
         'plan' => 'free',
+        'currency' => 'XOF',
+        'wa_credit' => 0,
         'subscription_status' => self::ACTIVE,
         'is_suspended' => false,
     ];
@@ -80,9 +85,24 @@ class Workspace extends Model
         return $this->planModel()?->limit($key) ?? (Plan::FALLBACK_LIMITS[$key] ?? 0);
     }
 
+    /** Une fonction vient de l'offre, ou d'une option achetée à la carte (activée par l'équipe après paiement). */
     public function hasFeature(string $feature): bool
     {
-        return (bool) $this->planModel()?->feature($feature);
+        return (bool) $this->planModel()?->feature($feature) || (bool) (($this->settings['addons'] ?? [])[$feature] ?? false);
+    }
+
+    public function grantAddon(string $key, bool $enabled = true): void
+    {
+        $settings = $this->settings ?? [];
+        $settings['addons'][$key] = $enabled;
+        $this->settings = $settings;
+        $this->save();
+    }
+
+    /** L'option est-elle achetée à la carte (et non incluse dans l'offre) ? */
+    public function hasAddon(string $key): bool
+    {
+        return (bool) (($this->settings['addons'] ?? [])[$key] ?? false);
     }
 
     public function isPaid(): bool
@@ -96,10 +116,26 @@ class Workspace extends Model
         return $this->plan_ends_at ? (int) floor(now()->diffInDays($this->plan_ends_at, false)) : null;
     }
 
+    /** Sur une offre gratuite dont la date de fin n'est pas encore passee. */
+    public function onTrial(): bool
+    {
+        return ! $this->isPaid() && $this->plan_ends_at?->isFuture() === true;
+    }
+
+    /** Offre gratuite dont la date de fin est passee : l'assistant est en pause, les donnees sont conservees. */
+    public function trialExpired(): bool
+    {
+        return ! $this->isPaid() && $this->plan_ends_at?->isPast() === true;
+    }
+
     public function statusLabel(): string
     {
         if ($this->is_suspended) {
             return 'Suspendu';
+        }
+
+        if ($this->trialExpired()) {
+            return 'Essai terminé';
         }
 
         return match ($this->subscription_status) {
@@ -128,5 +164,34 @@ class Workspace extends Model
     public function owner(): ?User
     {
         return $this->users()->where('role', User::CLIENT)->orderBy('id')->first();
+    }
+
+    /**
+     * Comment le propriétaire veut être prévenu d'une demande (page Alertes). Sans choix, l'e-mail est actif : le
+     * tableau de bord, lui, est toujours alimenté.
+     *
+     * Destinataires : une adresse principale (au choix, sinon celle de l'assistant, sinon celle du propriétaire), des
+     * membres de l'équipe (leur adresse e-mail ou leur numéro de profil) et d'autres adresses ou numéros.
+     *
+     * @return array{email:bool,email_to:?string,email_members:list<int>,email_extra:list<string>,whatsapp:bool,whatsapp_number:?string,whatsapp_members:list<int>,whatsapp_extra:list<string>,template:string,reminder_minutes:int,kinds:list<string>,chosen:bool}
+     */
+    public function alertSettings(): array
+    {
+        $saved = (array) (($this->settings ?? [])['alerts'] ?? []);
+
+        return [
+            'email' => (bool) ($saved['email'] ?? true),
+            'email_to' => $saved['email_to'] ?? null,
+            'email_members' => array_map('intval', $saved['email_members'] ?? []),
+            'email_extra' => array_values($saved['email_extra'] ?? []),
+            'whatsapp' => (bool) ($saved['whatsapp'] ?? false),
+            'whatsapp_number' => $saved['whatsapp_number'] ?? null,
+            'whatsapp_members' => array_map('intval', $saved['whatsapp_members'] ?? []),
+            'whatsapp_extra' => array_values($saved['whatsapp_extra'] ?? []),
+            'template' => (string) ($saved['template'] ?? 'alerte_demande'),
+            'reminder_minutes' => (int) ($saved['reminder_minutes'] ?? 30),
+            'kinds' => array_values($saved['kinds'] ?? array_keys(Lead::KINDS)),
+            'chosen' => (bool) ($saved['chosen'] ?? false),
+        ];
     }
 }

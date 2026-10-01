@@ -32,22 +32,28 @@
                     <x-input-label for="tagline" value="Accroche" />
                     <input id="tagline" name="tagline" class="field" value="{{ old('tagline', $plan->tagline) }}" placeholder="Pour une PME qui reçoit beaucoup de demandes">
                 </div>
-                <div class="grid gap-5 sm:grid-cols-4">
-                    <div class="sm:col-span-2">
-                        <x-input-label for="price" value="Prix" />
-                        <input id="price" name="price" type="number" min="0" required class="field" value="{{ old('price', $plan->price ?? 0) }}">
+                <div>
+                    <p class="text-sm font-medium text-slate-700">Prix par période, dans chaque devise</p>
+                    <p class="mt-1 text-xs text-slate-500">Le FCFA sert de référence. Une devise laissée vide n'est pas proposée : le client voit alors le prix en FCFA. Repères : 1 euro = 655,957 FCFA = 491,968 KMF (parités fixes) ; le dollar varie, à revoir de temps en temps.</p>
+                    <div class="mt-3 grid gap-4 sm:grid-cols-4">
+                        @foreach (\App\Support\Currency::ALL as $code => $currency)
+                            <div>
+                                <x-input-label for="price-{{ $code }}" :value="$currency['name'].' ('.$currency['symbol'].')'" />
+                                <input id="price-{{ $code }}" name="prices[{{ $code }}]" type="number" min="0" @required($code === 'XOF') class="field" value="{{ old('prices.'.$code, $plan->priceIn($code)) }}">
+                                <x-input-error :messages="$errors->get('prices.'.$code)" class="mt-1" />
+                            </div>
+                        @endforeach
                     </div>
-                    <div>
-                        <x-input-label for="currency" value="Devise" />
-                        <select id="currency" name="currency" class="field">
-                            @foreach (['XOF' => 'FCFA (XOF)', 'KMF' => 'KMF', 'EUR' => 'Euro', 'USD' => 'Dollar'] as $code => $label)
-                                <option value="{{ $code }}" @selected(old('currency', $plan->currency) === $code)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                </div>
+                <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <x-input-label for="period_months" value="Période (mois)" />
                         <input id="period_months" name="period_months" type="number" min="1" max="12" required class="field" value="{{ old('period_months', $plan->period_months ?? 1) }}">
+                    </div>
+                    <div>
+                        <x-input-label for="trial_days" value="Durée de l'essai gratuit (jours)" />
+                        <input id="trial_days" name="trial_days" type="number" min="1" max="365" class="field" value="{{ old('trial_days', $plan->trial_days) }}" placeholder="Vide : sans limite">
+                        <p class="mt-1 text-xs text-slate-500">Pour l'offre gratuite : après ce délai, l'assistant se met en pause jusqu'au choix d'une offre payante. Laissez vide pour une offre payante.</p>
                     </div>
                 </div>
             </section>

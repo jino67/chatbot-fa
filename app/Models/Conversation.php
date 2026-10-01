@@ -63,6 +63,17 @@ class Conversation extends Model
         return $this->hasMany(Message::class);
     }
 
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    /** Demandes encore à traiter liées à cette conversation (les « étiquettes » affichées dans la boîte de réception). */
+    public function openLeads(): HasMany
+    {
+        return $this->leads()->whereIn('status', [Lead::NEW, Lead::TAKEN]);
+    }
+
     public function isHandledByHuman(): bool
     {
         return in_array($this->status, [self::NEEDS_HUMAN, self::HUMAN], true);

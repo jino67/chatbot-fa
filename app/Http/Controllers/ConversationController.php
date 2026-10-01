@@ -9,6 +9,7 @@ use App\Channels\WhatsApp\TemplateManager;
 use App\Models\Bot;
 use App\Models\Channel;
 use App\Models\Conversation;
+use App\Models\Lead;
 use App\Models\Message;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class ConversationController extends Controller
 
         $conversations = $bot->conversations()
             ->real()
+            ->with('openLeads')
             ->when($status, fn ($q) => $q->where('status', $status))
             ->addSelect(['last_text' => Message::select('content')
                 ->whereColumn('conversation_id', 'conversations.id')
@@ -105,6 +107,9 @@ class ConversationController extends Controller
             'meta' => ['agent' => $request->user()->name],
         ]);
         $conversation->forceFill(['status' => Conversation::HUMAN, 'last_message_at' => now()])->save();
+
+        // Répondre à un client, c'est prendre en charge ses demandes : les rappels s'arrêtent.
+        $conversation->leads()->where('status', Lead::NEW)->update(['status' => Lead::TAKEN, 'assigned_to' => $request->user()->id, 'taken_at' => now()]);
 
         if ($conversation->channel === 'whatsapp') {
             $channel = Channel::where('bot_id', $bot->id)

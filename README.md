@@ -12,8 +12,13 @@ Plateforme d'assistants conversationnels pour entreprises, à la manière d'un B
 - Widget web en une ligne de code (Shadow DOM, liste blanche de domaines).
 - WhatsApp : adaptateurs Meta et Twilio derrière une interface unique, signatures vérifiées, doublons ignorés.
 - Transfert vers un humain et boîte de réception.
+- **Demandes à traiter** (commandes à confirmer, rendez-vous, devis, personne demandée) et **alertes** au choix du propriétaire : e-mail, WhatsApp, tableau de bord, rappels.
+- **Langues** multiples par assistant, dont des langues locales avec leur niveau de fiabilité ([docs/LANGUES.md](docs/LANGUES.md)).
+- **Messages vocaux** : écoute et réponses en audio (WhatsApp Meta et Twilio, widget), selon l'offre.
+- **Import des discussions WhatsApp** : l'assistant apprend le style et les réponses habituelles du client (option).
+- **API pour développeurs** (`/developpeurs`) et widget riche (micro, écoute, copie, avis, langue, nouvelle conversation).
 - Analytique et liste des « questions sans réponse ».
-- Back-office de l'équipe technique pour activer les canaux.
+- Back-office de l'équipe technique : canaux, **consommation en temps réel** de chaque client, portefeuille Twilio, offres en plusieurs devises.
 
 ## Démarrage local (Windows, PHP 8.2, Node 20)
 
@@ -52,11 +57,13 @@ Le serveur intégré est **mono-processus** : une requête à la fois. Une répo
 
 | Commande | Rôle |
 |---|---|
-| `php artisan test` | Lance les 166 tests (aucun appel réseau réel) |
+| `php artisan test` | Lance la suite complète (aucun appel réseau réel ; les tests du dialogue de la démonstration tournent sous Node) |
 | `php artisan platform:ask 1 "Vous livrez à Bobo ?"` | Pose une question à l'assistant n° 1 et affiche extraits, score, latence |
 | `php artisan platform:reindex` | Recalcule les vecteurs après un changement de modèle d'embeddings |
 | `php artisan platform:make-admin email@exemple.com` | Crée un compte de l'équipe technique |
 | `php artisan platform:resync-due` | Relance les sites à mise à jour automatique (planifié toutes les heures) |
+| `php artisan leads:remind` | Relance le propriétaire pour les demandes sans réponse (planifié toutes les 10 minutes) |
+| `php artisan platform:check-wallets` | Alerte quand le solde Twilio est bas ou qu'un client approche son volume (planifié toutes les heures) |
 | `php artisan queue:work` | Worker de la file (obligatoire si `QUEUE_CONNECTION` n'est pas `sync`) |
 
 ## Installer le widget sur un site
@@ -75,7 +82,9 @@ Renseigner les domaines autorisés dans *Réglages* de l'assistant avant la mise
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Schémas, modèle de données, décisions, sécurité, évolution |
 | [docs/WHATSAPP.md](docs/WHATSAPP.md) | Meta ou Twilio, procédure d'activation par l'équipe technique, dépannage |
 | [docs/COUTS.md](docs/COUTS.md) | Modèle de coûts et fixation des offres |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Mise en production |
+| [docs/LANGUES.md](docs/LANGUES.md) | Langues, niveaux de fiabilité, voix, modèles libres pour les langues locales |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Mise en production (hébergement mutualisé, e-mail, tâches planifiées) |
+| [docs/SEO.md](docs/SEO.md) | Référencement : Search Console, pages de contenu, plan du site, ajout d'une page |
 | [docs/RECHERCHE.md](docs/RECHERCHE.md) | Recherche web, idées d'organisation, sources |
 
 ## Structure
@@ -86,6 +95,11 @@ app/Ingestion/   extracteurs, crawler sécurisé, découpage, pipeline
 app/Retrieval/   recherche hybride
 app/Chat/        prompt et service de conversation
 app/Channels/    WhatsApp : interface, adaptateurs Meta et Twilio, traitement entrant
+app/Speech/      voix : écoute et synthèse derrière une interface (OpenAI, serveur libre, mode hors ligne)
+app/Leads/       demandes à traiter et alertes du propriétaire
+app/Import/      import des discussions WhatsApp (lecture, anonymisation, style)
+app/Support/SeoPages.php  pages de contenu du site public (config/seo.php)
+resources/js/playground/  démonstration interactive de la page d'accueil (dialogue local)
 public/widget/   widget embarquable
 tests/           tests unitaires et fonctionnels
 ```

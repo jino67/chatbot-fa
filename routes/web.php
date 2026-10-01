@@ -1,19 +1,27 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\ChannelController;
+use App\Http\Controllers\ChatImportController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\DemoController;
+use App\Http\Controllers\DevelopersController;
 use App\Http\Controllers\FacebookController;
 use App\Http\Controllers\InstructionController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PlaygroundController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PwaController;
+use App\Http\Controllers\SeoPageController;
 use App\Http\Controllers\SourceController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
@@ -26,10 +34,31 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', LandingController::class)->name('home');
+Route::get('/developpeurs', DevelopersController::class)->name('developers');
 Route::get('/conditions', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/confidentialite', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/robots.txt', [LandingController::class, 'robots']);
+Route::get('/llms.txt', [LandingController::class, 'llms']);
+
+// Pages de contenu pour le référencement : une route par page de config/seo.php, plus la page « Ressources ».
+Route::get('/ressources', [SeoPageController::class, 'hub'])->name('seo.hub');
+foreach ((array) config('seo.pages', []) as $key => $page) {
+    Route::get($page['path'], [SeoPageController::class, 'show'])->defaults('key', $key)->name('seo.'.$key);
+}
+Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+
+// Memorise la devise choisie sur les pages de tarifs (appele par le selecteur, sans rechargement de la page).
+Route::get('/devise/{code}', function (Illuminate\Http\Request $request, string $code) {
+    $code = strtoupper($code);
+    abort_unless(App\Support\Currency::isValid($code), 404);
+    App\Support\Currency::remember($request, $code);
+
+    return response()->noContent();
+})->where('code', '[A-Za-z]{3}')->name('currency.set');
 Route::get('/sitemap.xml', [LandingController::class, 'sitemap']);
+
+// Reponse vocale que Twilio vient chercher : adresse signee (chemin relatif), valable deux heures.
+Route::get('/media/voice/{name}', [MediaController::class, 'voice'])->middleware('signed:relative')->where('name', '[A-Za-z0-9]{40}\.(ogg|mp3|wav)')->name('media.voice');
 
 // Page de demonstration partageable : le widget d'un assistant sur une page vierge.
 Route::get('/demo/{publicKey}', [DemoController::class, 'show'])->name('demo');
@@ -48,6 +77,19 @@ Route::prefix('webhooks/whatsapp')->group(function () {
 */
 Route::middleware(['auth', 'workspace'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Cles d'API de l'offre developpeurs.
+    Route::get('developers/keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
+    Route::post('developers/keys', [ApiKeyController::class, 'store'])->name('api-keys.store');
+    Route::delete('developers/keys/{apiKey}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
+
+    // Demandes à traiter et alertes du propriétaire
+    Route::get('demandes', [LeadController::class, 'index'])->name('leads.index');
+    Route::patch('demandes/{lead}', [LeadController::class, 'update'])->name('leads.update');
+    Route::get('alertes', [AlertController::class, 'edit'])->name('alerts.edit');
+    Route::put('alertes', [AlertController::class, 'update'])->name('alerts.update');
+    Route::match(['post', 'put'], 'alertes/modele', [AlertController::class, 'template'])->name('alerts.template');
+    Route::post('import/option', [ChatImportController::class, 'requestOption'])->name('import.option');
 
     Route::resource('bots', BotController::class)->except(['show']);
 
@@ -83,6 +125,13 @@ Route::middleware(['auth', 'workspace'])->group(function () {
         Route::get('channels', [ChannelController::class, 'show'])->name('channels.show');
         Route::post('channels/whatsapp-request', [ChannelController::class, 'requestWhatsApp'])->name('channels.whatsapp-request');
 
+        Route::get('import', [ChatImportController::class, 'show'])->name('import.show');
+        Route::post('import', [ChatImportController::class, 'upload'])->name('import.upload');
+        Route::post('import/analyse', [ChatImportController::class, 'analyze'])->name('import.analyze');
+        Route::post('import/valider', [ChatImportController::class, 'commit'])->name('import.commit');
+        Route::delete('import', [ChatImportController::class, 'cancel'])->name('import.cancel');
+        Route::put('import/style', [ChatImportController::class, 'style'])->name('import.style');
+
         Route::get('templates', [TemplateController::class, 'index'])->name('templates.index');
         Route::post('templates', [TemplateController::class, 'store'])->name('templates.store');
         Route::post('templates/sync', [TemplateController::class, 'sync'])->name('templates.sync');
@@ -100,6 +149,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/app/installed', [PwaController::class, 'installed'])->name('pwa.installed');
+    Route::post('/profile/password-link', [ProfileController::class, 'sendPasswordLink'])->middleware('throttle:5,1')->name('profile.password-link');
+    Route::post('/profile/sessions/logout-others', [ProfileController::class, 'logoutOthers'])->middleware('throttle:5,1')->name('profile.logout-others');
 });
 
 /*
@@ -120,6 +172,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::post('workspaces/{workspace}/suspend', [Admin\WorkspaceController::class, 'suspend'])->name('workspaces.suspend');
     Route::put('workspaces/{workspace}/plan', [Admin\WorkspaceController::class, 'plan'])->name('workspaces.plan');
     Route::post('workspaces/{workspace}/payments', [Admin\PaymentController::class, 'store'])->name('payments.store');
+    Route::post('workspaces/{workspace}/wallet', [Admin\WalletController::class, 'topup'])->name('wallet.topup');
+    Route::post('workspaces/{workspace}/addons', [Admin\WorkspaceController::class, 'addon'])->name('workspaces.addon');
     Route::post('workspaces/{workspace}/users', [Admin\WorkspaceUserController::class, 'store'])->name('workspace-users.store');
     Route::post('users/{user}/reset', [Admin\WorkspaceUserController::class, 'reset'])->name('users.reset');
     Route::post('users/{user}/toggle', [Admin\WorkspaceUserController::class, 'toggle'])->name('users.toggle');
@@ -143,6 +197,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('plans/{plan}', [Admin\PlanController::class, 'update'])->name('plans.update');
         Route::delete('plans/{plan}', [Admin\PlanController::class, 'destroy'])->name('plans.destroy');
 
+        Route::get('consumption', [Admin\ConsumptionController::class, 'index'])->name('consumption.index');
+        Route::get('consumption/live', [Admin\ConsumptionController::class, 'live'])->name('consumption.live');
+        Route::post('consumption/wallet', [Admin\ConsumptionController::class, 'refreshWallet'])->name('consumption.wallet');
         Route::get('ai', [Admin\ProviderController::class, 'index'])->name('ai.index');
         Route::post('ai/providers', [Admin\ProviderController::class, 'store'])->name('ai.store');
         Route::put('ai/providers/{provider}', [Admin\ProviderController::class, 'update'])->name('ai.update');
@@ -155,6 +212,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/voice-test', [Admin\SettingsController::class, 'voiceTest'])->name('settings.voice-test');
 
         Route::get('team', [Admin\TeamController::class, 'index'])->name('team.index');
         Route::post('team', [Admin\TeamController::class, 'store'])->name('team.store');

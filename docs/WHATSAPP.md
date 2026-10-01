@@ -4,6 +4,14 @@ Ce document est destiné à l'**équipe technique** qui active WhatsApp pour un 
 
 > Les écrans et les règles de Meta évoluent souvent. Les faits ci-dessous viennent des documentations consultées le 29 septembre 2026 (liste dans [RECHERCHE.md](RECHERCHE.md)). Vérifiez toujours l'écran ou la page officielle avant une activation.
 
+## 0. Qui paie les messages ?
+
+**La plateforme, pas le client.** Les messages WhatsApp passent par les comptes de la plateforme (compte Meta Cloud API, ou compte Twilio approvisionné par un portefeuille) : le client n'a ni carte bancaire à saisir, ni compte à ouvrir chez Meta ou Twilio. Chaque offre inclut un **volume de messages par mois** (`whatsapp_messages_per_month`) ; au-delà, le client recharge par Mobile Money (lots de 1 000 messages, enregistrés par l'équipe) et le crédit acheté (`workspaces.wa_credit`) est consommé.
+
+- Chaque message est enregistré dans `usage_events` avec son coût estimé (frais de l'intermédiaire Twilio + tarif Meta selon la catégorie). La page **Consommation** du super admin montre en temps réel ce que consomme chaque client, sa marge et le solde du portefeuille Twilio.
+- Les identifiants de la plateforme se règlent dans **Administration, Paramètres, WhatsApp** (jeton Meta et identifiant du compte WhatsApp Business, ou SID et jeton Twilio). Un canal sans identifiants propres utilise ceux de la plateforme ; un canal qui en a (cas d'un client qui impose son propre compte) les utilise et supporte lui-même ses frais.
+- **Meta direct est le moins cher** (aucun frais d'intermédiaire) ; Twilio ajoute environ 0,005 $ par message entrant et sortant, mais démarre plus vite. La décision par cas est plus bas.
+
 ## 1. Comment c'est branché dans le code
 
 ```
@@ -24,7 +32,7 @@ Client WhatsApp  <->  Meta  ou  Twilio  <->  /webhooks/whatsapp/...  ->  file d'
 
 | | **Meta Cloud API** | **Twilio** |
 |---|---|---|
-| Marge par message | Aucune | 0,005 USD par message reçu et par message envoyé, en plus des tarifs Meta |
+| Surcoût par message (supporté par la plateforme) | Aucun | 0,005 USD par message reçu et par message envoyé, en plus des tarifs Meta |
 | Webhooks | Un seul pour tous les clients | Un par client (à créer côté Twilio) |
 | Délai de démarrage | Dépend de la vérification Meta | Court avec le bac à sable ; sinon même vérification Meta |
 | Dépendances | Meta | Meta **et** Twilio |
@@ -38,7 +46,7 @@ Client WhatsApp  <->  Meta  ou  Twilio  <->  /webhooks/whatsapp/...  ->  file d'
 | Situation | Choix |
 |---|---|
 | Cas général : le client a un numéro, une entreprise identifiable | **Meta direct** |
-| Volume élevé ou client sensible au prix | **Meta direct** (la marge Twilio pèse vite : 1 000 conversations de 10 messages représentent environ 50 USD par mois de marge) |
+| Volume élevé | **Meta direct** (les messages étant payés par la plateforme, le surcoût Twilio se retire de la marge : 1 000 conversations de 10 messages coûtent environ 50 USD par mois de plus) |
 | Démonstration ou essai le jour même | **Twilio, bac à sable** |
 | Le client a déjà un compte Twilio ou impose Twilio | **Twilio** |
 | Le numéro ne peut pas être enregistré chez Meta en direct (problème de vérification, pays) | **Twilio** en secours, à valider cas par cas |
@@ -73,7 +81,7 @@ Durée : de quelques jours à quelques semaines selon la vérification.
 - [ ] Un portfolio Meta Business (ancien « Business Manager »), idéalement **vérifié** (documents d'enregistrement de l'entreprise) : sans vérification, plafonds d'envoi plus bas et nom d'affichage limité.
 - [ ] Un **numéro** qui peut recevoir un SMS ou un appel vocal pour la vérification, et **qui n'est pas déjà enregistré** sur WhatsApp (application personnelle ou Business). Sinon : supprimer le compte WhatsApp de ce numéro (perte de l'historique) ou étudier la coexistence (hors V1).
 - [ ] Un **nom d'affichage** conforme aux règles de Meta (lié au nom de l'entreprise).
-- [ ] Un **moyen de paiement** ajouté au compte WhatsApp Business du client (c'est lui qui paie ses messages).
+- [ ] Rien à payer pour le client : le **moyen de paiement** est celui du compte WhatsApp Business de la plateforme. (Exception : un client qui impose son propre compte Meta y ajoute son moyen de paiement et renseigne ses propres identifiants sur le canal ; il supporte alors ses frais.)
 
 ### 4.2 Étapes
 

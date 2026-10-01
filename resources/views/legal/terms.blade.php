@@ -1,4 +1,4 @@
-<x-legal-layout title="Conditions d'utilisation">
+<x-legal-layout title="Conditions d'utilisation" description="Les conditions d'utilisation du service : compte, contenus, WhatsApp, offres, paiement par Mobile Money, résiliation et responsabilités.">
     <p class="text-sm text-slate-500">Dernière mise à jour : {{ $legal['updated'] }}</p>
 
     <p>

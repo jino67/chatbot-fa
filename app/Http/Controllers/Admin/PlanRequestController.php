@@ -31,6 +31,11 @@ class PlanRequestController extends Controller
 
         $planRequest->update($data + ['handled_by' => $request->user()->id]);
 
+        // Une option à la carte se donne dès que l'équipe approuve la demande (après réception du paiement).
+        if ($data['status'] === PlanRequest::APPROVED && ($key = $planRequest->addonKey())) {
+            $planRequest->workspace?->grantAddon($key);
+        }
+
         return back()->with('status', 'Demande mise à jour.');
     }
 }

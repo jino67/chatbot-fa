@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Support\Currency;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,10 +41,16 @@ class RegisteredUserController extends Controller
         ]);
 
         // Chaque entreprise cliente dispose de son espace (workspace) : c'est l'unite d'isolation des donnees.
+        // L'offre par defaut est gratuite et limitee dans le temps : l'essai demarre a l'inscription.
+        $plan = Plan::default();
+
         $workspace = Workspace::create([
             'name' => $request->company,
-            'plan' => Plan::default()?->slug ?? 'free',
+            'plan' => $plan?->slug ?? 'free',
+            'currency' => Currency::current(),
+            'subscription_status' => $plan?->hasTrial() ? Workspace::TRIALING : Workspace::ACTIVE,
             'plan_started_at' => now(),
+            'plan_ends_at' => $plan?->trialEndsAt(),
         ]);
 
         $user = User::create([

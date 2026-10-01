@@ -33,6 +33,9 @@
         <!-- IA hors ligne : aucun appel reseau reel, resultats deterministes. -->
         <env name="PLATFORM_LLM" value="fake"/>
         <env name="PLATFORM_EMBEDDINGS" value="hashing"/>
+        <env name="PLATFORM_SPEECH" value="fake"/>
+        <!-- Seuil des embeddings locaux : independant du .env du poste (0.35 sert aux vrais embeddings). -->
+        <env name="PLATFORM_MIN_SCORE" value="0.15"/>
         <env name="ANTHROPIC_API_KEY" value=""/>
         <env name="VOYAGE_API_KEY" value=""/>
         <env name="OPENAI_API_KEY" value=""/>

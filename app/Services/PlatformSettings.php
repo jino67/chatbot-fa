@@ -93,8 +93,8 @@ class PlatformSettings
             'name' => (string) $this->get('brand.name', config('brand.name')),
             'tagline' => (string) $this->get('brand.tagline', config('brand.tagline')),
             'url' => (string) $this->get('brand.url', config('app.url')),
-            'whatsapp' => preg_replace('/\D/', '', (string) $this->get('brand.whatsapp', '')),
-            'email' => (string) $this->get('brand.email', ''),
+            'whatsapp' => preg_replace('/\D/', '', (string) $this->get('brand.whatsapp', config('brand.whatsapp', ''))),
+            'email' => (string) $this->get('brand.email', config('brand.email', '')),
         ];
     }
 }

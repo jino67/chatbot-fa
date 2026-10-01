@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Plan;
 use App\Models\Workspace;
+use App\Services\LandingBot;
+use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,7 +25,7 @@ class PlanController extends Controller
 
     public function create()
     {
-        return view('admin.plans.form', ['plan' => new Plan(['currency' => 'XOF', 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'is_public' => true, 'sort' => 10])]);
+        return view('admin.plans.form', ['plan' => new Plan(['prices' => ['XOF' => 0], 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'is_public' => true, 'sort' => 10])]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -33,6 +35,7 @@ class PlanController extends Controller
         $this->onlyOneDefault($plan);
 
         AuditLog::record('plan.created', $plan->slug);
+        $this->refreshLandingBot();
 
         return redirect()->route('admin.plans.index')->with('status', "Offre « {$plan->name} » créée.");
     }
@@ -47,7 +50,8 @@ class PlanController extends Controller
         $plan->update($this->validated($request, $plan));
         $this->onlyOneDefault($plan);
 
-        AuditLog::record('plan.updated', $plan->slug, ['price' => $plan->price]);
+        AuditLog::record('plan.updated', $plan->slug, ['prices' => $plan->prices]);
+        $this->refreshLandingBot();
 
         return redirect()->route('admin.plans.index')->with('status', "Offre « {$plan->name} » enregistrée. Les changements s'appliquent immédiatement aux espaces concernés.");
     }
@@ -63,8 +67,24 @@ class PlanController extends Controller
 
         $plan->delete();
         AuditLog::record('plan.deleted', $plan->slug);
+        $this->refreshLandingBot();
 
         return back()->with('status', 'Offre supprimée.');
+    }
+
+    /** La grille a changé : l'assistant de la page d'accueil la relit une fois la réponse envoyée (sans ralentir l'enregistrement). */
+    private function refreshLandingBot(): void
+    {
+        app()->terminating(function () {
+            try {
+                $landing = app(LandingBot::class);
+                if ($landing->exists()) {
+                    $landing->sync();
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        });
     }
 
     /** @return array<string,mixed> */
@@ -73,15 +93,22 @@ class PlanController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:60'],
             'tagline' => ['nullable', 'string', 'max:120'],
-            'price' => ['required', 'integer', 'min:0', 'max:100000000'],
-            'currency' => ['required', Rule::in(['XOF', 'KMF', 'EUR', 'USD'])],
+            'prices' => ['required', 'array'],
+            // Le prix en FCFA est la reference ; les autres devises sont facultatives (repli sur le FCFA).
+            'prices.XOF' => ['required', 'integer', 'min:0', 'max:100000000'],
             'period_months' => ['required', 'integer', 'min:1', 'max:12'],
+            'trial_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'sort' => ['required', 'integer', 'min:0', 'max:999'],
             'limits' => ['required', 'array'],
             'features' => ['nullable', 'array'],
         ];
+        foreach (array_diff(Currency::codes(), ['XOF']) as $code) {
+            $rules['prices.'.$code] = ['nullable', 'integer', 'min:0', 'max:100000000'];
+        }
         foreach (Plan::limitFields() as $field) {
-            $rules['limits.'.$field['key']] = ['required', 'integer', 'min:0', 'max:10000000'];
+            // Les quotas ajoutes apres coup (WhatsApp, vocal) sont facultatifs : absents, ils valent 0.
+            $optional = in_array($field['key'], ['whatsapp_messages_per_month', 'voice_per_month'], true);
+            $rules['limits.'.$field['key']] = [$optional ? 'nullable' : 'required', 'integer', 'min:0', 'max:10000000'];
         }
         if (! $plan) {
             $rules['slug'] = ['required', 'string', 'max:30', 'regex:/^[a-z0-9_-]+$/', 'unique:plans,slug'];
@@ -89,20 +116,23 @@ class PlanController extends Controller
 
         $data = $request->validate($rules);
 
-        return array_filter([
-            'slug' => $data['slug'] ?? null,
+        $payload = [
             'name' => $data['name'],
             'tagline' => $data['tagline'] ?? null,
-            'price' => $data['price'],
-            'currency' => $data['currency'],
+            'prices' => collect(Currency::codes())
+                ->filter(fn ($code) => isset($data['prices'][$code]))
+                ->mapWithKeys(fn ($code) => [$code => (int) $data['prices'][$code]])->all(),
             'period_months' => $data['period_months'],
+            'trial_days' => $data['trial_days'] ?? null,
             'sort' => $data['sort'],
             'limits' => array_map('intval', $data['limits']),
             'features' => collect(Plan::featureFields())->mapWithKeys(fn ($f) => [$f['key'] => $request->boolean('features.'.$f['key'])])->all(),
             'is_public' => $request->boolean('is_public'),
             'is_default' => $request->boolean('is_default'),
             'is_highlighted' => $request->boolean('is_highlighted'),
-        ], fn ($v) => $v !== null);
+        ];
+
+        return isset($data['slug']) ? ['slug' => $data['slug']] + $payload : $payload;
     }
 
     private function onlyOneDefault(Plan $plan): void

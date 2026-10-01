@@ -16,30 +16,37 @@
                 <p class="text-sm text-slate-600">Offre actuelle</p>
                 <p class="mt-1 flex items-center gap-3 font-display text-3xl font-bold text-brand-950">
                     {{ $plan?->name ?? 'Gratuite' }}
-                    @if ($status === 'past_due') <x-badge tone="red">À renouveler</x-badge>
+                    @if ($workspace->trialExpired()) <x-badge tone="red">Essai terminé</x-badge>
+                    @elseif ($workspace->onTrial()) <x-badge tone="amber">Essai gratuit</x-badge>
+                    @elseif ($status === 'past_due') <x-badge tone="red">À renouveler</x-badge>
                     @elseif ($status === 'active' && $ends) <x-badge tone="green">Active</x-badge>
                     @elseif ($plan?->isFree()) <x-badge>Gratuite</x-badge> @endif
                 </p>
                 <p class="mt-2 text-sm text-slate-600">
-                    @if ($ends)
+                    @if ($workspace->trialExpired())
+                        Votre essai gratuit s'est terminé le {{ $ends->format('d/m/Y') }}. Votre assistant est en pause : choisissez une offre ci-dessous pour le réactiver. Vos assistants et vos données sont conservés.
+                    @elseif ($workspace->onTrial())
+                        Votre essai gratuit dure jusqu'au {{ $ends->format('d/m/Y') }} ({{ $ends->diffForHumans() }}). Choisissez une offre avant cette date pour ne pas interrompre votre assistant.
+                    @elseif ($ends)
                         @if ($ends->isPast())
                             Échue depuis le {{ $ends->format('d/m/Y') }}. Renouvelez avant le {{ $ends->copy()->addDays((int) config('platform.billing.grace_days'))->format('d/m/Y') }} pour garder vos avantages.
                         @else
                             Valable jusqu'au {{ $ends->format('d/m/Y') }} ({{ $ends->diffForHumans() }}).
                         @endif
-                    @elseif ($plan?->isFree())
-                        L'offre gratuite n'a pas de date de fin. Passez à une offre payante quand votre activité le demande.
                     @endif
                 </p>
             </div>
-            <div class="grid gap-4 sm:grid-cols-3">
-                @foreach ([['Réponses ce mois-ci', 'messages'], ['Assistants', 'bots'], ['Sources', 'sources']] as [$label, $key])
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach (array_values(array_filter([['Réponses ce mois-ci', 'messages'], $workspace->hasFeature('whatsapp') ? ['Messages WhatsApp', 'whatsapp'] : null, $workspace->hasFeature('voice') ? ['Messages vocaux', 'voice'] : null, ['Assistants', 'bots'], ['Sources', 'sources']])) as [$label, $key])
                     @php $pct = min(100, (int) round(100 * $usage[$key]['used'] / max(1, $usage[$key]['limit']))); @endphp
                     <div>
                         <p class="text-sm text-slate-600">{{ $label }}</p>
                         <p class="font-display text-xl font-bold text-brand-950">{{ $usage[$key]['used'] }} <span class="text-sm font-normal text-slate-500">/ {{ $usage[$key]['limit'] }}</span></p>
+                        @if ($key === 'whatsapp' && $usage[$key]['credit'] > 0)
+                            <p class="mt-0.5 text-xs font-medium text-accent-700">+ {{ number_format($usage[$key]['credit'], 0, ',', "\u{202F}") }} messages de crédit</p>
+                        @endif
                         <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full rounded-full {{ $pct >= 90 ? 'bg-red-500' : 'bg-brand-500' }}" style="width: {{ $pct }}%"></div>
+                            <div class="bar-fill h-full rounded-full {{ $pct >= 90 ? 'bg-red-500' : 'bg-brand-500' }}" style="width: {{ $pct }}%"></div>
                         </div>
                     </div>
                 @endforeach
@@ -48,14 +55,17 @@
 
         @if ($pending)
             <div class="rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 text-sm text-brand-900">
-                Demande en cours pour l'offre <strong>{{ $plans->firstWhere('slug', $pending->plan)?->name ?? $pending->plan }}</strong>. Payez selon les indications ci-dessous : l'offre est activée dès réception de votre paiement.
+                Demande en cours : <strong>{{ $pending->label() }}</strong>. Payez selon les indications ci-dessous : elle est activée dès réception de votre paiement.
             </div>
         @endif
 
         {{-- Offres --}}
         <section>
-            <h2 class="font-display text-xl font-bold">Choisir une offre</h2>
-            <div class="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="font-display text-xl font-bold">Choisir une offre</h2>
+                <x-currency-switcher />
+            </div>
+            <div class="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($plans as $p)
                     @php $current = $p->slug === $workspace->plan; @endphp
                     <article class="surface flex flex-col p-6 {{ $p->is_highlighted ? 'ring-2 ring-brand-500' : '' }}">
@@ -65,7 +75,7 @@
                         </div>
                         <p class="mt-1 text-sm text-slate-600">{{ $p->tagline }}</p>
                         <p class="mt-4 font-display text-3xl font-bold text-brand-950">{{ $p->formattedPrice() }}</p>
-                        @unless ($p->isFree()) <p class="text-xs text-slate-500">par {{ $p->period_months === 1 ? 'mois' : $p->period_months.' mois' }}</p> @endunless
+                        @if ($p->periodLabel() !== '') <p class="text-xs text-slate-500">{{ $p->periodLabel() }}</p> @endif
 
                         <ul class="mt-4 flex-1 space-y-1.5 text-sm text-slate-700">
                             <li>{{ $p->limit('bots') }} assistant(s)</li>
@@ -81,7 +91,7 @@
                             @if ($current)
                                 <span class="btn-outline w-full cursor-default opacity-70">Offre actuelle</span>
                             @elseif ($p->isFree())
-                                <span class="block text-center text-xs text-slate-500">Retour automatique en fin d'abonnement</span>
+                                <span class="block text-center text-xs text-slate-500">{{ $p->hasTrial() ? 'Offre d\'essai de '.$p->trial_days.' jours' : 'Offre gratuite' }}</span>
                             @else
                                 <form method="POST" action="{{ route('billing.request') }}">
                                     @csrf <input type="hidden" name="plan" value="{{ $p->slug }}">

@@ -5,6 +5,15 @@
 
     RewriteEngine On
 
+    # Adresse unique du site (referencement : une seule adresse par page) : https, sans « www ».
+    # Ces regles ne s'appliquent qu'au domaine kouma.site ; en local rien ne change.
+    RewriteCond %{HTTP_HOST} ^www\.kouma\.site$ [NC]
+    RewriteRule ^ https://kouma.site%{REQUEST_URI} [L,R=301]
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP_HOST} ^kouma\.site$ [NC]
+    RewriteRule ^ https://kouma.site%{REQUEST_URI} [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -22,4 +31,26 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# Performance (Core Web Vitals, donc referencement) : compression et cache long pour les fichiers compiles.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/manifest+json
+</IfModule>
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+    # Fichiers compiles par Vite : leur nom contient l'empreinte du contenu (app-uFmX8I1O.js), donc cache d'un an.
+    # Le widget (public/widget/widget.js) n'a pas d'empreinte : il n'est pas concerne et reste à jour chez les clients.
+    <FilesMatch "-[A-Za-z0-9_-]{8}\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    # Le service worker et le manifeste se renouvellent vite
+    <FilesMatch "^(sw\.js|offline\.html)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
 </IfModule>

@@ -1,27 +1,16 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-slate-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
-    </div>
+<x-guest-layout title="Confirmer votre mot de passe | {{ $brand['name'] }}">
+    <h1 class="font-display text-3xl font-bold text-brand-950">Une confirmation, par sécurité</h1>
+    <p class="mt-2 text-slate-600">Cette zone est protégée. Saisissez votre mot de passe pour continuer.</p>
 
-    <form method="POST" action="{{ route('password.confirm') }}">
+    <form method="POST" action="{{ route('password.confirm') }}" class="mt-8 space-y-5">
         @csrf
 
-        <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
+        <x-password-input id="password" name="password" label="Mot de passe" autocomplete="current-password" :required="true" :messages="$errors->get('password')" />
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
-        </div>
+        <button class="btn-primary w-full py-3 text-base">Confirmer</button>
     </form>
+
+    <p class="mt-8 text-sm text-slate-600">
+        <a href="{{ route('password.request') }}" class="font-semibold text-brand-600 hover:text-brand-800">Mot de passe oublié ?</a>
+    </p>
 </x-guest-layout>

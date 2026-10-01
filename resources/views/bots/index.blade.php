@@ -13,7 +13,7 @@
                 <a href="{{ route('sources.index', $bot) }}" class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50">
                     <div class="min-w-0">
                         <p class="truncate font-semibold text-brand-950">{{ $bot->name }}</p>
-                        <p class="text-sm text-slate-600">{{ $bot->sources_count }} source(s), langue : {{ strtoupper($bot->language) }}@if ($bot->sector), {{ config('sectors.'.$bot->sector.'.label') }}@endif</p>
+                        <p class="text-sm text-slate-600">{{ $bot->sources_count }} source(s), {{ count($bot->spokenLanguages()) > 1 ? 'langues' : 'langue' }} : {{ collect($bot->spokenLanguages())->map(fn ($c) => \App\Support\Languages::name($c))->implode(', ') }}@if ($bot->sector), {{ config('sectors.'.$bot->sector.'.label') }}@endif</p>
                     </div>
                     @if ($bot->is_active) <x-badge tone="green">Actif</x-badge> @else <x-badge tone="amber">En pause</x-badge> @endif
                 </a>

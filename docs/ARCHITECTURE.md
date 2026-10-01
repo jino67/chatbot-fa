@@ -108,6 +108,7 @@ L'ancien contenu n'est supprimé **qu'après** le succès complet de la nouvelle
 erDiagram
     WORKSPACE ||--o{ USER : emploie
     WORKSPACE ||--o{ BOT : possède
+    PLAN ||--o{ WORKSPACE : "définit l'offre de"
     BOT ||--o{ SOURCE : "est nourri par"
     SOURCE ||--o{ DOCUMENT : produit
     DOCUMENT ||--o{ CHUNK : "découpé en"
@@ -119,16 +120,24 @@ erDiagram
     BOT ||--o{ FACEBOOK_CONNECTION : "relit"
     FACEBOOK_CONNECTION |o--|| SOURCE : "alimente"
 
-    WORKSPACE { string plan "free, starter, pro" }
+    WORKSPACE { string plan "slug de l'offre" string currency "XOF, KMF, EUR, USD" datetime plan_ends_at "fin d'essai ou de période" string subscription_status "trialing, active, past_due, canceled, expired" }
     USER { bool is_super_admin "équipe technique" }
     SOURCE { string type "file, image, url, text, qa, facebook" string status }
     CHUNK { text embedding "float32 en base64" string embedding_model }
     CONVERSATION { string channel "web, whatsapp, playground" string status "bot, needs_human, human, closed" }
     MESSAGE { string role "user, assistant, agent" json meta "grounded, tokens, latence" }
     CHANNEL { string type "whatsapp_meta, whatsapp_twilio" text credentials "chiffré" }
+    PLAN { json prices "un prix par devise" int trial_days "durée de l'essai gratuit" json limits json features }
+    BOT ||--o{ LEAD : "reçoit"
+    CONVERSATION ||--o{ LEAD : "produit"
+    WORKSPACE ||--o{ USAGE_EVENT : "consomme"
+    WORKSPACE ||--o{ API_KEY : "émet"
+    LEAD { string kind "order, appointment, quote, human" string status "new, taken, done, dismissed" json alert_log }
+    USAGE_EVENT { string kind "ai_answer, wa_in, wa_out, wa_template, voice_in, voice_out" decimal cost_usd }
+    API_KEY { string key_hash "SHA-256, jamais la clé" }
     WHATSAPP_TEMPLATE { string status "DRAFT, PENDING, APPROVED, REJECTED" string category "UTILITY, MARKETING" int variables_count }
     FACEBOOK_CONNECTION { string page_id text access_token "chiffré" string status "active, expired" }
-    BOT { text instructions "consigne modifiable" text instructions_default "version générée, pour restaurer" json profile "ton, tutoiement, horaires" }
+    BOT { json languages "langues parlées, principale en tête" string voice_out "never, mirror, always" text instructions "consigne modifiable" text instructions_default "version générée, pour restaurer" json profile "ton, tutoiement, horaires" }
 ```
 
 Toutes les tables « métier » portent `workspace_id`.
@@ -196,7 +205,7 @@ Toutes les tables « métier » portent `workspace_id`.
 
 ### D10. WhatsApp : interface unique, Meta par défaut, Twilio en secours
 
-**Décision.** L'interface `WhatsAppGateway` (`sendText`, `markRead`, `checkConnection`, et pour les modèles `listTemplates`, `supportsTemplateCreation`, `createTemplate`, `deleteTemplate`, `sendTemplate`) a deux adaptateurs. Le fournisseur est un attribut du `Channel`. Un seul webhook Meta sert tous les clients (routage par `phone_number_id`) ; Twilio a un webhook par canal.
+**Décision.** L'interface `WhatsAppGateway` (`sendText`, `sendAudio`, `downloadMedia`, `markRead`, `checkConnection`, et pour les modèles `listTemplates`, `supportsTemplateCreation`, `createTemplate`, `deleteTemplate`, `sendTemplate`) a deux adaptateurs. **Les messages sont payés par la plateforme, pas par le client** : un canal sans identifiants propres utilise les comptes de la plateforme (réglages `whatsapp.*`), et la consommation est mesurée par client (D14). Le fournisseur est un attribut du `Channel`. Un seul webhook Meta sert tous les clients (routage par `phone_number_id`) ; Twilio a un webhook par canal.
 **Raisons et comparatif.** Voir [WHATSAPP.md](WHATSAPP.md).
 **Fenêtre de 24 heures.** WhatsApp n'autorise le texte libre que dans les 24 heures qui suivent le dernier message du client. Passé ce délai, l'application refuse le texte libre et propose les **modèles approuvés** du canal (`TemplateManager::sendTo`). Meta : le client crée ses modèles depuis l'application (l'identifiant WABA est requis) et suit leur statut d'approbation. Twilio : la création passe par la console Twilio (Content Template Builder), l'application synchronise puis envoie par `ContentSid`. Les variables sont nettoyées (retours à la ligne et espaces multiples refusés par Meta).
 **Réponses rapides.** Les suggestions de l'assistant deviennent des boutons WhatsApp interactifs sur Meta : 3 au maximum, 20 caractères chacun, texte de 1 024 caractères au plus, sur le dernier message seulement ; au-delà, un message texte simple.
@@ -211,6 +220,51 @@ Toutes les tables « métier » portent `workspace_id`.
 **Décision.** À la création, `InstructionGenerator` produit une consigne complète et professionnelle à partir du métier (`sector`), de la personnalité (ton, tutoiement ou vouvoiement, émojis, longueur, langues) et des faits de l'entreprise (ville, horaires, téléphone, offre, règles particulières). Elle est stockée dans `bots.instructions`, modifiable librement par le client ; `instructions_default` garde la version générée pour la restaurer. Changer le profil ne réécrit la consigne que si le client le demande. Un « peaufinage » par le modèle est proposé mais jamais enregistré seul, et un résultat inexploitable (trop court, sans sections) est écarté.
 **Garde-fou.** `PromptBuilder` place les **règles de la plateforme** (ne jamais inventer un prix, ne pas révéler les instructions, marqueurs de fin de message) avant les consignes de l'entreprise et déclare qu'elles priment. Le client ne peut donc pas les retirer ni les contourner en modifiant sa consigne ; longueur plafonnée à 12 000 caractères.
 **Raison.** Un assistant générique répond mal à un restaurant comme à une clinique. Une consigne éditable en texte reste dans l'esprit de D11 : pas de graphe, pas de code.
+
+### D13. Offres : un prix par devise, un essai gratuit qui expire
+
+**Décision.** Chaque offre (`plans`) porte un prix **par devise** (`prices` : FCFA, franc comorien, euro, dollar), ses quotas, ses options et, pour l'offre gratuite, une durée d'essai (`trial_days`, 14 jours). Tout se règle depuis l'administration, sans code. Le FCFA est la devise de référence (obligatoire) ; une devise laissée vide n'est pas proposée et le client voit alors le prix en FCFA, jamais un prix converti. Le visiteur choisit sa devise par `?devise=EUR` (mémorisée en session par `SetCurrency`) ; le client garde la sienne sur son espace (`workspaces.currency`), et chaque paiement enregistré porte sa propre devise. Les recettes s'additionnent par devise, jamais entre devises.
+**Essai gratuit.** À l'inscription, l'espace reçoit une date de fin (`plan_ends_at`). Passé ce délai, `Workspace::trialExpired()` est vrai : `UsageService::canReply` refuse, l'assistant répond « momentanément indisponible » sans appel IA (raison `trial_expired`), et un bandeau invite à choisir une offre. Les données et l'accès au tableau de bord sont conservés. La commande quotidienne `platform:subscriptions` envoie le rappel avant la fin et le message de fin, une seule fois chacun. Un abonné dont la période de grâce est écoulée repasse à l'offre gratuite avec un essai déjà consommé.
+**Raisons.** Les prix sont calculés d'après les coûts réels (voir [COUTS.md](COUTS.md), section 6). L'offre à 10 000 FCFA n'inclut pas WhatsApp, dont l'intégration coûte trop cher pour ce prix.
+**Limite.** L'essai est par espace, pas par personne : rien n'empêche de s'inscrire à nouveau avec une autre adresse. Un contrôle par numéro de téléphone ou par entreprise reste à décider.
+
+### D14. Mesure de la consommation : un journal d'événements avec un coût estimé
+
+**Décision.** Tout ce qui coûte de l'argent écrit une ligne dans `usage_events` (`UsageMeter`) : réponse IA (jetons, fournisseur), message WhatsApp entrant, sortant ou en modèle (catégorie Meta), message vocal écouté ou dit. Le coût vient de `CostCalculator` (tarifs réglables dans l'administration : frais Twilio, catégories Meta, minutes de voix, parités monétaires). La page **Consommation** du super admin lit ce journal en temps réel (par client, par période, marge estimée) et lit le solde du portefeuille Twilio (`TwilioWallet`) ; `platform:check-wallets` alerte par e-mail quand le solde passe sous un seuil ou qu'un client approche son volume.
+**Volume et recharge.** Chaque offre inclut un volume de messages WhatsApp et de messages vocaux par mois. `UsageService` refuse l'envoi au-delà (WhatsApp : après consommation du crédit `wa_credit`, acheté par Mobile Money et ajouté par l'équipe).
+**Limite.** Les coûts sont des **estimations** : la facture réelle de Meta ou de Twilio fait foi. Le journal ne bloque jamais une réponse : une erreur de comptage est journalisée et ignorée.
+
+### D15. Offre pour développeurs : clés d'API par assistant
+
+**Décision.** Une offre `api` (`audience = developer`) donne accès à `POST /api/v1/chat` avec une clé secrète `kma_...` liée à un assistant. Seul le **hachage SHA-256** de la clé est stocké ; elle n'est montrée qu'une fois. Le point d'accès réutilise `ChatService` (mêmes garde-fous, mêmes quotas), identifie la conversation par un `conversation_id` fourni par le développeur, et répond avec l'usage du mois. Limitation de débit par clé, erreurs à code stable (`missing_key`, `invalid_key`, `plan_required`, `account_suspended`, `quota_exceeded`). La page publique `/developpeurs` présente l'offre ; les offres de cette audience n'apparaissent jamais sur les pages tarifaires des entreprises.
+
+### D16. Langues et voix
+
+**Décision.** Un assistant parle une **liste** de langues (`bots.languages`, principale en tête), choisie et modifiable par le client ; chaque langue a un niveau de fiabilité annoncé (`config/languages.php`). La règle de langue du prompt est construite depuis cette liste (`Languages::promptRule`). La voix passe par l'interface `SpeechClient` (comme `LlmClient`) : `OpenAiSpeech` couvre OpenAI et tout serveur libre compatible, `SpeechRouter` envoie les langues locales vers un serveur libre quand il existe, `FakeSpeech` sert aux tests. `VoiceService` applique l'offre (option `voice`), le volume mensuel, les limites de durée, les réglages de l'assistant (écouter ; répondre jamais, en miroir ou toujours) et le comptage ; **la voix ne peut jamais faire perdre une réponse écrite**.
+**Ce qui n'est pas fait.** Aucune synthèse vocale libre à licence commerciale n'existe pour le bambara, le dioula ou le mooré : ces langues restent écrites. Détail, licences et branchement d'un serveur libre : [LANGUES.md](LANGUES.md).
+
+### D17. Demandes à traiter et alertes du propriétaire
+
+**Décision.** Quand un client confirme une commande, une réservation ou un devis (marqueur `[[LEAD: commande | résumé]]` placé par l'assistant, retiré avant l'affichage) ou demande une personne, `LeadService` crée une **demande** (`leads`) : une seule demande ouverte par conversation et par type. `LeadNotifier` prévient le propriétaire selon **ses** choix (page Alertes, `workspaces.settings.alerts`) : tableau de bord toujours, e-mail (adresse au choix), WhatsApp vers son numéro. Hors des 24 h de la fenêtre de service, WhatsApp n'accepte qu'un **modèle approuvé** : l'application propose de créer le modèle d'alerte ; sans lui, l'alerte n'est pas envoyée et le journal de la demande (`alert_log`) le dit. `leads:remind` (toutes les 10 minutes) relance trois fois au plus, à l'intervalle choisi ; répondre au client ou prendre la demande en charge arrête les rappels.
+**Étiquettes WhatsApp.** L'API WhatsApp Cloud ne permet pas d'étiqueter une conversation (les étiquettes n'existent que dans l'application WhatsApp Business, et restent manuelles même en coexistence). Les demandes jouent ce rôle dans Kouma (page Demandes, étiquettes dans la boîte de réception), et l'application indique pour chacune l'étiquette à poser à la main si le client utilise aussi l'application.
+
+### D18. Import des discussions WhatsApp
+
+**Décision.** Option `chat_import` (incluse dès Pro, achetable à la carte : `workspaces.settings.addons`, activée par l'équipe quand elle approuve la demande `addon:chat_import`). Le client dépose l'export d'une discussion (`.txt` ou `.zip`), coche son consentement, dit qui il est, puis **valide** le style et les paires question / réponse avant tout enregistrement. Le fichier n'est jamais conservé ; seule une version **pseudonymisée** (participants P1, P2..., numéros, e-mails, suites de chiffres et liens à paramètres masqués) reste 30 minutes dans le cache pendant la validation. Les paires validées deviennent **une** source texte (« Réponses habituelles »), remplacée à chaque nouvel import ; le style devient un bloc `<style_entreprise>` du prompt, traité comme une donnée (balises neutralisées) et placé sous les règles de la plateforme : il change la forme des réponses, jamais leur contenu.
+**Raison.** Les vraies conversations donnent le ton et les réponses habituelles, mais contiennent des données de tiers : d'où l'anonymisation avant stockage, la validation humaine et l'absence de conservation du brut.
+
+### D19. Widget et démonstration
+
+**Widget.** Toujours en Shadow DOM, sans dépendance, écrit en ES5 (navigateurs Android anciens). Il propose : réponses qui s'écrivent, micro (vocal), écoute d'une réponse, copie, avis (pouces, stockés dans `messages.meta.feedback`), choix de la langue, nouvelle conversation (la précédente est close), lien « Continuer sur WhatsApp » quand l'offre et le canal le permettent, bulle d'accroche une fois par session.
+**Démonstration de la page d'accueil.** Un appareil pliable interactif (`resources/js/playground`) : dialogue local déterministe (`nlu.js`, aucun appel réseau ni IA), alertes réglables côté commerçant, réponses et confirmations, écran de couverture. Il reste un **exemple fictif** ; une histoire se joue d'abord seule et s'arrête au premier geste du visiteur. Le moteur de dialogue est testé sous Node (`tests/Js/playground-nlu.mjs`).
+
+### D20. Référencement : pages décrites par la configuration, chiffres tirés des offres
+
+**Décision.** Les pages de contenu du site public (solutions, guides, métiers, pays) sont des **données** (`config/seo.php`) rendues par deux vues communes (`seo/page`, `seo/hub`), pas du code par page. `App\Support\SeoPages` résout les jetons `{price:offre}`, `{limit:offre:quota}` et `{trial_days}` depuis la table des offres : un changement de prix dans l'admin met à jour les guides. Les prix des pages de contenu sont stables (devise de la page, sinon celle de la plateforme) et ne suivent pas le choix de devise du visiteur, pour que les moteurs voient toujours les mêmes chiffres. Toutes les pages publiques passent par `<x-seo>` (titre, description, canonique, Open Graph, `summary_large_image`, données structurées). Le plan du site, `robots.txt` et `llms.txt` sont produits par `LandingController`. `SeoPagesTest` refuse les titres trop longs, les doublons, les liens internes cassés, les jetons oubliés et les dates futures. Procédure et limites : `docs/SEO.md`.
+
+### D21. L'assistant de la page d'accueil se met à jour avec les offres
+
+**Décision.** L'assistant qui répond aux visiteurs (la « vitrine ») n'a pas de texte écrit à la main : `App\Services\LandingBot` rédige ses sources à partir de la table des offres, de `config/languages.php` et des réglages de la marque, puis les fait lire par le pipeline d'ingestion habituel. Une source inchangée n'est pas relue ; une source qui disparaît des textes est supprimée ; la consigne suit les règles sauf si elle a été modifiée à la main. Chaque source répond à une question courte (« Combien ça coûte ? », « Comment payer ? ») : les recherches courtes des visiteurs tombent ainsi sur la bonne réponse. `platform:landing-bot` le crée ou le met à jour (indispensable en production, où il n'existe pas encore) ; l'administration le relance après chaque enregistrement d'offre, une fois la réponse envoyée.
 
 ## 6. Sécurité : synthèse
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Chat\InstructionGenerator;
 use App\Models\AuditLog;
 use App\Models\Bot;
+use App\Support\Languages;
 use App\Services\UsageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,18 +38,22 @@ class BotController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'language' => ['required', Rule::in(['fr', 'en', 'ar'])],
+            'language' => ['required', Rule::in(Languages::codes())],
             'sector' => ['required', Rule::in(array_keys($generator->sectors()))],
             ...InstructionController::profileRules(),
         ]);
 
+        // Langues parlées : la liste cochée, avec la langue principale en tête.
+        $languages = Languages::normalize($data['languages'], $data['language']);
+        $data['languages'] = $languages;
         $profile = InstructionController::profileFrom($data);
         $instructions = $generator->generate($data['name'], $workspace->name, $data['sector'], $profile);
 
         $bot = Bot::create([
             'workspace_id' => $workspace->id,
             'name' => $data['name'],
-            'language' => $data['language'],
+            'language' => $languages[0],
+            'languages' => $languages,
             'sector' => $data['sector'],
             'profile' => $profile,
             'instructions' => $instructions,
@@ -74,7 +79,12 @@ class BotController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'language' => ['required', Rule::in(['fr', 'en', 'ar'])],
+            'language' => ['required', Rule::in(Languages::codes())],
+            'languages' => ['nullable', 'array', 'max:12'],
+            'languages.*' => [Rule::in(Languages::codes())],
+            'voice_in' => ['nullable', 'boolean'],
+            'voice_out' => ['nullable', Rule::in(['never', 'mirror', 'always'])],
+            'voice_style' => ['nullable', Rule::in(['feminine', 'masculine', 'neutral'])],
             'welcome_message' => ['nullable', 'string', 'max:400'],
             'fallback_message' => ['nullable', 'string', 'max:400'],
             'suggested_questions' => ['nullable', 'string', 'max:1000'],
@@ -87,9 +97,19 @@ class BotController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        $bot->update([
+        // La liste envoyée est la liste voulue ; sans liste (ancien formulaire), la langue principale reste seule choisie.
+        $languages = Languages::normalize($data['languages'] ?? [$data['language']], $data['language']);
+        // Les réglages de voix ne bougent que si la section a été envoyée (le marqueur est la liste déroulante).
+        $voice = $request->has('voice_out') ? [
+            'voice_in' => $request->boolean('voice_in'),
+            'voice_out' => $data['voice_out'],
+            'voice_style' => $data['voice_style'] ?? $bot->voice_style,
+        ] : [];
+
+        $bot->update($voice + [
             'name' => $data['name'],
-            'language' => $data['language'],
+            'language' => $languages[0],
+            'languages' => $languages,
             'welcome_message' => $data['welcome_message'] ?? null,
             'fallback_message' => $data['fallback_message'] ?? null,
             'suggested_questions' => $this->lines($data['suggested_questions'] ?? '', 4, 80),
@@ -97,7 +117,7 @@ class BotController extends Controller
             'handoff_email' => $data['handoff_email'] ?? null,
             'collect_contact' => $request->boolean('collect_contact'),
             'is_active' => $request->boolean('is_active'),
-            'theme' => ['color' => $data['color'], 'position' => $data['position'], 'title' => $data['title'] ?: $data['name']],
+            'theme' => ['color' => $data['color'], 'position' => $data['position'], 'title' => ($data['title'] ?? null) ?: $data['name']],
         ]);
 
         return redirect()->route('bots.edit', $bot)->with('status', 'Réglages enregistrés.');

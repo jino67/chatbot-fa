@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\UsageService;
+use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -53,11 +54,18 @@ class WorkspaceController extends Controller
             'plan' => ['required', Rule::exists('plans', 'slug')],
             'country' => ['nullable', 'string', 'max:60'],
             'phone' => ['nullable', 'string', 'max:40'],
+            'currency' => ['nullable', Rule::in(Currency::codes())],
         ]);
+
+        // Une offre gratuite demarre toujours par un essai limite dans le temps.
+        $plan = Plan::bySlug($data['plan']);
 
         $workspace = Workspace::create([
             'name' => $data['name'],
             'plan' => $data['plan'],
+            'currency' => $data['currency'] ?? Currency::default(),
+            'subscription_status' => $plan?->hasTrial() ? Workspace::TRIALING : Workspace::ACTIVE,
+            'plan_ends_at' => $plan?->trialEndsAt(),
             'country' => $data['country'] ?? null,
             'phone' => $data['phone'] ?? null,
             'plan_started_at' => now(),
@@ -129,6 +137,17 @@ class WorkspaceController extends Controller
     }
 
     /** Change l'offre sans paiement (geste commercial, essai, correction) ; les paiements passent par PaymentController. */
+    /** Active ou retire une option à la carte (achetée par le client, hors de son offre). */
+    public function addon(Request $request, Workspace $workspace): RedirectResponse
+    {
+        $data = $request->validate(['addon' => ['required', Rule::in(array_keys(config('platform.billing.addons')))], 'enabled' => ['required', 'boolean']]);
+
+        $workspace->grantAddon($data['addon'], $request->boolean('enabled'));
+        AuditLog::record('workspace.addon_changed', $workspace->name, ['addon' => $data['addon'], 'enabled' => $request->boolean('enabled')], $workspace->id);
+
+        return back()->with('status', $request->boolean('enabled') ? 'Option activée.' : 'Option retirée.');
+    }
+
     public function plan(Request $request, Workspace $workspace): RedirectResponse
     {
         $data = $request->validate([
@@ -136,11 +155,14 @@ class WorkspaceController extends Controller
             'ends_at' => ['nullable', 'date'],
         ]);
 
+        // Sans date de fin : une offre payante reste active ; l'offre gratuite recoit la duree d'essai par defaut.
+        $plan = Plan::bySlug($data['plan']);
+
         $workspace->update([
             'plan' => $data['plan'],
             'plan_started_at' => now(),
-            'plan_ends_at' => $data['ends_at'] ?? null,
-            'subscription_status' => Workspace::ACTIVE,
+            'plan_ends_at' => $data['ends_at'] ?? $plan?->trialEndsAt(),
+            'subscription_status' => $plan?->hasTrial() ? Workspace::TRIALING : Workspace::ACTIVE,
         ]);
 
         AuditLog::record('workspace.plan_changed', $workspace->name, ['plan' => $data['plan'], 'ends_at' => $data['ends_at'] ?? null], $workspace->id);

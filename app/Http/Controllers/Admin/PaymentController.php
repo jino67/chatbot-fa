@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\PlanRequest;
 use App\Models\Workspace;
+use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,6 +24,7 @@ class PaymentController extends Controller
         $data = $request->validate([
             'plan' => ['required', Rule::exists('plans', 'slug')],
             'amount' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'currency' => ['nullable', Rule::in(Currency::codes())],
             'method' => ['required', Rule::in(array_keys(Payment::METHODS))],
             'reference' => ['nullable', 'string', 'max:120'],
             'period_months' => ['required', 'integer', 'min:1', 'max:24'],
@@ -40,7 +42,7 @@ class PaymentController extends Controller
             'workspace_id' => $workspace->id,
             'plan' => $plan->slug,
             'amount' => $data['amount'],
-            'currency' => $plan->currency,
+            'currency' => $data['currency'] ?? $workspace->currency,
             'method' => $data['method'],
             'reference' => $data['reference'] ?? null,
             'period_months' => $data['period_months'],
@@ -64,7 +66,7 @@ class PaymentController extends Controller
         PlanRequest::withoutGlobalScopes()->where('workspace_id', $workspace->id)->where('status', PlanRequest::REQUESTED)
             ->update(['status' => PlanRequest::APPROVED, 'handled_by' => $request->user()->id]);
 
-        AuditLog::record('payment.recorded', $workspace->name, ['plan' => $plan->slug, 'amount' => $data['amount'], 'method' => $data['method'], 'ref' => $data['reference'] ?? null], $workspace->id);
+        AuditLog::record('payment.recorded', $workspace->name, ['plan' => $plan->slug, 'amount' => $data['amount'], 'currency' => $data['currency'] ?? $workspace->currency, 'method' => $data['method'], 'ref' => $data['reference'] ?? null], $workspace->id);
 
         return back()->with('status', "Paiement enregistré : offre {$plan->name} active jusqu'au ".$end->format('d/m/Y').'.');
     }

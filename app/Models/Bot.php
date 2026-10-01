@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToWorkspace;
 use App\Services\PlatformSettings;
+use App\Speech\VoiceService;
+use App\Support\Languages;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -15,12 +17,16 @@ class Bot extends Model
 
     protected $fillable = [
         'workspace_id', 'name', 'sector', 'profile', 'instructions', 'instructions_default', 'language',
+        'languages', 'voice_in', 'voice_out', 'voice_style',
         'welcome_message', 'fallback_message', 'suggested_questions', 'theme', 'allowed_origins',
         'handoff_email', 'collect_contact', 'is_active',
     ];
 
     protected $attributes = [
         'language' => 'fr',
+        'voice_in' => true,
+        'voice_out' => 'mirror',
+        'voice_style' => 'feminine',
         'is_active' => true,
         'collect_contact' => false,
     ];
@@ -29,6 +35,8 @@ class Bot extends Model
     {
         return [
             'suggested_questions' => 'array',
+            'languages' => 'array',
+            'voice_in' => 'boolean',
             'profile' => 'array',
             'theme' => 'array',
             'allowed_origins' => 'array',
@@ -68,6 +76,12 @@ class Bot extends Model
     public function templates(): HasManyThrough
     {
         return $this->hasManyThrough(WhatsAppTemplate::class, Channel::class, 'bot_id', 'channel_id');
+    }
+
+    /** Langues parlees, langue principale en tete (jamais vide). @return list<string> */
+    public function spokenLanguages(): array
+    {
+        return Languages::normalize((array) $this->languages, $this->language);
     }
 
     public function welcome(): string
@@ -116,7 +130,10 @@ class Bot extends Model
             'color' => $this->theme('color', '#2340D9'),
             'position' => $this->theme('position', 'right'),
             'language' => $this->language,
-            'rtl' => $this->language === 'ar',
+            'rtl' => Languages::isRtl($this->language),
+            'whatsapp' => $this->whatsappNumber(),
+            'voice' => app(VoiceService::class)->capabilities($this),
+            'languages' => collect($this->spokenLanguages())->map(fn ($c) => ['code' => $c, 'name' => Languages::all()[$c]['native'], 'rtl' => Languages::isRtl($c)])->all(),
             'collect_contact' => $this->collect_contact,
             // Publicite « Propulsé par » : retirée par l'option de l'offre (Pro et Business par défaut).
             'branding' => ! ($this->workspace?->hasFeature('remove_branding') ?? false),
@@ -125,6 +142,19 @@ class Bot extends Model
                 'url' => rtrim($brand['url'], '/').'/?utm_source=widget&utm_medium=chat&utm_campaign=powered_by&utm_content='.$this->public_key,
             ],
         ];
+    }
+
+    /** Numero WhatsApp actif de l'assistant (chiffres seuls, pour un lien wa.me), si l'offre inclut WhatsApp. */
+    public function whatsappNumber(): ?string
+    {
+        if (! ($this->workspace?->hasFeature('whatsapp') ?? false)) {
+            return null;
+        }
+
+        $phone = $this->channels()->withoutGlobalScopes()->where('status', Channel::ACTIVE)->whereNotNull('display_phone')->value('display_phone');
+        $digits = preg_replace('/\D/', '', (string) $phone);
+
+        return strlen($digits) >= 8 ? $digits : null;
     }
 
     /** Une origine est autorisee si la liste est vide (mode ouvert) ou la contient. */

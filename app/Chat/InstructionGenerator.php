@@ -26,8 +26,6 @@ class InstructionGenerator
 
     public const LENGTHS = ['short' => 'Très courtes', 'balanced' => 'Équilibrées', 'detailed' => 'Détaillées'];
 
-    public const LANGUAGES = ['fr' => 'français', 'en' => 'anglais', 'ar' => 'arabe'];
-
     public function __construct(private readonly LlmClient $llm) {}
 
     /** @return array<string,array<string,mixed>> */
@@ -170,8 +168,9 @@ class InstructionGenerator
             'detailed' => 'Réponses complètes mais structurées : jamais plus de huit lignes.',
             default => 'Réponses de deux à cinq phrases, ou une liste courte.',
         };
-        $langs = array_intersect_key(self::LANGUAGES, array_flip((array) $profile['languages']));
-        $languages = 'Tu réponds dans la langue du client'.($langs ? ' ('.implode(', ', $langs).')' : '').'. Si le message mélange plusieurs langues, réponds dans la langue principale du message.';
+        // La liste des langues parlées se règle dans les paramètres de l'assistant (règle de la plateforme) : la consigne
+        // n'en cite aucune, pour ne pas se contredire quand le client change ses langues.
+        $languages = 'Si le message mélange plusieurs langues, réponds dans la langue principale du message.';
 
         return [$tone, $address, $emojis, $length, $languages, 'Tu te présentes uniquement dans le premier message, jamais ensuite.'];
     }

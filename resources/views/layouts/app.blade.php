@@ -7,11 +7,12 @@
         <meta name="robots" content="noindex">
 
         <title>{{ $title ?? $brand['name'] }}</title>
-        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+        <x-pwa-meta />
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:600,700|instrument-sans:400,500,600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=unbounded:500,600,700|instrument-sans:400,500,600&display=swap" rel="stylesheet" />
 
+        <script>try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&document.referrer&&new URL(document.referrer).origin===location.origin){document.documentElement.classList.add('page-arriving')}}catch(e){}</script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body>
@@ -39,6 +40,8 @@
                     </div>
                 @endif
 
+                <x-trial-banner />
+
                 @isset($header)
                     <header class="border-b border-slate-200/80 bg-white">
                         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -54,5 +57,6 @@
                 </main>
             </div>
         </div>
+        <x-install-hint />
     </body>
 </html>

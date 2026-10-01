@@ -31,7 +31,7 @@
                                     @unless ($plan->is_public) <x-badge>Masquée</x-badge> @endunless
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-slate-800">{{ $plan->formattedPrice() }}@unless ($plan->isFree()) <span class="text-xs text-slate-500">/ {{ $plan->period_months }} mois</span>@endunless</td>
+                            <td class="px-5 py-4 text-slate-800">{{ $plan->allPrices() }}@unless ($plan->isFree()) <span class="text-xs text-slate-500">/ {{ $plan->period_months }} mois</span>@elseif ($plan->hasTrial()) <span class="text-xs text-slate-500">{{ $plan->periodLabel() }}</span>@endunless</td>
                             <td class="px-5 py-4 text-slate-700">
                                 {{ $plan->limit('bots') }} assistant(s), {{ number_format($plan->limit('messages_per_month'), 0, ',', ' ') }} réponses/mois<br>
                                 <span class="text-xs text-slate-500">{{ $plan->limit('sources') }} sources, {{ $plan->limit('pages_per_crawl') }} pages/site, {{ $plan->limit('members') }} utilisateur(s)</span>

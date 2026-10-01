@@ -27,7 +27,8 @@ class OverviewController extends Controller
                 'conversations' => Conversation::withoutGlobalScopes()->where('channel', '!=', 'playground')->where('created_at', '>=', now()->subDays(7))->count(),
                 'messages' => Message::withoutGlobalScopes()->where('role', Message::ASSISTANT)->where('meta->llm', true)->where('created_at', '>=', $monthStart)->count(),
                 'channels' => Channel::withoutGlobalScopes()->where('status', Channel::ACTIVE)->count(),
-                'revenue' => Payment::withoutGlobalScopes()->where('paid_at', '>=', $monthStart)->where('currency', 'XOF')->sum('amount'),
+                // Une somme par devise : additionner des FCFA et des euros n'a pas de sens.
+                'revenue' => Payment::withoutGlobalScopes()->where('paid_at', '>=', $monthStart)->selectRaw('currency, sum(amount) as total')->groupBy('currency')->pluck('total', 'currency'),
             ],
             'pendingChannels' => ChannelRequest::withoutGlobalScopes()
                 ->with(['bot' => fn ($q) => $q->withoutGlobalScopes(), 'workspace'])

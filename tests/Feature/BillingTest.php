@@ -34,16 +34,22 @@ class BillingTest extends TestCase
         ]);
     }
 
-    public function test_the_four_default_plans_exist_with_a_free_default_one(): void
+    public function test_the_default_plans_exist_with_a_free_default_one(): void
     {
-        $this->assertSame(['free', 'essentiel', 'pro', 'business'], Plan::orderBy('sort')->pluck('slug')->all());
+        $this->assertSame(['free', 'essentiel', 'bonplan', 'pro', 'business', 'api'], Plan::orderBy('sort')->pluck('slug')->all());
         $this->assertSame('free', Plan::default()->slug);
         $this->assertTrue(Plan::bySlug('free')->isFree());
         $this->assertFalse(Plan::bySlug('free')->feature('whatsapp'));
         $this->assertTrue(Plan::bySlug('pro')->feature('templates'));
         $this->assertTrue(Plan::bySlug('pro')->feature('remove_branding'));
         $this->assertFalse(Plan::bySlug('essentiel')->feature('templates'));
-        $this->assertSame('30 000 FCFA', str_replace("\u{202F}", ' ', Plan::bySlug('pro')->formattedPrice()));
+        $this->assertSame('40 000 FCFA', str_replace("\u{202F}", ' ', Plan::bySlug('pro')->formattedPrice()));
+
+        // L'offre a 10 000 FCFA n'inclut pas WhatsApp (trop couteux) ; l'offre gratuite est un essai limite dans le temps.
+        $this->assertFalse(Plan::bySlug('essentiel')->feature('whatsapp'));
+        $this->assertTrue(Plan::bySlug('pro')->feature('whatsapp'));
+        $this->assertSame(14, Plan::default()->trial_days);
+        $this->assertNull(Plan::bySlug('pro')->trial_days);
     }
 
     public function test_plan_limits_come_from_the_database_and_fall_back_when_a_plan_is_missing(): void
@@ -96,7 +102,7 @@ class BillingTest extends TestCase
     public function test_a_hidden_plan_is_not_offered_to_clients(): void
     {
         [, $client] = $this->tenant();
-        Plan::create(['slug' => 'sur-mesure', 'name' => 'Offre Sur Mesure', 'price' => 500000, 'currency' => 'XOF', 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'is_public' => false, 'sort' => 9]);
+        Plan::create(['slug' => 'sur-mesure', 'name' => 'Offre Sur Mesure', 'prices' => ['XOF' => 500000], 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'is_public' => false, 'sort' => 9]);
 
         $this->actingAs($client)->get(route('billing.show'))->assertDontSee('Offre Sur Mesure');
         $this->actingAs($client)->post(route('billing.request'), ['plan' => 'sur-mesure'])->assertSessionHasErrors('plan');
@@ -219,7 +225,7 @@ class BillingTest extends TestCase
 
         $gone = $gone->fresh();
         $this->assertSame('free', $gone->plan, 'grace depassee : retour a l\'offre gratuite');
-        $this->assertNull($gone->plan_ends_at);
+        $this->assertTrue($gone->trialExpired(), 'l\'offre gratuite est un essai deja consomme : l\'assistant est en pause');
         $this->assertSame('canceled', $gone->subscription_status);
         $this->assertSame(1, Bot::withoutGlobalScopes()->where('workspace_id', $gone->id)->count(), 'les donnees sont conservees');
 
@@ -239,7 +245,7 @@ class BillingTest extends TestCase
         $this->assertCount(1, $reminders);
     }
 
-    public function test_a_free_workspace_or_one_without_end_date_is_never_touched(): void
+    public function test_an_expired_free_workspace_keeps_its_plan_and_one_without_end_date_is_never_touched(): void
     {
         $free = Workspace::create(['name' => 'Gratuit', 'plan' => 'free', 'plan_ends_at' => now()->subYear()]);
         $forever = Workspace::create(['name' => 'Offert', 'plan' => 'business', 'plan_ends_at' => null]);
@@ -247,7 +253,9 @@ class BillingTest extends TestCase
         $this->artisan('platform:subscriptions')->assertSuccessful();
 
         $this->assertSame('free', $free->fresh()->plan);
+        $this->assertSame(Workspace::EXPIRED, $free->fresh()->subscription_status);
         $this->assertSame('business', $forever->fresh()->plan);
+        $this->assertSame(Workspace::ACTIVE, $forever->fresh()->subscription_status);
     }
 
     public function test_downgrade_removes_paid_features(): void
@@ -269,25 +277,31 @@ class BillingTest extends TestCase
         $super = $this->admin();
 
         $this->actingAs($super)->post(route('admin.plans.store'), [
-            'slug' => 'ong', 'name' => 'ONG', 'tagline' => 'Tarif associatif', 'price' => 5000, 'currency' => 'XOF', 'period_months' => 1, 'sort' => 5,
+            'slug' => 'ong', 'name' => 'ONG', 'tagline' => 'Tarif associatif', 'prices' => ['XOF' => 5000, 'KMF' => '', 'EUR' => 8], 'period_months' => 1, 'sort' => 5,
             'limits' => ['bots' => 2, 'sources' => 30, 'pages_per_crawl' => 100, 'messages_per_month' => 2000, 'members' => 3],
             'features' => ['whatsapp' => 1], 'is_public' => 1,
         ])->assertRedirect(route('admin.plans.index'));
 
         $plan = Plan::bySlug('ong');
-        $this->assertSame(5000, $plan->price);
+        $this->assertSame(5000, $plan->priceIn('XOF'));
+        $this->assertSame(8, $plan->priceIn('EUR'));
+        $this->assertNull($plan->priceIn('KMF'), 'une devise laissee vide n\'est pas proposee');
+        $this->assertNull($plan->trial_days);
         $this->assertTrue($plan->feature('whatsapp'));
         $this->assertFalse($plan->feature('templates'));
         $this->assertSame(2000, $plan->limit('messages_per_month'));
 
         $this->actingAs($super)->put(route('admin.plans.update', $plan), [
-            'name' => 'ONG', 'price' => 4000, 'currency' => 'XOF', 'period_months' => 1, 'sort' => 5,
+            'name' => 'ONG', 'prices' => ['XOF' => 4000, 'USD' => 7], 'trial_days' => 30, 'period_months' => 1, 'sort' => 5,
             'limits' => ['bots' => 2, 'sources' => 30, 'pages_per_crawl' => 100, 'messages_per_month' => 2500, 'members' => 3],
             'features' => ['whatsapp' => 1, 'templates' => 1], 'is_public' => 1,
         ])->assertRedirect(route('admin.plans.index'));
 
         $plan->refresh();
-        $this->assertSame(4000, $plan->price);
+        $this->assertSame(4000, $plan->priceIn('XOF'));
+        $this->assertSame(7, $plan->priceIn('USD'));
+        $this->assertNull($plan->priceIn('EUR'), 'un prix retire du formulaire disparait');
+        $this->assertSame(30, $plan->trial_days);
         $this->assertTrue($plan->feature('templates'));
         $this->assertSame('ong', $plan->slug, 'l\'identifiant ne change jamais');
     }
@@ -295,11 +309,13 @@ class BillingTest extends TestCase
     public function test_plan_validation_and_default_plan_rules(): void
     {
         $super = $this->admin();
-        $form = ['name' => 'X', 'price' => 100, 'currency' => 'XOF', 'period_months' => 1, 'sort' => 1, 'limits' => Plan::FALLBACK_LIMITS];
+        $form = ['name' => 'X', 'prices' => ['XOF' => 100], 'period_months' => 1, 'sort' => 1, 'limits' => Plan::FALLBACK_LIMITS];
 
         $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'pro'] + $form)->assertSessionHasErrors('slug');
         $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'Mauvais Slug'] + $form)->assertSessionHasErrors('slug');
-        $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'ok', 'price' => -1] + $form)->assertSessionHasErrors('price');
+        $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'ok', 'prices' => ['XOF' => -1]] + $form)->assertSessionHasErrors('prices.XOF');
+        $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'ok', 'prices' => ['KMF' => 500]] + $form)->assertSessionHasErrors('prices.XOF');
+        $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'ok', 'trial_days' => 0] + $form)->assertSessionHasErrors('trial_days');
 
         // Une seule offre par defaut : en designer une autre retire le statut a l'ancienne.
         $this->actingAs($super)->post(route('admin.plans.store'), ['slug' => 'nouvelle', 'is_default' => 1] + $form);
@@ -312,13 +328,13 @@ class BillingTest extends TestCase
         $this->actingAs($super)->delete(route('admin.plans.destroy', Plan::bySlug('pro')))->assertSessionHas('error');
         $this->assertNotNull(Plan::bySlug('pro'));
 
-        $unused = Plan::create(['slug' => 'inutilisee', 'name' => 'Inutilisée', 'price' => 1, 'currency' => 'XOF', 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'sort' => 50]);
+        $unused = Plan::create(['slug' => 'inutilisee', 'name' => 'Inutilisée', 'prices' => ['XOF' => 1], 'period_months' => 1, 'limits' => Plan::FALLBACK_LIMITS, 'features' => [], 'sort' => 50]);
         $this->actingAs($super)->delete(route('admin.plans.destroy', $unused))->assertSessionHas('status');
     }
 
     public function test_the_landing_page_lists_the_plans_stored_in_the_database(): void
     {
-        Plan::bySlug('pro')->update(['price' => 42000]);
+        Plan::bySlug('pro')->update(['prices' => ['XOF' => 42000, 'KMF' => 31500, 'EUR' => 65, 'USD' => 73]]);
 
         $this->get('/')->assertOk()->assertSee(Plan::bySlug('pro')->formattedPrice());
     }
@@ -345,7 +361,12 @@ class BillingTest extends TestCase
         $this->actingAs($free)->post(route('channels.whatsapp-request', $bot), $payload)->assertRedirect(route('billing.show'))->assertSessionHas('error');
         $this->assertSame(0, \App\Models\ChannelRequest::withoutGlobalScopes()->count());
 
-        [, $paid, $paidBot] = $this->tenant('Payant', 'essentiel');
+        // L'offre a 10 000 FCFA n'inclut pas WhatsApp : la demande est refusee et renvoie vers les offres.
+        [, $essential, $essentialBot] = $this->tenant('Essentiel', 'essentiel');
+        $this->actingAs($essential)->post(route('channels.whatsapp-request', $essentialBot), $payload)->assertRedirect(route('billing.show'))->assertSessionHas('error');
+        $this->assertSame(0, \App\Models\ChannelRequest::withoutGlobalScopes()->count());
+
+        [, $paid, $paidBot] = $this->tenant('Payant', 'pro');
         $this->actingAs($paid)->post(route('channels.whatsapp-request', $paidBot), $payload)->assertSessionHas('status');
     }
 

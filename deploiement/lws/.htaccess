@@ -1,0 +1,91 @@
+# ==========================================================================
+# Racine du domaine kouma.site chez LWS
+# --------------------------------------------------------------------------
+# Le dossier du domaine sert de dossier public ; le projet vit dans kouma/,
+# que ce fichier interdit au web. Il remplace public/.htaccess du dépôt.
+#
+# APRÈS LA MISE EN LIGNE, ces adresses doivent répondre 403 ou 404, jamais un contenu :
+#   https://kouma.site/kouma/.env
+#   https://kouma.site/kouma/storage/logs/
+# ==========================================================================
+
+# Un index.html posé par l'hébergeur ne doit pas passer devant notre index.php.
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+    RewriteBase /
+
+    # Interdit l'accès au code source, au .env et aux journaux.
+    RewriteRule ^kouma/ - [F,L]
+
+    # Adresse unique du site (référencement : une seule adresse par page) : https, sans « www ».
+    RewriteCond %{HTTP_HOST} ^www\.kouma\.site$ [NC]
+    RewriteRule ^ https://kouma.site%{REQUEST_URI} [L,R=301]
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP_HOST} ^kouma\.site$ [NC]
+    RewriteRule ^ https://kouma.site%{REQUEST_URI} [L,R=301]
+
+    # En-tête d'autorisation
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # En-tête X-XSRF-Token
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirection des slashs finaux
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Tout le reste passe par index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Ceinture et bretelles, hors du bloc de réécriture : même si la règle ci-dessus venait à manquer, le .env
+# et les journaux ne sont jamais servis.
+<FilesMatch "(^\.env|\.sqlite$|\.log$|\.sql$)">
+    Require all denied
+</FilesMatch>
+
+# Performance (Core Web Vitals, donc référencement) : compression et cache long pour les fichiers compilés.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/manifest+json text/plain application/xml
+</IfModule>
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+    # Fichiers compilés par Vite : leur nom contient l'empreinte du contenu (app-uFmX8I1O.js), donc cache d'un an.
+    # Le widget (widget/widget.js) n'a pas d'empreinte : il reste à jour chez les clients.
+    <FilesMatch "-[A-Za-z0-9_-]{8}\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    # Le service worker et la page hors connexion se renouvellent vite
+    <FilesMatch "^(sw\.js|offline\.html)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+
+    # En-têtes de sécurité, posés ici pour s'appliquer aussi aux fichiers servis directement.
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Permissions-Policy "camera=(), geolocation=()"
+
+    # À NE DÉCOMMENTER QU'APRÈS AVOIR VÉRIFIÉ QUE LE HTTPS FONCTIONNE sur kouma.site.
+    # Posé avant que le certificat soit en place, cet en-tête rendrait le site inaccessible
+    # pendant un an à tous ceux qui l'ont visité une fois.
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>

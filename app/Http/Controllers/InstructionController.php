@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Chat\InstructionGenerator;
 use App\Models\AuditLog;
 use App\Models\Bot;
+use App\Support\Languages;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class InstructionController extends Controller
             'emojis' => ['required', Rule::in(array_keys(InstructionGenerator::EMOJIS))],
             'length' => ['required', Rule::in(array_keys(InstructionGenerator::LENGTHS))],
             'languages' => ['required', 'array', 'min:1'],
-            'languages.*' => [Rule::in(array_keys(InstructionGenerator::LANGUAGES))],
+            'languages.*' => [Rule::in(Languages::codes())],
         ];
     }
 
@@ -72,7 +73,9 @@ class InstructionController extends Controller
             ...self::profileRules(),
         ]);
 
+        // Les langues se règlent dans les paramètres de l'assistant : le profil en garde la liste, sans la changer ici.
         $profile = self::profileFrom($data);
+        $profile['languages'] = $bot->spokenLanguages();
         $updates = ['sector' => $data['sector'], 'profile' => $profile];
 
         if ($request->boolean('regenerate')) {

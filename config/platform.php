@@ -123,6 +123,38 @@ return [
         'scopes' => ['pages_show_list', 'pages_read_engagement'],
     ],
 
+    // Couts unitaires servant a estimer la consommation de chaque client (reglables dans l'administration).
+    // Meta : tarifs par message reperes pour l'Afrique hors Nigeria et Afrique du Sud ; a verifier dans la grille Meta telechargeable.
+    'costs' => [
+        // Unites de chaque monnaie pour un euro. FCFA et franc comorien : parites fixes ; dollar et dirham : a revoir de temps en temps.
+        'rates' => ['XOF' => 655.957, 'KMF' => 491.96775, 'EUR' => 1.0, 'USD' => 1.1339, 'MAD' => 10.8],
+        'whatsapp' => [
+            'twilio_fee' => 0.005, // par message entrant et par message sortant ; Meta direct : aucun frais d'intermediaire
+            'meta' => ['service' => 0.0, 'utility' => 0.0077, 'authentication' => 0.0077, 'marketing' => 0.0225],
+        ],
+        'voice' => ['stt_per_minute' => 0.003, 'tts_per_minute' => 0.015],
+        'ai_default' => ['in' => 1.0, 'out' => 5.0], // dollars par million de jetons quand le fournisseur est inconnu
+    ],
+
+    // Voix : ecoute des messages vocaux et reponses en audio. OpenAI par defaut (une seule cle) ; les langues locales
+    // passent par un serveur libre compatible OpenAI si `local.base_url` est renseigne (voir docs/LANGUES.md).
+    'speech' => [
+        'driver' => env('PLATFORM_SPEECH', env('PLATFORM_LLM') === 'fake' ? 'fake' : 'openai'),
+        'openai' => [
+            'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+            'stt_models' => ['gpt-4o-mini-transcribe', 'whisper-1'], // essayes dans l'ordre
+            'tts_model' => env('OPENAI_TTS_MODEL', 'gpt-4o-mini-tts'),
+        ],
+        'local' => [
+            'base_url' => env('LOCAL_STT_URL'),
+            'api_key' => env('LOCAL_STT_KEY'),
+            'model' => env('LOCAL_STT_MODEL', 'bambara-asr'),
+        ],
+        'max_seconds' => 120,        // un message vocal plus long est refuse poliment
+        'max_bytes' => 8_000_000,
+        'tts_max_chars' => 900,      // au-dela, la reponse reste en texte (un vocal de plus d'une minute n'est pas ecoute)
+    ],
+
     'widget' => [
         'rate_per_minute_ip' => 30,
         'rate_per_minute_bot' => 300,
@@ -132,5 +164,11 @@ return [
     'billing' => [
         'grace_days' => 3,
         'reminder_days' => 5,
+        // Recharge de messages WhatsApp (payee par Mobile Money, ajoutee par l'equipe) : un lot et son prix par monnaie.
+        'wa_pack' => ['messages' => 1000, 'prices' => ['XOF' => 6000, 'KMF' => 4500, 'EUR' => 9, 'USD' => 10, 'MAD' => 100]],
+        // Options a la carte, achetables par un client dont l'offre ne les inclut pas (activees par l'equipe apres paiement).
+        'addons' => [
+            'chat_import' => ['name' => 'Import de vos discussions WhatsApp', 'description' => 'L\'assistant apprend votre façon d\'écrire et vos réponses habituelles.', 'prices' => ['XOF' => 5000, 'KMF' => 3750, 'EUR' => 8, 'USD' => 9, 'MAD' => 85]],
+        ],
     ],
 ];

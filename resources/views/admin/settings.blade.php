@@ -33,7 +33,7 @@
                     <div>
                         <x-input-label for="brand_whatsapp" value="Numéro WhatsApp commercial" />
                         <input id="brand_whatsapp" name="brand_whatsapp" class="field" value="{{ old('brand_whatsapp', $values['brand.whatsapp']) }}" placeholder="+226 70 00 00 00">
-                        <p class="mt-1 text-xs text-slate-500">Affiche un lien « Parler à un conseiller » sur le site.</p>
+                        <p class="mt-1 text-xs text-slate-500">Avec l'indicatif du pays. Tant qu'il est vide, le bouton « Écrivez-nous sur WhatsApp » n'apparaît pas sur le site.</p>
                     </div>
                 </div>
             </section>
@@ -70,6 +70,92 @@
                     <div><x-input-label for="legal_address" value="Adresse" /><input id="legal_address" name="legal_address" class="field" value="{{ old('legal_address', $values['legal.address']) }}"></div>
                     <div><x-input-label for="legal_email" value="E-mail légal" /><input id="legal_email" name="legal_email" type="email" class="field" value="{{ old('legal_email', $values['legal.email']) }}"></div>
                 </div>
+            </section>
+
+            <section id="whatsapp" class="surface space-y-5 p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-display text-lg font-bold">WhatsApp : comptes de la plateforme et coûts</h2>
+                    <div class="flex gap-1.5">
+                        <x-badge :tone="$metaTokenSet ? 'green' : 'gray'">Meta {{ $metaTokenSet ? 'connecté' : 'non renseigné' }}</x-badge>
+                        <x-badge :tone="$twilioTokenSet ? 'green' : 'gray'">Twilio {{ $twilioTokenSet ? 'connecté' : 'non renseigné' }}</x-badge>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                    Les messages WhatsApp sont payés par la plateforme, pas par les clients : tout passe par vos comptes, et la page « Consommation » montre ce que chaque client consomme.
+                    <strong>Meta direct est le moins cher</strong> (aucun frais d'intermédiaire) ; Twilio ajoute environ 0,005 $ par message entrant et sortant, mais démarre plus vite.
+                    Un canal peut utiliser l'un ou l'autre : laissez ses identifiants vides pour qu'il prenne ceux de la plateforme.
+                </p>
+
+                <div>
+                    <x-input-label for="whatsapp_provider" value="Fournisseur conseillé pour les nouveaux canaux" />
+                    <select id="whatsapp_provider" name="whatsapp_provider" class="field">
+                        @foreach (['auto' => 'Automatique : Meta direct si disponible, sinon Twilio', 'meta' => 'Toujours Meta direct', 'twilio' => 'Toujours Twilio'] as $value => $label)
+                            <option value="{{ $value }}" @selected(old('whatsapp_provider', $values['whatsapp.provider'] ?? 'auto') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div><x-input-label for="meta_waba_id" value="Meta : identifiant du compte WhatsApp Business (WABA)" /><input id="meta_waba_id" name="meta_waba_id" class="field font-mono" value="{{ old('meta_waba_id', $values['whatsapp.meta.waba_id']) }}"></div>
+                    <div><x-input-label for="meta_system_token" value="Meta : jeton d'utilisateur système" /><input id="meta_system_token" name="meta_system_token" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $metaTokenSet ? 'Enregistré : laisser vide pour conserver' : '' }}"></div>
+                    <div><x-input-label for="twilio_account_sid" value="Twilio : Account SID" /><input id="twilio_account_sid" name="twilio_account_sid" class="field font-mono" value="{{ old('twilio_account_sid', $values['whatsapp.twilio.account_sid']) }}"></div>
+                    <div><x-input-label for="twilio_auth_token" value="Twilio : Auth Token" /><input id="twilio_auth_token" name="twilio_auth_token" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $twilioTokenSet ? 'Enregistré : laisser vide pour conserver' : '' }}"></div>
+                </div>
+
+                <div>
+                    <x-input-label for="wallet_alert_below" value="Prévenir par e-mail quand le solde Twilio passe sous (dollars)" />
+                    <input id="wallet_alert_below" name="wallet_alert_below" type="number" step="1" min="0" class="field sm:w-48" value="{{ old('wallet_alert_below', $values['wallet.alert_below'] ?? 20) }}">
+                </div>
+
+                <div class="rounded-xl bg-slate-50 p-4">
+                    <p class="text-sm font-semibold text-brand-950">Coûts unitaires (dollars)</p>
+                    <p class="mt-1 text-xs text-slate-500">Servent à estimer la consommation de chaque client. Les valeurs de Meta sont à vérifier dans la grille tarifaire téléchargeable de Meta ; laissez vide pour reprendre les valeurs par défaut.</p>
+                    <div class="mt-3 grid gap-4 sm:grid-cols-4">
+                        <div><x-input-label for="cost_twilio_fee" value="Twilio, par message" /><input id="cost_twilio_fee" name="cost_twilio_fee" type="number" step="0.0001" min="0" class="field" value="{{ old('cost_twilio_fee', $values['costs.twilio_fee'] ?? config('platform.costs.whatsapp.twilio_fee')) }}"></div>
+                        <div><x-input-label for="cost_meta_service" value="Meta, service" /><input id="cost_meta_service" name="cost_meta_service" type="number" step="0.0001" min="0" class="field" value="{{ old('cost_meta_service', $values['costs.meta_service'] ?? config('platform.costs.whatsapp.meta.service')) }}"></div>
+                        <div><x-input-label for="cost_meta_utility" value="Meta, utilitaire" /><input id="cost_meta_utility" name="cost_meta_utility" type="number" step="0.0001" min="0" class="field" value="{{ old('cost_meta_utility', $values['costs.meta_utility'] ?? config('platform.costs.whatsapp.meta.utility')) }}"></div>
+                        <div><x-input-label for="cost_meta_marketing" value="Meta, marketing" /><input id="cost_meta_marketing" name="cost_meta_marketing" type="number" step="0.0001" min="0" class="field" value="{{ old('cost_meta_marketing', $values['costs.meta_marketing'] ?? config('platform.costs.whatsapp.meta.marketing')) }}"></div>
+                    </div>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div><x-input-label for="rate_usd" value="Dollars pour un euro" /><input id="rate_usd" name="rate_usd" type="number" step="0.0001" min="0.1" class="field" value="{{ old('rate_usd', $values['costs.rate_usd'] ?? config('platform.costs.rates.USD')) }}"></div>
+                        <div><x-input-label for="rate_mad" value="Dirhams pour un euro" /><input id="rate_mad" name="rate_mad" type="number" step="0.0001" min="1" class="field" value="{{ old('rate_mad', $values['costs.rate_mad'] ?? config('platform.costs.rates.MAD')) }}"></div>
+                    </div>
+                </div>
+            </section>
+            <section id="voix" class="surface space-y-5 p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-display text-lg font-bold">Voix : messages vocaux et langues locales</h2>
+                    <div class="flex gap-1.5">
+                        <x-badge :tone="$speechCloudReady ? 'green' : 'gray'">OpenAI {{ $speechCloudReady ? 'prêt' : 'sans clé' }}</x-badge>
+                        <x-badge :tone="filled($values['speech.local_url']) ? 'green' : 'gray'">Serveur libre {{ filled($values['speech.local_url']) ? 'configuré' : 'absent' }}</x-badge>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600">
+                    L'écoute des messages vocaux et les réponses en audio utilisent OpenAI avec la clé déjà saisie pour les réponses (ou celle-ci). Coût indicatif : 0,003 $ par minute écoutée, 0,015 $ par minute dite.
+                    Pour le bambara, le dioula, le peul, le wolof et le mooré, branchez un serveur libre compatible OpenAI (voir docs/LANGUES.md) : sans lui, ces langues restent comprises à l'écrit seulement.
+                </p>
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div><x-input-label for="speech_api_key" value="Clé pour la voix (facultatif)" /><input id="speech_api_key" name="speech_api_key" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $speechKeySet ? 'Enregistrée : laisser vide pour conserver' : 'Sinon, la clé OpenAI de la plateforme' }}"></div>
+                    <div><x-input-label for="speech_stt_model" value="Modèle d'écoute" /><input id="speech_stt_model" name="speech_stt_model" class="field font-mono" placeholder="gpt-4o-mini-transcribe" value="{{ old('speech_stt_model', $values['speech.stt_model']) }}"></div>
+                    <div><x-input-label for="speech_tts_model" value="Modèle de voix" /><input id="speech_tts_model" name="speech_tts_model" class="field font-mono" placeholder="gpt-4o-mini-tts" value="{{ old('speech_tts_model', $values['speech.tts_model']) }}"></div>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-4">
+                    <p class="text-sm font-semibold text-brand-950">Serveur libre pour les langues locales (facultatif)</p>
+                    <div class="mt-3 grid gap-4 sm:grid-cols-3">
+                        <div><x-input-label for="speech_local_url" value="Adresse (…/v1)" /><input id="speech_local_url" name="speech_local_url" type="url" class="field font-mono" placeholder="https://asr.exemple.com/v1" value="{{ old('speech_local_url', $values['speech.local_url']) }}"></div>
+                        <div><x-input-label for="speech_local_model" value="Modèle" /><input id="speech_local_model" name="speech_local_model" class="field font-mono" placeholder="bambara-asr" value="{{ old('speech_local_model', $values['speech.local_model']) }}"></div>
+                        <div><x-input-label for="speech_local_key" value="Clé (si besoin)" /><input id="speech_local_key" name="speech_local_key" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $speechLocalKeySet ? 'Enregistrée' : '' }}"></div>
+                    </div>
+                </div>
+
+                <div x-data="{ busy: false, result: null, async run() { this.busy = true; this.result = null; try { const r = await fetch('{{ route('admin.settings.voice-test') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } }); this.result = await r.json(); } catch (e) { this.result = { cloud: { ok: false, detail: 'La requête a échoué.' } }; } this.busy = false; } }" class="flex flex-wrap items-start gap-4">
+                    <button type="button" class="btn-outline" @click="run()" :disabled="busy"><span x-show="! busy">Tester la voix</span><span x-show="busy" x-cloak>Essai en cours…</span></button>
+                    <div class="min-w-0 flex-1 space-y-1 text-sm" x-show="result" x-cloak>
+                        <p :class="result?.cloud?.ok ? 'text-emerald-700' : 'text-red-700'" x-text="'OpenAI : ' + (result?.cloud?.detail ?? '')"></p>
+                        <p x-show="result?.local" :class="result?.local?.ok ? 'text-emerald-700' : 'text-red-700'" x-text="'Serveur libre : ' + (result?.local?.detail ?? '')"></p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500">L'essai dit une phrase puis la réécoute, avec les réglages enregistrés (enregistrez avant de tester).</p>
             </section>
 
             <section class="surface space-y-5 p-6">

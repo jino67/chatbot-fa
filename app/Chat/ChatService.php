@@ -5,14 +5,15 @@ namespace App\Chat;
 use App\Ai\Llm\LlmClient;
 use App\Ai\Llm\LlmRequest;
 use App\Ai\LlmException;
-use App\Mail\HandoffRequested;
+use App\Leads\LeadService;
 use App\Models\Conversation;
+use App\Models\Lead;
 use App\Models\Message;
 use App\Retrieval\RetrievedChunk;
 use App\Retrieval\Retriever;
+use App\Services\UsageMeter;
 use App\Services\UsageService;
 use App\Support\Text;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Orchestre un tour de conversation, quel que soit le canal (widget, WhatsApp, playground) :
@@ -25,6 +26,8 @@ class ChatService
         private readonly PromptBuilder $prompts,
         private readonly LlmClient $llm,
         private readonly UsageService $usage,
+        private readonly UsageMeter $meter,
+        private readonly LeadService $leads,
     ) {}
 
     /**
@@ -62,7 +65,7 @@ class ChatService
     public function reply(Conversation $conversation, Message $userMessage): Message
     {
         $started = microtime(true);
-        $bot = $conversation->bot()->with('workspace')->first();
+        $bot = $conversation->bot()->withoutGlobalScopes()->with('workspace')->first();
         $text = $userMessage->content;
 
         // Une demande explicite de contact humain passe avant tout : ni quota, ni base de connaissances, ni appel IA.
@@ -83,7 +86,11 @@ class ChatService
                 $conversation,
                 "Ce service est momentanément indisponible. Merci de contacter directement l'entreprise.",
                 [],
-                ['grounded' => false, 'llm' => false, 'reason' => $bot->workspace->is_suspended ? 'workspace_suspended' : 'quota_exceeded']
+                ['grounded' => false, 'llm' => false, 'reason' => match (true) {
+                    $bot->workspace->is_suspended => 'workspace_suspended',
+                    $bot->workspace->trialExpired() => 'trial_expired',
+                    default => 'quota_exceeded',
+                }]
             );
         }
 
@@ -100,7 +107,7 @@ class ChatService
             system: $this->prompts->system($bot, $conversation->channel),
             messages: [
                 ...$this->prompts->history($conversation, $userMessage->id),
-                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks)],
+                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks, (bool) ($userMessage->meta['voice'] ?? false), $userMessage->meta['lang'] ?? null)],
             ],
         );
 
@@ -132,6 +139,9 @@ class ChatService
             'latency_ms' => (int) ((microtime(true) - $started) * 1000),
         ];
 
+        // Chaque reponse de l'IA est comptee avec son cout estime (page « Consommation » du super admin).
+        $this->meter->ai($conversation->workspace_id, $bot->id, $meta['provider'], $meta['model'] ?? null, (int) $response->inputTokens, (int) $response->outputTokens);
+
         // Reponses rapides proposees au visiteur (touches du widget, boutons WhatsApp).
         if ($parsed['suggestions'] && $grounded && ! $parsed['handoff']) {
             $meta['suggestions'] = $parsed['suggestions'];
@@ -139,6 +149,11 @@ class ChatService
 
         if ($parsed['handoff']) {
             $this->requestHuman($conversation, 'demande du client ou situation sensible');
+        }
+
+        // Commande, rendez-vous ou devis confirmé par le client : une demande à traiter, et le propriétaire est prévenu.
+        if ($parsed['lead'] && $grounded && ! $parsed['handoff']) {
+            $this->leads->capture($conversation, $parsed['lead']['kind'], $parsed['lead']['summary'], $parsed['lead']['summary'] ?: null);
         }
 
         if (! $grounded && ! $parsed['handoff']) {
@@ -218,14 +233,9 @@ class ChatService
             'meta' => array_merge($conversation->meta ?? [], ['handoff_reason' => $reason, 'handoff_at' => now()->toIso8601String()]),
         ])->save();
 
-        $email = $conversation->bot?->handoff_email;
-        if ($email) {
-            try {
-                Mail::to($email)->queue(new HandoffRequested($conversation, $reason));
-            } catch (\Throwable $e) {
-                report($e); // une notification perdue ne doit jamais casser la conversation
-            }
-        }
+        // La demande est notée, et le propriétaire prévenu selon ses alertes (e-mail, WhatsApp) : voir LeadNotifier.
+        $last = $conversation->messages()->where('role', Message::USER)->latest('id')->value('content');
+        $this->leads->capture($conversation, Lead::HUMAN, $last ? "« {$last} »" : $reason, null);
     }
 
     private function humanAcknowledgement(string $language): string

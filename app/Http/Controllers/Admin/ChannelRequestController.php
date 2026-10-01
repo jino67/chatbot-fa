@@ -72,11 +72,16 @@ class ChannelRequestController extends Controller
 
         $isMeta = $data['provider'] === Channel::WHATSAPP_META;
 
+        // Les messages sont payes par la plateforme : sans identifiants propres au canal, on utilise ses comptes Meta ou Twilio.
+        $platform = app(\App\Services\PlatformSettings::class);
+        $platformMeta = $platform->has('whatsapp.meta.system_token');
+        $platformTwilio = $platform->has('whatsapp.twilio.account_sid') && $platform->has('whatsapp.twilio.auth_token');
+
         if ($isMeta && empty($data['phone_number_id'])) {
             return back()->withInput()->with('error', "Meta : l'identifiant du numéro (phone_number_id) est obligatoire.");
         }
-        if (! $isMeta && (empty($data['account_sid']) || (empty($data['from']) && empty($data['messaging_service_sid'])))) {
-            return back()->withInput()->with('error', 'Twilio : le SID du compte et un numéro expéditeur (ou un Messaging Service) sont obligatoires.');
+        if (! $isMeta && ((empty($data['account_sid']) && ! $platformTwilio) || (empty($data['from']) && empty($data['messaging_service_sid'])))) {
+            return back()->withInput()->with('error', 'Twilio : un numéro expéditeur (ou un Messaging Service) est obligatoire, et le SID du compte aussi tant que le compte Twilio de la plateforme n\'est pas renseigné dans les Paramètres.');
         }
 
         $channel = Channel::withoutGlobalScopes()->firstOrNew(['bot_id' => $channelRequest->bot_id, 'type' => $data['provider']]);
@@ -84,16 +89,16 @@ class ChannelRequestController extends Controller
 
         // Un secret laisse vide est conserve tel quel : on ne reaffiche jamais un jeton, on ne le force pas a etre ressaisi.
         $credentials = $isMeta
-            ? ['access_token' => $data['access_token'] ?: ($existing['access_token'] ?? null), 'waba_id' => $data['waba_id'] ?? null]
+            ? ['access_token' => ($data['access_token'] ?? null) ?: ($existing['access_token'] ?? null), 'waba_id' => $data['waba_id'] ?? null]
             : [
-                'account_sid' => $data['account_sid'],
-                'auth_token' => $data['auth_token'] ?: ($existing['auth_token'] ?? null),
+                'account_sid' => $data['account_sid'] ?? null,
+                'auth_token' => ($data['auth_token'] ?? null) ?: ($existing['auth_token'] ?? null),
                 'from' => $data['from'] ?? null,
                 'messaging_service_sid' => $data['messaging_service_sid'] ?? null,
             ];
 
         if ($data['status'] === Channel::ACTIVE) {
-            $secret = $isMeta ? $credentials['access_token'] : $credentials['auth_token'];
+            $secret = $isMeta ? ($credentials['access_token'] ?: $platformMeta) : ($credentials['auth_token'] ?: $platformTwilio);
             if (! $secret) {
                 return back()->withInput()->with('error', 'Impossible d\'activer un canal sans jeton d\'accès.');
             }
@@ -103,7 +108,7 @@ class ChannelRequestController extends Controller
             'workspace_id' => $channelRequest->workspace_id,
             'status' => $data['status'],
             'display_phone' => $data['display_phone'] ?? $channelRequest->phone_number,
-            'external_ref' => $isMeta ? $data['phone_number_id'] : ltrim((string) ($data['from'] ?: $data['account_sid']), '+'),
+            'external_ref' => $isMeta ? $data['phone_number_id'] : ltrim((string) ($data['from'] ?: ($data['messaging_service_sid'] ?? '') ?: ($data['account_sid'] ?? '')), '+'),
             'credentials' => $credentials,
         ]);
 

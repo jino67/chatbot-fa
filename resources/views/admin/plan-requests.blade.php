@@ -17,7 +17,7 @@
                     <div class="min-w-0">
                         <a href="{{ route('admin.workspaces.show', $req->workspace_id) }}" class="font-semibold text-brand-950 hover:text-brand-700">{{ $req->workspace?->name }}</a>
                         <p class="text-sm text-slate-600">
-                            Offre souhaitée : <strong>{{ $req->plan }}</strong>, demandée par {{ $req->requester?->name }} ({{ $req->requester?->email }}), {{ $req->created_at->diffForHumans() }}
+                            Demande : <strong>{{ $req->label() }}</strong>, demandée par {{ $req->requester?->name }} ({{ $req->requester?->email }}), {{ $req->created_at->diffForHumans() }}
                         </p>
                         @if ($req->message) <p class="mt-1 text-sm text-slate-700">« {{ $req->message }} »</p> @endif
                         @if ($req->admin_notes) <p class="mt-1 text-sm text-slate-500">Note : {{ $req->admin_notes }}</p> @endif

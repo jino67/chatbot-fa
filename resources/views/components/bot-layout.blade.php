@@ -8,6 +8,7 @@
         'conversations' => ['Conversations', route('conversations.index', $bot)],
         'analytics' => ['Analytique', route('analytics.show', $bot)],
         'channels' => ['Canaux', route('channels.show', $bot)],
+        'import' => ['Import WhatsApp', route('import.show', $bot)],
         'settings' => ['Réglages', route('bots.edit', $bot)],
     ];
 @endphp

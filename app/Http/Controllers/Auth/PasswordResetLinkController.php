@@ -11,16 +11,14 @@ use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Display the password reset link request view.
-     */
     public function create(): View
     {
         return view('auth.forgot-password');
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Demande d'un lien de réinitialisation. La réponse est la même que l'adresse existe ou non : on ne révèle pas
+     * quels comptes existent. Seule une demande trop rapprochée est signalée.
      *
      * @throws ValidationException
      */
@@ -30,16 +28,12 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $status = Password::sendResetLink($request->only('email'));
 
-        return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        if ($status === Password::RESET_THROTTLED) {
+            return back()->withInput($request->only('email'))->withErrors(['email' => __($status)]);
+        }
+
+        return back()->with('status', 'Si un compte existe avec cette adresse, un lien de réinitialisation vient de lui être envoyé. Pensez à regarder dans les courriers indésirables.');
     }
 }

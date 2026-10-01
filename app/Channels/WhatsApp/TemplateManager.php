@@ -6,6 +6,9 @@ use App\Models\Channel;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\WhatsAppTemplate;
+use App\Models\Workspace;
+use App\Services\UsageMeter;
+use App\Services\UsageService;
 
 /**
  * Gestion des modeles de messages WhatsApp d'un canal : synchronisation avec le fournisseur, creation,
@@ -13,7 +16,11 @@ use App\Models\WhatsAppTemplate;
  */
 class TemplateManager
 {
-    public function __construct(private readonly GatewayFactory $gateways) {}
+    public function __construct(
+        private readonly GatewayFactory $gateways,
+        private readonly UsageMeter $meter,
+        private readonly UsageService $usage,
+    ) {}
 
     /**
      * Recopie les modeles du fournisseur (statuts d'approbation compris).
@@ -104,6 +111,12 @@ class TemplateManager
         }
 
         $channel = Channel::withoutGlobalScopes()->findOrFail($template->channel_id);
+
+        $workspace = Workspace::withoutGlobalScopes()->find($conversation->workspace_id);
+        if ($workspace && ! $this->usage->canSendWhatsApp($workspace)) {
+            throw new GatewayException('Le volume de messages WhatsApp de votre offre est atteint : rechargez des messages ou changez d\'offre.');
+        }
+
         $providerId = $this->gateways->for($channel)->sendTemplate(
             $conversation->external_id,
             $template->name,
@@ -111,6 +124,8 @@ class TemplateManager
             array_slice($variables, 0, $template->variables_count),
             $template->external_id,
         );
+
+        $this->meter->whatsapp($channel, 'template', $template->category, $conversation->bot_id);
 
         $message = $conversation->messages()->create([
             'workspace_id' => $conversation->workspace_id,

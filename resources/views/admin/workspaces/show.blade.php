@@ -43,8 +43,8 @@
                         <div>
                             <x-input-label for="pay-plan" value="Offre" />
                             <select id="pay-plan" name="plan" class="field">
-                                @foreach ($plans->where('price', '>', 0) as $p)
-                                    <option value="{{ $p->slug }}" @selected($workspace->plan === $p->slug)>{{ $p->name }} ({{ $p->formattedPrice() }})</option>
+                                @foreach ($plans->reject(fn ($p) => $p->isFree()) as $p)
+                                    <option value="{{ $p->slug }}" @selected($workspace->plan === $p->slug)>{{ $p->name }} ({{ $p->formattedPrice($workspace->currency) }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -54,7 +54,15 @@
                         </div>
                         <div>
                             <x-input-label for="pay-amount" value="Montant reçu" />
-                            <input id="pay-amount" name="amount" type="number" min="0" required class="field" value="{{ $plans->firstWhere('slug', $workspace->plan)?->price ?: '' }}">
+                            <input id="pay-amount" name="amount" type="number" min="0" required class="field" value="{{ $plans->firstWhere('slug', $workspace->plan)?->priceIn($workspace->currency) ?: '' }}">
+                        </div>
+                        <div>
+                            <x-input-label for="pay-currency" value="Devise du paiement" />
+                            <select id="pay-currency" name="currency" class="field">
+                                @foreach (\App\Support\Currency::ALL as $code => $currency)
+                                    <option value="{{ $code }}" @selected($workspace->currency === $code)>{{ $currency['name'] }} ({{ $currency['symbol'] }})</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div>
                             <x-input-label for="pay-method" value="Moyen de paiement" />
@@ -76,8 +84,47 @@
             </section>
 
             <section class="surface space-y-5 p-6">
+                @php $pack = config('platform.billing.wa_pack'); $packCode = $workspace->currency; @endphp
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-display text-lg font-bold">Recharger des messages WhatsApp</h2>
+                    <x-badge tone="brand">Crédit : {{ number_format($workspace->wa_credit, 0, ',', "\u{202F}") }} messages</x-badge>
+                </div>
+                <p class="text-sm text-slate-600">Le client paie par Mobile Money : vous enregistrez le paiement et les messages s'ajoutent à son crédit. Ils servent après le volume inclus dans son offre.</p>
+                <form method="POST" action="{{ route('admin.wallet.topup', $workspace) }}" class="grid gap-4 sm:grid-cols-2">
+                    @csrf
+                    <div><x-input-label for="topup-messages" value="Messages ajoutés" /><input id="topup-messages" name="messages" type="number" min="1" required class="field" value="{{ $pack['messages'] }}"></div>
+                    <div><x-input-label for="topup-amount" value="Montant reçu ({{ \App\Support\Currency::symbol($packCode) }})" /><input id="topup-amount" name="amount" type="number" min="0" required class="field" value="{{ $pack['prices'][$packCode] ?? $pack['prices']['XOF'] }}"></div>
+                    <input type="hidden" name="currency" value="{{ $packCode }}">
+                    <div>
+                        <x-input-label for="topup-method" value="Moyen de paiement" />
+                        <select id="topup-method" name="method" class="field">@foreach ($methods as $key => $label) <option value="{{ $key }}">{{ $label }}</option> @endforeach</select>
+                    </div>
+                    <div><x-input-label for="topup-ref" value="Référence" /><input id="topup-ref" name="reference" class="field" placeholder="N° de transaction"></div>
+                    <div class="sm:col-span-2"><button class="btn-primary">Enregistrer et créditer</button></div>
+                </form>
+            </section>
+            <section class="surface space-y-4 p-6">
+                <h2 class="font-display text-lg font-bold">Options à la carte</h2>
+                <p class="text-sm text-slate-600">Une option achetée en plus de l'offre. Elle est aussi activée quand vous approuvez la demande du client (Demandes d'offre).</p>
+                @foreach (config('platform.billing.addons') as $key => $addon)
+                    @php $included = (bool) $workspace->planModel()?->feature($key); $on = $workspace->hasAddon($key); @endphp
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-brand-950">{{ $addon['name'] }}</p>
+                            <p class="text-sm text-slate-500">{{ $included ? 'Déjà incluse dans son offre.' : ($on ? 'Activée à la carte.' : 'Non activée.') }}</p>
+                        </div>
+                        <form method="POST" action="{{ route('admin.workspaces.addon', $workspace) }}">
+                            @csrf
+                            <input type="hidden" name="addon" value="{{ $key }}">
+                            <input type="hidden" name="enabled" value="{{ $on ? 0 : 1 }}">
+                            <button class="btn-outline" @disabled($included)>{{ $on ? 'Retirer' : 'Activer' }}</button>
+                        </form>
+                    </div>
+                @endforeach
+            </section>
+            <section class="surface space-y-5 p-6">
                 <h2 class="font-display text-lg font-bold">Changer l'offre sans paiement</h2>
-                <p class="text-sm text-slate-600">Geste commercial, essai ou correction. Sans date de fin, l'offre reste active indéfiniment.</p>
+                <p class="text-sm text-slate-600">Geste commercial, essai ou correction. Sans date de fin, une offre payante reste active ; l'offre gratuite reçoit la durée d'essai par défaut.</p>
                 <form method="POST" action="{{ route('admin.workspaces.plan', $workspace) }}" class="grid gap-4 sm:grid-cols-2">
                     @csrf @method('PUT')
                     <div>

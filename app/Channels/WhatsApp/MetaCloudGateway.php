@@ -3,6 +3,8 @@
 namespace App\Channels\WhatsApp;
 
 use App\Models\Channel;
+use App\Services\PlatformSettings;
+use App\Speech\SpeechAudio;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -16,6 +18,16 @@ use Illuminate\Support\Facades\Http;
 class MetaCloudGateway implements WhatsAppGateway
 {
     public function __construct(private readonly Channel $channel) {}
+
+    public function provider(): string
+    {
+        return 'meta';
+    }
+
+    public function channel(): Channel
+    {
+        return $this->channel;
+    }
 
     public function sendText(string $to, string $text, array $buttons = []): string
     {
@@ -47,6 +59,45 @@ class MetaCloudGateway implements WhatsAppGateway
             ];
 
         return $this->send($payload);
+    }
+
+    public function sendAudio(string $to, SpeechAudio $audio): string
+    {
+        // Le fichier est d'abord déposé chez Meta, puis envoyé par son identifiant.
+        $upload = $this->request()->attach('file', $audio->bytes, 'reponse.ogg', ['Content-Type' => 'audio/ogg'])
+            ->post($this->url('media'), ['messaging_product' => 'whatsapp', 'type' => 'audio/ogg']);
+
+        if (! $upload->successful() || ! $upload->json('id')) {
+            throw new GatewayException($this->errorMessage($upload));
+        }
+
+        return $this->send([
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => ltrim($to, '+'),
+            'type' => 'audio',
+            'audio' => ['id' => (string) $upload->json('id')],
+        ]);
+    }
+
+    public function downloadMedia(InboundMessage $inbound): array
+    {
+        if (! $inbound->mediaRef) {
+            throw new GatewayException('Message vocal sans identifiant de média.');
+        }
+
+        // Deux temps : l'identifiant donne une adresse temporaire, qui se télécharge avec le même jeton.
+        $meta = $this->request()->get('https://graph.facebook.com/'.config('platform.whatsapp.meta.graph_version').'/'.$inbound->mediaRef);
+        if (! $meta->successful() || ! $meta->json('url')) {
+            throw new GatewayException($this->errorMessage($meta));
+        }
+
+        $file = $this->request()->withHeaders(['Accept' => '*/*'])->get((string) $meta->json('url'));
+        if (! $file->successful()) {
+            throw new GatewayException($this->errorMessage($file));
+        }
+
+        return ['bytes' => $file->body(), 'mime' => (string) ($meta->json('mime_type') ?: $inbound->mediaMime ?: 'audio/ogg')];
     }
 
     public function markRead(string $messageId): void
@@ -262,6 +313,8 @@ class MetaCloudGateway implements WhatsAppGateway
                         type: in_array($type, ['text', 'image', 'audio', 'document', 'location'], true) ? $type : ($text ? 'text' : 'other'),
                         text: $text,
                         channelRef: $phoneNumberId,
+                        mediaRef: $type === 'audio' ? ($message['audio']['id'] ?? null) : null,
+                        mediaMime: $type === 'audio' ? ($message['audio']['mime_type'] ?? null) : null,
                     );
                 }
             }
@@ -286,7 +339,10 @@ class MetaCloudGateway implements WhatsAppGateway
 
     private function request(): PendingRequest
     {
-        return Http::withToken((string) $this->channel->credential('access_token'))->timeout(15)->acceptJson();
+        // Jeton du canal (compte du client), sinon celui de la plateforme : les messages sont alors payes par la plateforme.
+        $token = $this->channel->credential('access_token') ?: app(PlatformSettings::class)->get('whatsapp.meta.system_token');
+
+        return Http::withToken((string) $token)->timeout(15)->acceptJson();
     }
 
     private function url(string $path): string
@@ -299,7 +355,7 @@ class MetaCloudGateway implements WhatsAppGateway
     /** Les modeles appartiennent au compte WhatsApp Business (WABA), pas au numero. */
     private function wabaUrl(string $path): string
     {
-        $waba = $this->channel->credential('waba_id');
+        $waba = $this->channel->credential('waba_id') ?: app(PlatformSettings::class)->get('whatsapp.meta.waba_id');
         if (! $waba) {
             throw new GatewayException("L'identifiant du compte WhatsApp Business (WABA ID) est manquant : l'équipe technique doit le renseigner pour gérer les modèles.");
         }

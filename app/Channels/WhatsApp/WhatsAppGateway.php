@@ -8,6 +8,12 @@ namespace App\Channels\WhatsApp;
  */
 interface WhatsAppGateway
 {
+    /** Fournisseur du canal : « meta » (direct, sans frais d'intermediaire) ou « twilio ». */
+    public function provider(): string;
+
+    /** Le canal servi par cette passerelle (pour rattacher chaque message a son client). */
+    public function channel(): \App\Models\Channel;
+
     /**
      * Envoie un texte libre (valable dans la fenetre de service de 24 h). Jusqu'a trois reponses rapides
      * peuvent l'accompagner : Meta les affiche comme boutons, Twilio les ignore.
@@ -18,6 +24,24 @@ interface WhatsAppGateway
      * @throws GatewayException
      */
     public function sendText(string $to, string $text, array $buttons = []): string;
+
+    /**
+     * Envoie un message vocal (ogg/opus). Le texte de la meme reponse part a part : un audio n'a pas de legende.
+     *
+     * @return string identifiant du message chez le fournisseur
+     *
+     * @throws GatewayException
+     */
+    public function sendAudio(string $to, \App\Speech\SpeechAudio $audio): string;
+
+    /**
+     * Telecharge le message vocal recu.
+     *
+     * @return array{bytes:string, mime:string}
+     *
+     * @throws GatewayException
+     */
+    public function downloadMedia(InboundMessage $inbound): array;
 
     /** Accuse de lecture (les deux coches bleues) : sans effet si le fournisseur ne le supporte pas. */
     public function markRead(string $messageId): void;

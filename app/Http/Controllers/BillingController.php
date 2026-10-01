@@ -24,7 +24,7 @@ class BillingController extends Controller
             'workspace' => $workspace,
             'plan' => $workspace->planModel(),
             'usage' => $usage->summary($workspace),
-            'plans' => Plan::where('is_public', true)->orderBy('sort')->get(),
+            'plans' => Plan::where('audience', $workspace->planModel()?->audience ?: 'business')->where('is_public', true)->orderBy('sort')->get(),
             'payments' => Payment::where('workspace_id', $workspace->id)->latest('paid_at')->limit(12)->get(),
             'pending' => PlanRequest::where('workspace_id', $workspace->id)->where('status', PlanRequest::REQUESTED)->latest()->first(),
             'instructions' => $settings->get('billing.instructions'),
@@ -46,7 +46,8 @@ class BillingController extends Controller
             return back()->with('error', 'Vous êtes déjà sur cette offre.');
         }
 
-        $open = PlanRequest::where('workspace_id', $workspace->id)->where('status', PlanRequest::REQUESTED)->first();
+        // Une option a la carte (« addon:... ») a sa propre demande : elle n'est jamais ecrasee par un changement d'offre.
+        $open = PlanRequest::where('workspace_id', $workspace->id)->where('status', PlanRequest::REQUESTED)->where('plan', 'not like', PlanRequest::ADDON_PREFIX.'%')->first();
         if ($open) {
             $open->update(['plan' => $data['plan'], 'message' => $data['message'] ?? $open->message]);
         } else {

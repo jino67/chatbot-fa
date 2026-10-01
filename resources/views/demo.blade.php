@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>Démonstration : {{ $bot->name }} | {{ $brand['name'] }}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <x-pwa-meta />
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:600,700|instrument-sans:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=unbounded:500,600,700|instrument-sans:400,500,600&display=swap" rel="stylesheet" />
+    <script>try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&document.referrer&&new URL(document.referrer).origin===location.origin){document.documentElement.classList.add('page-arriving')}}catch(e){}</script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-mist">
@@ -36,13 +37,13 @@
                 <p class="mt-5 max-w-xl text-sm text-slate-600">Cette page est une simulation : elle n'affiche pas le contenu réel du site de l'entreprise.</p>
             </div>
 
-            <aside class="surface p-6">
+            <aside data-tilt class="surface p-6">
                 <h2 class="font-display text-lg font-bold">Pour votre entreprise</h2>
                 <ul class="mt-4 space-y-3 text-sm text-slate-700">
-                    <li class="flex gap-3"><x-icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" /> Il lit vos documents, vos photos et le site de votre entreprise.</li>
-                    <li class="flex gap-3"><x-icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" /> Il répond sur votre site et sur WhatsApp, à toute heure.</li>
-                    <li class="flex gap-3"><x-icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" /> Il vous passe la main quand une question dépasse le robot.</li>
-                    <li class="flex gap-3"><x-icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" /> {{ $freePlan?->isFree() ? 'Gratuit pour démarrer, sans carte bancaire.' : 'Essai simple, sans engagement.' }}</li>
+                    <li class="group flex gap-3"><x-illus name="doc" class="h-8 w-8 shrink-0" /> Il lit vos documents, vos photos et le site de votre entreprise.</li>
+                    <li class="group flex gap-3"><x-illus name="chat" class="h-8 w-8 shrink-0" /> Il répond sur votre site et sur WhatsApp, à toute heure.</li>
+                    <li class="group flex gap-3"><x-illus name="voice" class="h-8 w-8 shrink-0" /> Il vous passe la main quand une question dépasse le robot.</li>
+                    <li class="group flex gap-3"><x-illus name="shield" class="h-8 w-8 shrink-0" /> {{ $freePlan?->hasTrial() ? 'Essai gratuit de '.$freePlan->trial_days.' jours, sans carte bancaire.' : ($freePlan?->isFree() ? 'Gratuit pour démarrer, sans carte bancaire.' : 'Essai simple, sans engagement.') }}</li>
                 </ul>
                 <a href="{{ route('register') }}" class="btn-accent mt-6 w-full">Essayer avec mes documents</a>
             </aside>

@@ -3,6 +3,9 @@
 namespace App\Channels\WhatsApp;
 
 use App\Models\Channel;
+use App\Services\PlatformSettings;
+use App\Speech\SpeechAudio;
+use App\Speech\VoiceMedia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -14,10 +17,41 @@ class TwilioGateway implements WhatsAppGateway
 {
     public function __construct(private readonly Channel $channel) {}
 
+    public function provider(): string
+    {
+        return 'twilio';
+    }
+
+    public function channel(): Channel
+    {
+        return $this->channel;
+    }
+
     /** Twilio n'affiche pas de boutons pour un texte libre : les reponses rapides sont ignorees. */
     public function sendText(string $to, string $text, array $buttons = []): string
     {
         return $this->post(['Body' => $text], $to);
+    }
+
+    /** Twilio va chercher le fichier lui-même : il doit être joignable publiquement (adresse signée et temporaire). */
+    public function sendAudio(string $to, SpeechAudio $audio): string
+    {
+        return $this->post(['MediaUrl' => VoiceMedia::publicUrl(VoiceMedia::store($audio))], $to);
+    }
+
+    public function downloadMedia(InboundMessage $inbound): array
+    {
+        if (! $inbound->mediaRef || ! str_starts_with($inbound->mediaRef, 'https://')) {
+            throw new GatewayException('Message vocal sans adresse de média.');
+        }
+
+        // Les médias Twilio se téléchargent avec les identifiants du compte.
+        $file = $this->request()->withHeaders(['Accept' => '*/*'])->get($inbound->mediaRef);
+        if (! $file->successful()) {
+            throw new GatewayException('Twilio HTTP '.$file->status().' : média introuvable.');
+        }
+
+        return ['bytes' => $file->body(), 'mime' => (string) ($file->header('Content-Type') ?: $inbound->mediaMime ?: 'audio/ogg')];
     }
 
     // ---- Modeles (Twilio : « Content Templates ») -------------------------------------------------
@@ -139,7 +173,7 @@ class TwilioGateway implements WhatsAppGateway
      */
     public static function verifySignature(Request $request, Channel $channel): bool
     {
-        $token = (string) $channel->credential('auth_token');
+        $token = (string) ($channel->credential('auth_token') ?: app(PlatformSettings::class)->get('whatsapp.twilio.auth_token'));
         $header = (string) $request->header('X-Twilio-Signature');
 
         if ($token === '' || $header === '') {
@@ -177,7 +211,11 @@ class TwilioGateway implements WhatsAppGateway
             default => 'text',
         };
 
-        return new InboundMessage($sid, $from, $request->post('ProfileName'), $type, $body !== '' ? $body : null);
+        return new InboundMessage(
+            $sid, $from, $request->post('ProfileName'), $type, $body !== '' ? $body : null,
+            mediaRef: $type === 'audio' ? (string) $request->post('MediaUrl0') : null,
+            mediaMime: $type === 'audio' ? $mime : null,
+        );
     }
 
     /** L'URL signee est celle que Twilio a appelee : derriere un proxy, on la reconstruit depuis la config. */
@@ -190,14 +228,20 @@ class TwilioGateway implements WhatsAppGateway
 
     private function request()
     {
-        return Http::withBasicAuth((string) $this->channel->credential('account_sid'), (string) $this->channel->credential('auth_token'))
+        // Compte du canal (client), sinon compte Twilio de la plateforme : les messages sont alors payes par la plateforme.
+        return Http::withBasicAuth($this->accountSid(), (string) ($this->channel->credential('auth_token') ?: app(PlatformSettings::class)->get('whatsapp.twilio.auth_token')))
             ->timeout(15)
             ->acceptJson();
     }
 
+    private function accountSid(): string
+    {
+        return (string) ($this->channel->credential('account_sid') ?: app(PlatformSettings::class)->get('whatsapp.twilio.account_sid'));
+    }
+
     private function endpoint(string $path, bool $account = false): string
     {
-        $sid = $this->channel->credential('account_sid');
+        $sid = $this->accountSid();
 
         return "https://api.twilio.com/2010-04-01/Accounts/{$sid}".($account ? $path : '/'.$path);
     }

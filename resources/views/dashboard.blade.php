@@ -17,16 +17,32 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        @if ($stats['leads'] > 0)
+            <a href="{{ route('leads.index') }}" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl rounded-bl-md border border-hibiscus-500/40 bg-white px-5 py-4 text-sm shadow-sm transition hover:shadow-lift">
+                <p><strong class="text-hibiscus-600">{{ $stats['leads'] }} demande{{ $stats['leads'] > 1 ? 's' : '' }} à traiter</strong> : commandes à confirmer, rendez-vous ou clients qui attendent une personne.</p>
+                <span class="btn-primary">Voir les demandes</span>
+            </a>
+        @endif
+        @unless ($alertsChosen)
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl rounded-bl-md border border-accent-300 bg-accent-50 px-5 py-4 text-sm">
+                <p><strong>Comment voulez-vous être prévenu ?</strong> Quand un client confirme une commande ou demande une personne, vous recevez un e-mail. Ajoutez WhatsApp et des rappels en deux minutes.</p>
+                <a href="{{ route('alerts.edit') }}" class="btn-accent">Choisir mes alertes</a>
+            </div>
+        @endunless
+
+        <div class="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
             @foreach ([
-                ['Conversations, 30 jours', $stats['conversations'], null],
-                ['Messages reçus, 30 jours', $stats['messages'], null],
-                ['Attendent une personne', $stats['waiting'], $stats['waiting'] ? 'text-red-600' : null],
-                ['Questions sans réponse, 30 jours', $stats['unanswered'], $stats['unanswered'] ? 'text-accent-700' : null],
-            ] as [$label, $value, $tone])
-                <div class="surface p-5">
-                    <p class="text-sm text-slate-600">{{ $label }}</p>
-                    <p class="mt-2 font-display text-4xl font-bold {{ $tone ?? 'text-brand-950' }}">{{ $value }}</p>
+                ['Conversations, 30 jours', $stats['conversations'], null, 'chat'],
+                ['Messages reçus, 30 jours', $stats['messages'], null, 'voice'],
+                ['Demandes à traiter', $stats['leads'], $stats['leads'] ? 'text-hibiscus-600' : null, 'inbox'],
+                ['Questions sans réponse, 30 jours', $stats['unanswered'], $stats['unanswered'] ? 'text-accent-700' : null, 'question'],
+            ] as [$label, $value, $tone, $illus])
+                <div data-tilt class="surface-link group p-5">
+                    <div class="flex items-start justify-between gap-2">
+                        <p class="text-sm text-slate-600">{{ $label }}</p>
+                        <x-illus :name="$illus" class="h-9 w-9 shrink-0" />
+                    </div>
+                    <p class="mt-2 font-display text-4xl font-bold {{ $tone ?? 'text-brand-950' }}" data-count="{{ $value }}">{{ $value }}</p>
                 </div>
             @endforeach
         </div>
@@ -41,7 +57,7 @@
                 @if ($bots->isNotEmpty())
                     <div class="surface divide-y divide-slate-100">
                         @foreach ($bots as $bot)
-                            <a href="{{ route('sources.index', $bot) }}" class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50">
+                            <a href="{{ route('sources.index', $bot) }}" class="group flex items-center justify-between gap-4 px-5 py-4 transition-all duration-300 hover:bg-brand-50/60 hover:pl-6">
                                 <div class="min-w-0">
                                     <p class="truncate font-semibold text-brand-950">{{ $bot->name }}</p>
                                     <p class="text-sm text-slate-600">{{ $bot->sources_count }} source(s), {{ $bot->conversations_count }} conversation(s)</p>
@@ -52,7 +68,8 @@
                     </div>
                 @else
                     <div class="surface p-10 text-center">
-                        <h3 class="font-display text-xl font-bold">Créez votre premier assistant</h3>
+                        <x-illus name="sleep" class="il-live mx-auto h-24 w-24" />
+                        <h3 class="mt-2 font-display text-xl font-bold">Créez votre premier assistant</h3>
                         <p class="mx-auto mt-2 max-w-md text-sm text-slate-600">Dix minutes suffisent : choisissez votre métier, ajoutez vos documents, testez, puis publiez.</p>
                         <a href="{{ route('bots.create') }}" class="btn-primary mt-5 px-6 py-3">Créer un assistant</a>
                     </div>

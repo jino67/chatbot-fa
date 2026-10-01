@@ -26,6 +26,8 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // Numéro WhatsApp personnel : il peut recevoir les alertes de demandes (page Alertes).
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9 ()\-\.]{8,20}$/'],
         ];
     }
 }

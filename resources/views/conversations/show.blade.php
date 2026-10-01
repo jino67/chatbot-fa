@@ -10,6 +10,13 @@
         <a href="{{ route('conversations.index', $bot) }}" class="text-sm text-slate-500 hover:text-brand-700">Toutes les conversations</a>
     </div>
 
+    @foreach ($conversation->openLeads as $lead)
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl rounded-bl-md border border-accent-300 bg-accent-50 px-5 py-3 text-sm">
+            <p><x-badge tone="amber">{{ $lead->label() }}</x-badge> <strong class="ms-1">{{ $lead->title }}</strong>@if ($lead->summary && $lead->summary !== $lead->title) <span class="text-slate-600">: {{ $lead->summary }}</span>@endif</p>
+            <a href="{{ route('leads.index') }}" class="font-medium text-brand-700 underline">Voir les demandes</a>
+        </div>
+    @endforeach
+
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="surface flex flex-col lg:col-span-2">
             <div class="max-h-[60vh] flex-1 space-y-3 overflow-y-auto px-5 py-4">

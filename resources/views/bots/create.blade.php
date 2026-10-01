@@ -9,7 +9,7 @@
         $formal = \App\Chat\InstructionGenerator::FORMALITY;
         $emojis = \App\Chat\InstructionGenerator::EMOJIS;
         $lengths = \App\Chat\InstructionGenerator::LENGTHS;
-        $langs = \App\Chat\InstructionGenerator::LANGUAGES;
+
         $old = fn ($k) => old($k, $defaults[$k] ?? '');
     @endphp
 
@@ -19,21 +19,10 @@
 
             <section class="surface p-6">
                 <h2 class="font-display text-lg font-bold">1. Votre assistant</h2>
-                <div class="mt-4 grid gap-5 sm:grid-cols-2">
-                    <div>
-                        <x-input-label for="name" value="Nom de l'assistant" />
-                        <input id="name" name="name" class="field" value="{{ old('name') }}" placeholder="Ex. Assistante Boutique Awa" required autofocus>
-                        <p class="mt-1 text-xs text-slate-500">Visible par vos clients dans la discussion.</p>
-                    </div>
-                    <div>
-                        <x-input-label for="language" value="Langue principale" />
-                        <select id="language" name="language" class="field">
-                            <option value="fr" @selected(old('language', 'fr') === 'fr')>Français</option>
-                            <option value="en" @selected(old('language') === 'en')>English</option>
-                            <option value="ar" @selected(old('language') === 'ar')>العربية</option>
-                        </select>
-                        <p class="mt-1 text-xs text-slate-500">Il répond toujours dans la langue du client.</p>
-                    </div>
+                <div class="mt-4">
+                    <x-input-label for="name" value="Nom de l'assistant" />
+                    <input id="name" name="name" class="field" value="{{ old('name') }}" placeholder="Ex. Assistante Boutique Awa" required autofocus>
+                    <p class="mt-1 text-xs text-slate-500">Visible par vos clients dans la discussion.</p>
                 </div>
 
                 <fieldset class="mt-5">
@@ -101,13 +90,8 @@
                 </div>
                 <fieldset class="mt-5">
                     <legend class="text-sm font-medium text-brand-900">Langues de vos clients</legend>
-                    <div class="mt-2 flex flex-wrap gap-4">
-                        @foreach ($langs as $code => $label)
-                            <label class="flex items-center gap-2 text-sm">
-                                <input type="checkbox" name="languages[]" value="{{ $code }}" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(in_array($code, (array) old('languages', ['fr'])))> {{ ucfirst($label) }}
-                            </label>
-                        @endforeach
-                    </div>
+                    <p class="mb-3 text-xs text-slate-500">Cochez toutes les langues que doit parler l'assistant. Vous pourrez les changer à tout moment dans ses paramètres.</p>
+                    <x-language-picker :selected="old('languages', ['fr'])" :primary="old('language', 'fr')" />
                 </fieldset>
             </section>
 

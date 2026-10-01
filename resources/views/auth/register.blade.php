@@ -1,4 +1,4 @@
-<x-guest-layout title="Créer mon assistant | {{ $brand['name'] }}">
+<x-guest-layout title="Créer mon assistant WhatsApp et site web | {{ $brand['name'] }}" description="Créez gratuitement l'assistant de votre entreprise : il répond à vos clients sur WhatsApp et sur votre site web à partir de vos documents. Essai sans carte bancaire." :indexable="true">
     <h1 class="font-display text-3xl font-bold text-brand-950">Créez votre assistant</h1>
     <p class="mt-2 text-slate-600">Gratuit pour démarrer, sans carte bancaire. Dix minutes suffisent.</p>
 

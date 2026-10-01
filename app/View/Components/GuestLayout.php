@@ -7,7 +7,8 @@ use Illuminate\View\View;
 
 class GuestLayout extends Component
 {
-    public function __construct(public ?string $title = null) {}
+    /** Seule la page d'inscription s'indexe (avec sa description) ; connexion et mots de passe restent hors des résultats. */
+    public function __construct(public ?string $title = null, public ?string $description = null, public bool $indexable = false) {}
 
     public function render(): View
     {

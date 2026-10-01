@@ -1,4 +1,4 @@
-<x-legal-layout title="Politique de confidentialité">
+<x-legal-layout title="Politique de confidentialité" description="Quelles données sont collectées, pourquoi, combien de temps elles sont conservées, et comment exercer vos droits sur vos informations et celles de vos clients.">
     <p class="text-sm text-slate-500">Dernière mise à jour : {{ $legal['updated'] }}</p>
 
     <p>
