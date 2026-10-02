@@ -358,7 +358,7 @@ final class Events
         try {
             $this->notifier->toStaff('system', $title, $body, $url, ['urgent' => $urgent, 'tag' => 'equipe-'.md5($title), 'dedupe_minutes' => 30]);
 
-            if ($to = config('platform.admin_email') ?: $this->settings->get('brand.email')) {
+            if ($to = $this->settings->alertEmail()) {
                 Mail::to($to)->send($notice);
             }
         } catch (\Throwable $e) {

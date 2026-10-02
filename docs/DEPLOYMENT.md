@@ -38,7 +38,7 @@ php artisan platform:make-admin equipe@votre-domaine.com --name="Équipe techniq
 | `ANTHROPIC_API_KEY`, `PLATFORM_MODEL` | Clé et modèle choisi |
 | `VOYAGE_API_KEY` (ou `OPENAI_API_KEY`) | Embeddings réels ; puis `PLATFORM_MIN_SCORE` à environ 0,35 à recaler sur le jeu de questions |
 | `META_APP_SECRET`, `META_VERIFY_TOKEN` | Voir [WHATSAPP.md](WHATSAPP.md) |
-| `PLATFORM_ADMIN_EMAIL` | Adresse de l'équipe technique |
+| `PLATFORM_ADMIN_EMAIL` | Adresse de l'équipe technique (repli de « E-mail de réception des alertes » dans Paramètres ; jamais affichée) |
 
 Changer de modèle d'embeddings impose de recalculer les vecteurs : `php artisan platform:reindex`.
 

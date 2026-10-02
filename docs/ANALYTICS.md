@@ -87,7 +87,7 @@ Une **note de santé** (0 à 100) résume chaque client : visites récentes (40)
 ## 6. Entretien
 
 - `php artisan analytics:prune` (chaque nuit à 03 h 30) efface au-delà de la durée de conservation (400 jours par défaut, réglable de 30 à 1095 jours dans Paramètres, Statistiques).
-- `php artisan analytics:digest` (lundi, 07 h 00) envoie le résumé à `PLATFORM_ADMIN_EMAIL` ou à l'e-mail de la marque ; `--force` l'envoie même s'il est désactivé ou si la semaine est vide.
+- `php artisan analytics:digest` (lundi, 07 h 00) envoie le résumé à l'adresse de réception des alertes (`PlatformSettings::alertEmail` : Paramètres, puis `PLATFORM_ADMIN_EMAIL`, puis l'e-mail de contact) ; `--force` l'envoie même s'il est désactivé ou si la semaine est vide.
 - Ces deux commandes passent par le planificateur : la tâche CRON de LWS (`cron.php`) suffit.
 
 ## 7. Mise en production (LWS, sans SSH)

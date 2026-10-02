@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
 class SettingsController extends Controller
 {
     private const KEYS = [
-        'brand.name', 'brand.tagline', 'brand.url', 'brand.whatsapp', 'brand.email',
+        'brand.name', 'brand.tagline', 'brand.url', 'brand.whatsapp', 'brand.email', 'team.alert_email',
         'marketing.landing_bot_key',
         'billing.instructions',
         'legal.company', 'legal.address', 'legal.registration', 'legal.email',
@@ -54,6 +54,7 @@ class SettingsController extends Controller
             'brand_url' => ['nullable', 'url', 'max:200'],
             'brand_whatsapp' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 ()\-\.]{7,25}$/'],
             'brand_email' => ['nullable', 'email', 'max:190'],
+            'team_alert_email' => ['nullable', 'email', 'max:190'],
             'landing_bot_key' => ['nullable', 'string', 'exists:bots,public_key'],
             'billing_instructions' => ['nullable', 'string', 'max:600'],
             'legal_company' => ['nullable', 'string', 'max:160'],
@@ -90,7 +91,7 @@ class SettingsController extends Controller
 
         foreach ([
             'brand.name' => 'brand_name', 'brand.tagline' => 'brand_tagline', 'brand.url' => 'brand_url',
-            'brand.whatsapp' => 'brand_whatsapp', 'brand.email' => 'brand_email',
+            'brand.whatsapp' => 'brand_whatsapp', 'brand.email' => 'brand_email', 'team.alert_email' => 'team_alert_email',
             'marketing.landing_bot_key' => 'landing_bot_key', 'billing.instructions' => 'billing_instructions',
             'legal.company' => 'legal_company', 'legal.address' => 'legal_address',
             'legal.registration' => 'legal_registration', 'legal.email' => 'legal_email',

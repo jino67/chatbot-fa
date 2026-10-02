@@ -76,7 +76,7 @@ Toutes passent par `Notifier` ; les textes sont écrits une seule fois dans `App
 | WhatsApp activé | l'espace ; e-mail au propriétaire | centre, téléphone, e-mail |
 | volume WhatsApp à 90 %, atteint | l'espace ; e-mail au propriétaire | centre, téléphone, e-mail |
 | bienvenue | la personne qui s'inscrit | centre, e-mail |
-| demande d'offre, d'option, d'activation WhatsApp ; solde Twilio bas | l'équipe de la plateforme | téléphone, centre, e-mail à l'adresse d'administration |
+| demande d'offre, d'option, d'activation WhatsApp ; solde Twilio bas | l'équipe de la plateforme | téléphone, centre, e-mail à l'adresse privée de réception des alertes (Paramètres, `team.alert_email`, sinon `PLATFORM_ADMIN_EMAIL`, sinon l'e-mail de contact) |
 
 La page **Alertes** du client choisit les canaux des demandes ; la case « Notification sur le téléphone » est cochée par défaut (elle ne fait rien tant qu'aucun appareil n'est abonné).
 

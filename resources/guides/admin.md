@@ -167,7 +167,7 @@ Pour un client qui nous confie la mise en place, déroulez cette liste dans son 
 
 ## 5. Les demandes d'offre
 
-Chaque nouvelle demande vous est signalée sur votre **téléphone** (si vous avez activé les notifications), dans votre cloche et par e-mail à l'adresse d'administration : vous n'avez pas à surveiller la page. Il en va de même des demandes d'option à la carte et des demandes d'activation WhatsApp.
+Chaque nouvelle demande vous est signalée sur votre **téléphone** (si vous avez activé les notifications), dans votre cloche et par e-mail à l'adresse de réception des alertes de l'équipe : vous n'avez pas à surveiller la page. Il en va de même des demandes d'option à la carte et des demandes d'activation WhatsApp.
 
 Quand un client clique sur **Choisir** une offre (ou demande une option), une demande apparaît dans **Demandes d'offre**, avec la liste filtrable par statut. Le client voit « Demande en cours » et les instructions de paiement.
 

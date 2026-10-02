@@ -122,7 +122,11 @@ La page **Équipe** liste les comptes du personnel. **Ajouter un membre** : nom,
 
 ### Marque
 
-Le **nom du produit** (il s'affiche partout : site, e-mails, « Propulsé par »), l'**adresse du site**, l'**accroche**, l'**e-mail de contact et de notification** (il reçoit les demandes d'offre et d'activation WhatsApp) et le **numéro WhatsApp commercial**. Avec l'indicatif du pays. Tant qu'il est vide, le bouton « Écrivez-nous sur WhatsApp » n'apparaît ni sur le site, ni dans les cartes « Besoin d'aide ? » de l'application.
+Le **nom du produit** (il s'affiche partout : site, e-mails, « Propulsé par »), l'**adresse du site**, l'**accroche**, l'**e-mail de contact (public)**, le **numéro WhatsApp commercial** (avec l'indicatif du pays) et l'**e-mail de réception des alertes de l'équipe**.
+
+> **Important :** ne confondez pas les deux adresses. L'**e-mail de contact** est **affiché partout** : sur le site, dans le pied de chaque e-mail, dans les guides et les boutons « Écrivez-nous ». Mettez-y l'adresse professionnelle de la marque (par exemple la boîte de votre domaine), jamais une adresse personnelle. L'**e-mail de réception des alertes** est **privé** : il reçoit les demandes d'offre, d'option et d'activation WhatsApp, le solde Twilio bas, les pannes d'IA et le résumé du lundi, et n'est jamais affiché. Mettez-y l'adresse que vous lisez tous les jours, même personnelle.
+
+Tant que le numéro WhatsApp est vide, le bouton « Écrivez-nous sur WhatsApp » n'apparaît ni sur le site, ni dans les cartes « Besoin d'aide ? » de l'application. Les PDF des guides impriment ces coordonnées : après un changement, régénérez-les (voir « Aide-mémoire des commandes »).
 
 ### Vitrine
 
@@ -288,7 +292,7 @@ La **fiche d'un espace client** montre aussi son activité des 30 derniers jours
 
 **La note de santé** d'un client va de 0 à 100 : visites récentes (40 points), régularité sur 30 jours (30), fonctions utilisées (20), vrais clients qui écrivent à son assistant (10). Au-dessus de 70 : très bonne ; sous 45 : à surveiller ; sous 20 : en danger. C'est une aide, pas un verdict : elle ne sait pas qu'un client est en vacances.
 
-Les phrases « **à retenir** » résument ce qui change (tendance, créneau record, canal qui domine, page qui perd ses visiteurs, clics répétés, journée inhabituelle). Elles se taisent tant qu'il y a moins d'une dizaine de visites. Un **résumé hebdomadaire** part par e-mail chaque lundi matin à l'adresse d'administration.
+Les phrases « **à retenir** » résument ce qui change (tendance, créneau record, canal qui domine, page qui perd ses visiteurs, clics répétés, journée inhabituelle). Elles se taisent tant qu'il y a moins d'une dizaine de visites. Un **résumé hebdomadaire** part par e-mail chaque lundi matin à l'e-mail de réception des alertes.
 
 > **À savoir :** les chiffres sont des **minimums**. Les visiteurs qui bloquent les scripts ou activent « Ne pas suivre » ne sont pas comptés, et le pays est une estimation d'après le fuseau horaire du navigateur (aucune adresse IP n'est lue).
 ### Respect de la vie privée
@@ -459,7 +463,7 @@ Ces commandes se lancent avec `php artisan` dans un environnement avec accès au
 | `platform:reindex` | Recalcule les vecteurs après un changement de moteur |
 | `whatsapp:templates --liste` | Montre la bibliothèque de modèles et les paquets |
 | `whatsapp:templates {id} --pack=essentiel` | Crée un paquet de modèles sur le canal d'un assistant |
-| `guides:build --url=https://kouma.site` | Fabrique les guides en PDF (A4, couverture, sommaire, signature). L'adresse publique est obligatoire : la commande refuse une adresse locale. À relancer après chaque changement d'un guide, puis envoyer les PDF de `public/documents/` avec la mise à jour |
+| `guides:build --url=https://kouma.site --email=contact@votre-domaine --whatsapp=22670000000` | Fabrique les guides en PDF (A4, couverture, sommaire, signature). À lancer **sur un ordinateur qui a Chrome ou Edge**, pas sur le serveur (il n'en a pas) : la commande le dit. L'adresse publique est obligatoire (une adresse locale est refusée) ; `--email` et `--whatsapp` imposent les coordonnées imprimées, car les Paramètres de l'ordinateur ne sont pas ceux du site. Puis envoyer les PDF de `public/documents/` et `resources/guides/pdf/` avec la mise à jour |
 | `analytics:prune`, `analytics:digest` | Nettoyage et résumé hebdomadaire des statistiques |
 | `push:keys` | État des clés des notifications (jamais la clé privée) |
 | `notifications:dispatch` | Envoie les campagnes et les notifications différées |

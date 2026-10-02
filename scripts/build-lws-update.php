@@ -4,7 +4,10 @@
  * Mise à jour d'un site déjà en ligne chez LWS, sans reconstruire tout le paquet : un petit zip qui ne contient que les
  * fichiers modifiés depuis le dernier commit (plus build/ quand le CSS ou le JS a changé).
  *
- *     php scripts/build-lws-update.php [nom-du-zip] [dossier-de-sortie]
+ *     php scripts/build-lws-update.php [nom-du-zip] [dossier-de-sortie] [--depuis=<commit>]
+ *
+ * Sans --depuis : les fichiers modifiés depuis le dernier commit. Avec --depuis=<commit> : ceux qui diffèrent de ce commit (le dernier
+ * commit réellement mis en ligne), commits suivants compris. À utiliser quand on a commité entre deux mises à jour.
  *
  * Par défaut : ../kouma-lws/mise-a-jour.zip. À extraire à la racine du dossier du domaine kouma.site, en écrasant :
  * les fichiers du projet vont dans kouma/, ceux de public/ à la racine. Le .env, storage/ et vendor/ ne sont jamais touchés.
@@ -18,24 +21,56 @@
 $racine = dirname(__DIR__);
 chdir($racine);
 
-$nom = $argv[1] ?? 'mise-a-jour.zip';
-$sortie = $argv[2] ?? dirname($racine).'/kouma-lws';
+// Les options (--depuis=...) se lisent à part ; le reste est positionnel.
+$depuis = null;
+$args = [];
+foreach (array_slice($argv, 1) as $arg) {
+    if (str_starts_with($arg, '--depuis=')) {
+        $depuis = substr($arg, 9);
+    } else {
+        $args[] = $arg;
+    }
+}
+
+$nom = $args[0] ?? 'mise-a-jour.zip';
+$sortie = $args[1] ?? dirname($racine).'/kouma-lws';
 @mkdir($sortie, 0777, true);
 
-// Fichiers modifiés ou nouveaux depuis le dernier commit (suivis ou non).
-$lignes = [];
-exec('git status --porcelain --untracked-files=all', $lignes);
+// Fichiers modifiés ou nouveaux (suivis ou non), depuis le dernier commit ou depuis le commit indiqué.
 $fichiers = [];
-foreach ($lignes as $ligne) {
-    $statut = substr($ligne, 0, 2);
-    $chemin = trim(substr($ligne, 3));
-    if (str_contains($chemin, ' -> ')) {
-        $chemin = substr($chemin, strpos($chemin, ' -> ') + 4);
+if ($depuis !== null) {
+    if (! preg_match('/^[0-9a-f]{4,40}$|^[A-Za-z0-9._\/-]+$/', $depuis)) {
+        fwrite(STDERR, "--depuis attend un commit ou une branche.\n");
+        exit(1);
     }
-    if (str_contains($statut, 'D') || ! is_file($chemin)) {
-        continue;
+    $differents = [];
+    exec('git diff --name-only --diff-filter=ACMR '.escapeshellarg($depuis), $differents, $code);
+    if ($code !== 0) {
+        fwrite(STDERR, "Commit introuvable : {$depuis}\n");
+        exit(1);
     }
-    $fichiers[] = str_replace('\\', '/', trim($chemin, '"'));
+    $nouveaux = [];
+    exec('git ls-files --others --exclude-standard', $nouveaux);
+    foreach (array_merge($differents, $nouveaux) as $chemin) {
+        if (is_file($chemin)) {
+            $fichiers[] = str_replace('\\', '/', trim($chemin, '"'));
+        }
+    }
+    $fichiers = array_values(array_unique($fichiers));
+} else {
+    $lignes = [];
+    exec('git status --porcelain --untracked-files=all', $lignes);
+    foreach ($lignes as $ligne) {
+        $statut = substr($ligne, 0, 2);
+        $chemin = trim(substr($ligne, 3));
+        if (str_contains($chemin, ' -> ')) {
+            $chemin = substr($chemin, strpos($chemin, ' -> ') + 4);
+        }
+        if (str_contains($statut, 'D') || ! is_file($chemin)) {
+            continue;
+        }
+        $fichiers[] = str_replace('\\', '/', trim($chemin, '"'));
+    }
 }
 
 // Ce qui ne part jamais en ligne : tests, docs, scripts, outils de construction, secrets.

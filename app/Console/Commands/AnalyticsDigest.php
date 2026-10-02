@@ -26,7 +26,7 @@ class AnalyticsDigest extends Command
             return self::SUCCESS;
         }
 
-        $to = config('platform.admin_email') ?: $settings->get('brand.email');
+        $to = $settings->alertEmail();
         if (! $to) {
             $this->warn('Aucune adresse de destination (PLATFORM_ADMIN_EMAIL ou e-mail de la marque).');
 

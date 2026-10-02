@@ -162,7 +162,7 @@ class ProviderRegistry
             report($pushError);
         }
 
-        $to = config('platform.admin_email') ?: $this->settings->get('brand.email');
+        $to = $this->settings->alertEmail();
         if (! $to) {
             return;
         }

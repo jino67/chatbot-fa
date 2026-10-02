@@ -25,10 +25,15 @@
                     <input id="brand_tagline" name="brand_tagline" class="field" value="{{ old('brand_tagline', $values['brand.tagline']) }}" placeholder="{{ config('brand.tagline') }}">
                 </div>
                 <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <x-input-label for="team_alert_email" value="E-mail de réception des alertes de l'équipe (privé)" />
+                        <input id="team_alert_email" name="team_alert_email" type="email" class="field" value="{{ old('team_alert_email', $values['team.alert_email']) }}" placeholder="{{ config('platform.admin_email') ?: 'votre adresse personnelle ou celle de la direction' }}">
+                        <p class="mt-1 text-xs text-slate-500"><strong>Jamais affiché.</strong> Reçoit les demandes d'offre, d'option et d'activation WhatsApp, le solde Twilio bas, les pannes d'IA et le résumé du lundi. Vide : l'adresse de contact public est utilisée.</p>
+                    </div>
                     <div>
-                        <x-input-label for="brand_email" value="E-mail de contact et de notification" />
-                        <input id="brand_email" name="brand_email" type="email" class="field" value="{{ old('brand_email', $values['brand.email']) }}">
-                        <p class="mt-1 text-xs text-slate-500">Reçoit les demandes d'offre et d'activation WhatsApp.</p>
+                        <x-input-label for="brand_email" value="E-mail de contact (public)" />
+                        <input id="brand_email" name="brand_email" type="email" class="field" value="{{ old('brand_email', $values['brand.email']) }}" placeholder="contact@votre-domaine">
+                        <p class="mt-1 text-xs text-slate-500"><strong>Affiché</strong> sur le site, dans les e-mails, les guides et les boutons « Écrivez-nous ». Mettez l'adresse professionnelle de la marque, jamais une adresse personnelle.</p>
                     </div>
                     <div>
                         <x-input-label for="brand_whatsapp" value="Numéro WhatsApp commercial" />
@@ -135,7 +140,7 @@
                 <label class="flex items-start gap-3 text-sm">
                     <input type="hidden" name="analytics_digest" value="0">
                     <input type="checkbox" name="analytics_digest" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('analytics_digest', $values['analytics.digest'] ?? true))>
-                    <span><strong class="font-semibold">Recevoir le résumé du lundi par e-mail</strong><br><span class="text-slate-600">Visites, heures de pointe, clients à relancer. Envoyé à l'adresse d'administration.</span></span>
+                    <span><strong class="font-semibold">Recevoir le résumé du lundi par e-mail</strong><br><span class="text-slate-600">Visites, heures de pointe, clients à relancer. Envoyé à l'e-mail de réception des alertes (privé).</span></span>
                 </label>
                 <div>
                     <x-input-label for="analytics_retention_days" value="Durée de conservation des données (jours)" />

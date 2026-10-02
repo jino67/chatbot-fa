@@ -86,6 +86,22 @@ class PlatformSettings
         $this->loaded = null;
     }
 
+    /**
+     * L'adresse qui reçoit les alertes de l'équipe (demandes d'offre, solde bas, panne d'IA, résumé du lundi) : privée, jamais
+     * affichée. Ordre : le réglage « E-mail de réception des alertes », puis PLATFORM_ADMIN_EMAIL, puis l'e-mail de contact public
+     * (anciennement la seule adresse, d'où ce repli).
+     */
+    public function alertEmail(): ?string
+    {
+        foreach ([$this->get('team.alert_email'), config('platform.admin_email'), $this->get('brand.email')] as $candidate) {
+            if (is_string($candidate) && filter_var(trim($candidate), FILTER_VALIDATE_EMAIL)) {
+                return trim($candidate);
+            }
+        }
+
+        return null;
+    }
+
     /** Marque affichee partout : nom, accroche, contact d'assistance. */
     public function brand(): array
     {
