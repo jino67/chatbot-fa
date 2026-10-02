@@ -197,6 +197,8 @@
                     async estimate() {
                         const form = this.$root;
                         const data = new FormData(form);
+                        // En modification, le formulaire porte « _method=PUT » : sans ce retrait, l'estimation serait lue comme un PUT (erreur 405).
+                        data.delete('_method');
                         this.est = null;
                         try {
                             const response = await fetch(this.estimateUrl, { method: 'POST', body: data, headers: { Accept: 'application/json', 'X-CSRF-TOKEN': this.token }, credentials: 'same-origin' });

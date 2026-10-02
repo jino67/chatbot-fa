@@ -270,6 +270,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');
 
         Route::get('audit', [Admin\AuditController::class, 'index'])->name('audit.index');
+        Route::get('audit/export', [Admin\AuditController::class, 'export'])->middleware('throttle:10,1')->name('audit.export');
 
         // Aperçu de tous les e-mails de la plateforme, et essai d'envoi à soi-même.
         Route::get('emails', [Admin\MailPreviewController::class, 'index'])->name('emails.index');

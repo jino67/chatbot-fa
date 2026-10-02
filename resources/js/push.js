@@ -291,7 +291,16 @@ window.notifBell = (summaryUrl, initial) => ({
 
     init() {
         window.addEventListener('kouma-notification', (event) => { this.unread = event.detail.count; if (this.open) this.load(); });
-        setInterval(() => { if (!document.hidden) this.load(true); }, 60000);
+        // Une relève par minute, et seulement si la cloche est visible (il y en a une pour le bureau, une pour le mobile) :
+        // quand la liaison est coupée (DNS, changement de réseau), on espace les essais au lieu de remplir la console.
+        let failures = 0;
+        const tick = async () => {
+            if (!document.hidden && navigator.onLine !== false && this.$el.offsetParent !== null) {
+                failures = (await this.load(true)) ? 0 : failures + 1;
+            }
+            setTimeout(tick, Math.min(600000, 60000 * 2 ** Math.min(failures, 4)));
+        };
+        setTimeout(tick, 60000);
     },
 
     async toggle() {
@@ -302,12 +311,14 @@ window.notifBell = (summaryUrl, initial) => ({
     async load(quiet = false) {
         try {
             const response = await fetch(summaryUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-            if (!response.ok) return;
+            if (!response.ok) return false;
             const data = await response.json();
             this.unread = data.unread;
             if (!quiet || this.open) this.items = data.items;
             this.loaded = true;
             if (window.koumaPush) window.koumaPush.setBadge(data.unread);
-        } catch (error) { /* hors connexion : le compteur reste celui de la page */ }
+
+            return true;
+        } catch (error) { /* hors connexion : le compteur reste celui de la page */ return false; }
     },
 });

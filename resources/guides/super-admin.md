@@ -416,7 +416,15 @@ Le menu **Notifications** (ouvert à l'équipe) : écrire le message, choisir l'
 
 Le **Journal** liste les actions sensibles : connexions du personnel, entrées dans un espace, paiements, changements d'offre, de devise, de rôle, création et révocation de clés d'API, activation de canaux, modèles créés, et **chaque consultation de conversation** (voir la section 10 : ouverture, note, signalement, résumé, export). Pour chacune : qui, quoi, dans quel espace, quand. Filtrez par type d'action.
 
-Consultez-le après tout incident, et régulièrement pour repérer une action inhabituelle (connexion à une heure inattendue, nombreux changements d'offre).
+Chaque ligne porte un **nom lisible** (« Rôle d'un membre changé », « Conversation consultée ») et, en dessous, le code technique de l'action. Les actions qui comptent le plus sont marquées **sensible** (orange) ou **critique** (rouge, ligne teintée) : changement de rôle, de paramètres, de fournisseur d'IA, suspension d'un espace, réinitialisation d'un mot de passe, suppression d'une offre.
+
+- **Période** : 24 heures, 7 jours, 30 jours (par défaut) ou tout.
+- **Filtres** : rubrique (espaces, paiements, offres, IA, équipe, paramètres, WhatsApp, assistants, notifications, supervision des conversations), personne, espace, et la case **Sensibles** pour ne voir que l'essentiel. La recherche porte sur la cible et sur l'action.
+- **En haut** : le nombre d'actions de la période, le nombre de personnes et la part d'actions sensibles (cliquez dessus pour les isoler).
+- **Détail** : les valeurs enregistrées avec l'action, en clair, et l'adresse IP de la personne sous son nom. Une ligne « Conversation consultée » renvoie directement à la conversation.
+- **Exporter en CSV** : le journal filtré (5 000 lignes au plus), pour un audit ou un dossier. L'export est lui-même inscrit au journal.
+
+Consultez-le après tout incident, et régulièrement pour repérer une action inhabituelle (connexion à une heure inattendue, nombreux changements d'offre, une personne de l'équipe qui lit beaucoup de conversations).
 
 ## 13. WhatsApp : mise en place complète
 
