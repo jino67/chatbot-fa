@@ -21,6 +21,7 @@ Plateforme d'assistants conversationnels pour entreprises, à la manière d'un B
 - **Notifications** sur les téléphones (application installée, compteur sur l'icône, rappels si bloquées), centre de notifications, préférences par catégorie et heures calmes ; l'équipe envoie promotions, nouveautés et messages importants (audience, programmation, résultats).
 - **E-mails** de marque (gabarit unique, version texte, aperçu et essai d'envoi dans l'administration).
 - **Statistiques** maison (visiteurs, clics, heures d'affluence, provenance, parcours, santé des clients), sans service tiers ni adresse IP.
+- **Supervision des conversations** (super administrateur) : toutes les conversations, visiteurs de Kouma et clients de chaque entreprise, avec signaux à surveiller, diagnostic, questions sans réponse, prospects, notes, exports, et journal de chaque consultation.
 - **Aide et guides** : pages publiques (client, développeur) avec PDF, guides internes de l'équipe, boutons « Besoin d'aide ».
 - Back-office de l'équipe technique : canaux, **consommation en temps réel** de chaque client, portefeuille Twilio, offres en plusieurs devises.
 
@@ -90,6 +91,7 @@ Renseigner les domaines autorisés dans *Réglages* de l'assistant avant la mise
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Mise en production (hébergement mutualisé, e-mail, tâches planifiées) |
 | [docs/SEO.md](docs/SEO.md) | Référencement : Search Console, pages de contenu, plan du site, ajout d'une page |
 | [docs/ANALYTICS.md](docs/ANALYTICS.md) | Statistiques maison : ce qui est mesuré, vie privée, onglets, entretien |
+| [docs/SUPERVISION.md](docs/SUPERVISION.md) | Supervision des conversations : vues, signaux, note de qualité, vie privée, limites |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notifications sur les téléphones (Web Push, compteur sur l'icône), centre de notifications, e-mails de marque, envois de l'équipe |
 | [docs/CATALOGUE.md](docs/CATALOGUE.md) | Catalogues Excel et CSV, étude des catalogues WhatsApp Business |
 | [docs/RECHERCHE.md](docs/RECHERCHE.md) | Recherche web, idées d'organisation, sources |

@@ -108,6 +108,9 @@ class BuildGuides extends Command
         $process->setTimeout(120);
         $process->run();
 
+        // Edge rend la main avant d'avoir fini d'écrire le fichier : on attend qu'il soit complet et stable.
+        $this->waitForPdf($target);
+
         if (! is_file($target) || ! str_starts_with((string) file_get_contents($target, false, null, 0, 5), '%PDF')) {
             $this->error("{$guide['pdf']} : échec. ".trim($process->getErrorOutput() ?: $process->getOutput()));
 
@@ -133,6 +136,25 @@ class BuildGuides extends Command
         }
 
         return null;
+    }
+
+    /** Attend (30 s au plus) que le PDF existe, se termine par « %%EOF » et ne change plus de taille. */
+    private function waitForPdf(string $target): void
+    {
+        $deadline = microtime(true) + 30;
+        $last = -1;
+
+        while (microtime(true) < $deadline) {
+            clearstatcache(true, $target);
+            $size = is_file($target) ? (int) filesize($target) : 0;
+
+            if ($size > 0 && $size === $last && str_contains((string) file_get_contents($target, false, null, max(0, $size - 64)), '%%EOF')) {
+                return;
+            }
+
+            $last = $size;
+            usleep(500000);
+        }
     }
 
     /** Nombre de pages, lu dans la structure du PDF (suffisant pour contrôler le résultat). */

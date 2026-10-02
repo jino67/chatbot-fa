@@ -17,6 +17,7 @@ Deux rôles existent dans l'équipe :
 | Équipe (ajouter, changer les rôles) | non | oui |
 | Paramètres de la plateforme | non | oui |
 | Journal d'audit | non | oui |
+| Lire toutes les conversations de la plateforme | non | oui |
 
 Votre rôle est affiché sous votre nom en bas du menu de gauche. Les entrées réservées au super admin n'apparaissent pas pour un admin.
 
@@ -34,7 +35,7 @@ Votre rôle est affiché sous votre nom en bas du menu de gauche. Les entrées r
 
 Connectez-vous avec votre adresse e-mail et votre mot de passe depuis la page **Se connecter**, puis ouvrez `/admin` (ou le lien « Administration »). Le menu de gauche a deux parties :
 
-- **Équipe** (ou « Super admin ») : Vue d'ensemble, Espaces clients, Demandes WhatsApp, Demandes d'offre (et, pour le super admin, Consommation, Offres et tarifs, IA et fournisseurs, Équipe, Paramètres, Journal).
+- **Équipe** (ou « Super admin ») : Vue d'ensemble, Espaces clients, Demandes WhatsApp, Demandes d'offre (et, pour le super admin, Statistiques, Conversations, Consommation, Offres et tarifs, IA et fournisseurs, Équipe, Paramètres, E-mails, Journal).
 - **Espace : nom du client**, quand vous êtes entré dans un espace : les pages du client (Tableau de bord, Assistants, Demandes, Alertes, Abonnement).
 
 En bas du menu : **Ressources** (Aide et guides, ce guide, Voir le site).

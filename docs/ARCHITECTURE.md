@@ -300,6 +300,12 @@ Toutes les tables « métier » portent `workspace_id`.
 
 **Décision.** Les anciens `Mail::raw` (texte brut) sont remplacés par `App\Mail\Notice` et le gabarit `components/mail/*` (bandeau de la marque, filet safran, bouton, faits, signature, version texte). Les e-mails d'événements sont construits par `Events` ; `MailCatalog` les capture avec des données d'exemple pour l'aperçu (Administration, E-mails) et pour le test de rendu de chacun.
 
+### D28. La supervision lit toutes les conversations, hors du périmètre d'entreprise, et laisse une trace
+
+**Décision.** Le super administrateur voit toutes les conversations (visiteurs de l'assistant de Kouma et clients de chaque entreprise) depuis `/admin/conversations`. `ChatQuery` les lit avec `withoutGlobalScopes()` et des sous-requêtes (aucune requête par ligne) ; `ChatDiagnosis` en tire, sans IA, l'issue, une note sur 100 et des signaux en clair ; le résumé par IA n'existe qu'à la demande (`ChatSummarizer`). Les notes, signalements et marques « examinée » vivent dans `conversation_notes`, séparée des conversations pour qu'aucune vue cliente ne puisse les afficher par accident.
+
+**Garde-fous.** Route réservée au super administrateur ; chaque ouverture, note, signalement, résumé et export est inscrit au journal (l'ouverture une fois par heure et par conversation) ; numéros masqués hors visiteurs de Kouma ; export CSV sans e-mail et à cellules neutralisées ; résumé jamais imputé au client ; mention dans la page Confidentialité. Détails et limites : `docs/SUPERVISION.md`.
+
 ## 6. Sécurité : synthèse
 
 | Menace | Mesure | Où |

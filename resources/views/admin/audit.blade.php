@@ -9,7 +9,7 @@
                 <label for="action" class="text-sm font-medium text-slate-700">Type d'action</label>
                 <select id="action" name="action" class="field">
                     <option value="">Toutes</option>
-                    @foreach (['workspace' => 'Espaces clients', 'payment' => 'Paiements', 'plan' => 'Offres', 'ai' => 'IA et fournisseurs', 'user' => 'Utilisateurs', 'team' => 'Équipe', 'settings' => 'Paramètres', 'template' => 'Modèles WhatsApp', 'billing' => 'Abonnement'] as $key => $label)
+                    @foreach (['workspace' => 'Espaces clients', 'payment' => 'Paiements', 'plan' => 'Offres', 'ai' => 'IA et fournisseurs', 'user' => 'Utilisateurs', 'team' => 'Équipe', 'settings' => 'Paramètres', 'template' => 'Modèles WhatsApp', 'billing' => 'Abonnement', 'chat' => 'Supervision des conversations'] as $key => $label)
                         <option value="{{ $key }}" @selected(request('action') === $key)>{{ $label }}</option>
                     @endforeach
                 </select>

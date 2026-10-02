@@ -29,6 +29,10 @@
         <li>Transmettre une conversation à un conseiller humain, et prévenir l'entreprise.</li>
         <li>Gérer les comptes, abonnements et paiements.</li>
         <li>Sécuriser le service, prévenir les abus et mesurer la consommation.</li>
+        <li>
+            Assurer la qualité du service et l'assistance : l'équipe de la plateforme peut lire des conversations (pour comprendre une panne ou une réclamation, ou pour améliorer un assistant).
+            Cet accès est réservé à des personnes habilitées, les numéros de téléphone des clients des entreprises y sont partiellement masqués, et chaque consultation est inscrite dans un journal.
+        </li>
     </ul>
 
     <h2>4. Intelligence artificielle et sous-traitants</h2>

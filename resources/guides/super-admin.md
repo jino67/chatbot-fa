@@ -28,6 +28,7 @@ Le menu de gauche, partie « Super admin », contient :
 | Notifications | Les promotions, nouveautés et messages importants envoyés aux clients (aussi ouvert à l'équipe) |
 | Consommation | Coûts réels et estimés, marges, solde Twilio |
 | Statistiques | Audience, comportements, entonnoirs, santé des clients |
+| Conversations | Toutes les conversations : visiteurs de Kouma et clients de chaque entreprise, avec les signaux à surveiller |
 | Offres et tarifs | Les offres, leurs prix par devise, quotas et options |
 | IA et fournisseurs | La chaîne de fournisseurs d'IA et la recherche dans les documents |
 | Équipe | Les membres de l'équipe et leurs rôles |
@@ -308,7 +309,77 @@ La mesure est conçue pour respecter la vie privée :
 
 > **Important :** selon les pays de vos visiteurs, une mesure d'audience peut demander une information, voire un consentement. Faites relire la page Confidentialité et la politique de conservation par un juriste de votre pays, comme pour les mentions légales.
 
-## 10. Les e-mails et les notifications
+## 10. Les conversations : voir tout ce qui se dit
+
+La page **Conversations** réunit, en un seul endroit, **toutes** les conversations de la plateforme : les visiteurs qui parlent à l'assistant de Kouma (celui de la page d'accueil) et, pour chaque entreprise cliente, les échanges entre son assistant et ses clients. Tous les canaux y sont : site web, WhatsApp, application, Facebook. Elle est réservée au **super admin**.
+
+Elle sert à quatre choses : **voir ce qui va mal** (un client qui attend, un assistant en panne ou en pause), **comprendre ce que les gens demandent**, **repérer les prospects** de Kouma, et **aider un client** qui a un doute sur son assistant.
+
+### Les sept vues
+
+| Vue | Ce qu'elle montre |
+|---|---|
+| Toutes | Toutes les conversations, de tous les assistants |
+| Assistant de Kouma | Les visiteurs qui ont parlé à l'assistant de la page d'accueil |
+| Assistants des clients | Les conversations de tous vos clients avec leurs propres clients |
+| À surveiller | Ce qui demande de l'attention : attente, questions sans réponse, mécontentement, clients non servis, pannes, signalements |
+| Prospects | Les visiteurs de Kouma qui ont laissé un contact, demandé une personne ou parlé de prix, d'essai, de devis |
+| Questions sans réponse | Les questions que les assistants n'ont pas su traiter, regroupées, toutes entreprises confondues |
+| Par client | Une ligne par entreprise : volume, part de questions sans réponse, passages à une personne, avis négatifs |
+
+Les essais faits par vos clients dans la zone de test de leur espace ne sont pas comptés, sauf si vous cochez « Avec les essais de la zone de test ».
+
+### Lire la page d'un coup d'œil
+
+- **En ce moment** : les conversations actives dans les 15 dernières minutes et les derniers messages de clients (la page se rafraîchit seule toutes les 20 secondes).
+- **Les chiffres de la période** : conversations, personnes différentes, questions, part de réponses trouvées dans les connaissances, avis des clients, passages à une personne, clients qui attendent, clients non servis, demandes enregistrées.
+- **Les puces « Repérer »** font remonter les conversations qui portent un signal :
+  - **En attente** : le client a demandé une personne et n'a pas reçu de réponse humaine depuis plus de 30 minutes.
+  - **Sans réponse** : au moins deux questions sans information trouvée. Le contenu de l'assistant est à compléter.
+  - **Mécontents** : un avis négatif, ou des mots de plainte (arnaque, remboursement, inacceptable...).
+  - **Non servis** : l'assistant n'a pas répondu parce qu'il était en pause, que l'essai était terminé, que l'espace était suspendu ou que le volume du mois était atteint. C'est un client perdu : à régler en priorité.
+  - **Pannes de l'IA** : un message d'excuse envoyé à cause d'une panne ou d'un refus de l'IA. Regardez « IA et fournisseurs ».
+  - **Prospects** : (vues Assistant de Kouma et Prospects) un contact laissé, une demande, ou un intérêt commercial.
+  - **Signalées** : celles que vous ou l'équipe avez marquées à surveiller.
+- **Rechercher** : par nom, numéro, e-mail, ou par un mot de l'échange. Vous pouvez aussi filtrer par entreprise, assistant, canal et état, et trier. Les choix sont dans l'adresse de la page : vous pouvez enregistrer une recherche dans vos favoris.
+- **Les heures d'affluence** : le lien sous le graphique affiche la carte des jours et des heures où les clients écrivent.
+
+### Ouvrir une conversation
+
+La page d'une conversation commence par un **diagnostic** fait automatiquement, sans appel à l'IA :
+
+- **Comment elle s'est terminée** : résolue par l'assistant, réponse partielle, restée sans réponse, client non servi, attente d'une personne, prise en charge par un conseiller, panne de l'IA.
+- **Une note sur 100**, avec une mention (Bonne, Correcte, À surveiller, Problématique). Elle part de 100 et retire des points : 15 par question sans information (jusqu'à 45), 35 si l'assistant n'a pas servi le client, 20 en cas de panne de l'IA, 25 par avis négatif (jusqu'à 50), 20 si le client attend une personne depuis plus de 30 minutes, 10 pour une question répétée, 10 pour une plainte sans conseiller. Chaque avis positif ajoute 5 points (jusqu'à 10). C'est une aide à la lecture, pas un verdict : lisez l'échange.
+- **Les signaux en clair**, avec la marche à suivre (par exemple : « compléter les connaissances », « vérifier les fournisseurs »).
+- **Les chiffres** : durée, temps avant la première réponse, temps de calcul moyen, réponses fondées, modèle d'IA, langue.
+
+Sous chaque réponse de l'assistant, vous voyez ce qu'il avait trouvé (**Dans les connaissances** ou **Sans information**), le motif quand il n'a pas pu répondre, le modèle, le temps de calcul, les sources et l'avis du client. Quand un client a attendu plus de 10 minutes une réponse, l'écart est signalé en rouge.
+
+Le panneau de droite regroupe :
+
+- **Qui** : le nom et les coordonnées. Pour un **client d'une entreprise**, le numéro et l'e-mail sont **partiellement masqués**. Pour un **visiteur de Kouma**, ils sont en clair : cette personne vous a écrit à vous, c'est ce qui permet de la recontacter.
+- **Suivi par l'équipe** : **Signaler** (la conversation entre dans « À surveiller ») et **Marquer examinée** (pour ne pas la relire).
+- **Résumé** : un résumé en quelques puces (ce que voulait la personne, ce qui a bloqué, la suite conseillée), fait par l'IA **seulement quand vous le demandez**. C'est un appel à l'IA de la plateforme, jamais compté dans le volume du client. Sans IA disponible, un résumé simplifié est composé à la place.
+- **Demandes enregistrées** : les commandes, rendez-vous, devis et demandes de personne nés de cette conversation.
+- **Notes de l'équipe** : des remarques internes, **jamais visibles du client**.
+- **Autres conversations de la même personne** : un client qui revient, ou qui n'a jamais obtenu sa réponse.
+
+### Que faire ensuite ?
+
+- **Aider un client** : le bouton **Entrer dans l'espace** ouvre l'espace de l'entreprise, pour répondre à sa place quand un client attend, ou corriger les connaissances de l'assistant. Cette entrée est inscrite au journal, comme d'habitude.
+- **Compléter les connaissances** : la vue **Questions sans réponse** est la liste de ce que les assistants ne savent pas. Pour l'assistant de Kouma, ajoutez la réponse dans ses sources ; pour un client, conseillez-lui d'ajouter l'information (ou faites-le pour lui).
+- **Recontacter un prospect** : dans la vue **Prospects**, ouvrez la conversation, lisez ce qu'il cherchait, puis écrivez-lui.
+- **Garder une trace** : **Exporter en CSV** (la liste filtrée) ou **Texte** (une conversation).
+
+### Vie privée : ce que vous devez savoir
+
+- Les échanges sont ceux de **personnes qui se sont adressées à un assistant d'entreprise**. N'utilisez cette page que pour la **qualité du service** et l'**assistance** : jamais par curiosité, ni pour contacter un client d'un client.
+- **Chaque conversation ouverte est inscrite au Journal** (avec votre nom, une fois par heure et par conversation), ainsi que les notes, signalements, résumés et exports. Filtrez le Journal sur « Supervision des conversations ».
+- Les numéros des clients des entreprises sont masqués dans les listes, les exports et la page de détail.
+- La page **Confidentialité** du site indique que l'équipe peut lire des conversations pour la qualité et l'assistance. Faites relire cette mention, et vos conditions d'utilisation, par un juriste de votre pays : certains pays demandent d'en informer aussi les clients de vos clients.
+- Ne copiez pas d'échanges dans un outil extérieur (messagerie, tableur partagé) sans nécessité.
+
+## 11. Les e-mails et les notifications
 
 ### Les e-mails
 
@@ -341,13 +412,13 @@ Le menu **Notifications** (ouvert à l'équipe) : écrire le message, choisir l'
 
 > **Attention :** un client doit avoir **activé** les notifications sur son appareil pour les recevoir sur l'écran. Les autres voient votre message dans la cloche à leur prochaine visite. La portée est affichée en haut de la page Notifications.
 
-## 11. Le journal d'audit
+## 12. Le journal d'audit
 
-Le **Journal** liste les actions sensibles : connexions du personnel, entrées dans un espace, paiements, changements d'offre, de devise, de rôle, création et révocation de clés d'API, activation de canaux, modèles créés. Pour chacune : qui, quoi, dans quel espace, quand. Filtrez par type d'action.
+Le **Journal** liste les actions sensibles : connexions du personnel, entrées dans un espace, paiements, changements d'offre, de devise, de rôle, création et révocation de clés d'API, activation de canaux, modèles créés, et **chaque consultation de conversation** (voir la section 10 : ouverture, note, signalement, résumé, export). Pour chacune : qui, quoi, dans quel espace, quand. Filtrez par type d'action.
 
 Consultez-le après tout incident, et régulièrement pour repérer une action inhabituelle (connexion à une heure inattendue, nombreux changements d'offre).
 
-## 12. WhatsApp : mise en place complète
+## 13. WhatsApp : mise en place complète
 
 ### Meta direct (cas général)
 
@@ -375,7 +446,7 @@ Consultez-le après tout incident, et régulièrement pour repérer une action i
 - Le **nom d'affichage** doit correspondre à l'entreprise : un nom générique est refusé.
 - Les tarifs de Meta dépendent de la catégorie du message et du pays : mettez à jour les coûts unitaires des Paramètres quand ils changent.
 
-## 13. La sécurité
+## 14. La sécurité
 
 ### Les règles d'or
 
@@ -403,7 +474,7 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - Retirez les accès des anciens collaborateurs le jour de leur départ.
 - Relisez la liste de l'équipe à chaque trimestre.
 
-## 14. La qualité du service
+## 15. La qualité du service
 
 - **Relisez des conversations réelles** chaque semaine : sur quelques clients, regardez si l'assistant répond juste, s'il cite des prix à jour, s'il passe la main quand il le faut.
 - **Constituez un jeu de questions de référence** (une vingtaine de questions typiques avec la réponse attendue) pour chaque grande catégorie de client, et rejouez-le **après tout changement de modèle d'IA ou de consigne**.
@@ -411,16 +482,17 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - **Conversation libre** : surveillez les premiers jours que l'assistant n'invente pas d'information sur l'entreprise. Un client peut la désactiver dans ses réglages.
 - **Langues locales** : faites relire par des locuteurs avant de les promettre à grande échelle.
 
-## 15. Conformité et légal
+## 16. Conformité et légal
 
 - **Mentions légales** : raison sociale, immatriculation, adresse, e-mail légal (Paramètres). Faites relire les pages Conditions d'utilisation et Confidentialité par un juriste.
 - **Données personnelles** : les clients de vos clients écrivent à des assistants et leurs messages sont enregistrés dans l'espace du client. Précisez dans les conditions les rôles de chacun (le client est responsable de ses données, la plateforme est son prestataire).
 - **Mesure d'audience** : voir la section 9.
+- **Lecture des conversations par l'équipe** : voir la section 10. Elle est réservée au super admin, journalisée et mentionnée dans la page Confidentialité ; faites valider cette mention et vos conditions d'utilisation.
 - **Messages marketing sur WhatsApp** : réservés aux personnes qui ont accepté d'en recevoir.
 - **Durées de conservation** : définissez et appliquez des durées pour les conversations et les statistiques ; informez-en les clients.
 - **Suppression** : un client peut supprimer ses assistants et son compte ; documentez ce qui est effacé et ce qui est conservé pour des raisons légales (paiements).
 
-## 16. Les listes de contrôle
+## 17. Les listes de contrôle
 
 ### Avant le lancement
 
@@ -450,7 +522,7 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - [ ] Revue du journal d'audit.
 - [ ] Révision des textes du site et des guides.
 
-## 17. Aide-mémoire des commandes
+## 18. Aide-mémoire des commandes
 
 Ces commandes se lancent avec `php artisan` dans un environnement avec accès au terminal (poste de développement). Chez LWS, sans SSH, utilisez la console et les procédures ci-dessus.
 

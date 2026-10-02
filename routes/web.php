@@ -280,6 +280,17 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('statistiques', [Admin\StatisticsController::class, 'index'])->name('statistics.index');
         Route::get('statistiques/direct', [Admin\StatisticsController::class, 'live'])->name('statistics.live');
         Route::get('statistiques/export/{table}', [Admin\StatisticsController::class, 'export'])->name('statistics.export');
+
+        // Supervision de toutes les conversations (assistant de Kouma et assistants des clients) : voir docs/SUPERVISION.md.
+        Route::get('conversations', [Admin\ChatSupervisionController::class, 'index'])->name('chats.index');
+        Route::get('conversations/direct', [Admin\ChatSupervisionController::class, 'live'])->name('chats.live');
+        Route::get('conversations/export', [Admin\ChatSupervisionController::class, 'export'])->middleware('throttle:10,1')->name('chats.export');
+        Route::get('conversations/{id}', [Admin\ChatSupervisionController::class, 'show'])->whereNumber('id')->name('chats.show');
+        Route::get('conversations/{id}/texte', [Admin\ChatSupervisionController::class, 'transcript'])->whereNumber('id')->middleware('throttle:20,1')->name('chats.transcript');
+        Route::post('conversations/{id}/note', [Admin\ChatSupervisionController::class, 'note'])->whereNumber('id')->name('chats.note');
+        Route::post('conversations/{id}/examinee', [Admin\ChatSupervisionController::class, 'review'])->whereNumber('id')->name('chats.review');
+        Route::post('conversations/{id}/signaler', [Admin\ChatSupervisionController::class, 'flag'])->whereNumber('id')->name('chats.flag');
+        Route::post('conversations/{id}/resume', [Admin\ChatSupervisionController::class, 'summarize'])->whereNumber('id')->middleware('throttle:6,1')->name('chats.summarize');
     });
 });
 

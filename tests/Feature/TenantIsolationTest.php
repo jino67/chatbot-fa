@@ -195,4 +195,24 @@ class TenantIsolationTest extends TestCase
         $this->get(route('admin.statistics.live'))->assertForbidden();
         $this->get(route('admin.statistics.export', ['table' => 'clients']))->assertForbidden();
     }
+
+    public function test_the_conversation_supervision_is_closed_to_clients_and_never_leaks_team_notes(): void
+    {
+        [, $userA] = $this->tenant('Client A');
+        [, $userB, $botB] = $this->tenant('Client B');
+        $conversationB = Conversation::withoutGlobalScopes()->create(['workspace_id' => $botB->workspace_id, 'bot_id' => $botB->id, 'channel' => 'web', 'external_id' => 'v-b', 'last_message_at' => now()]);
+        \App\Models\ConversationNote::create(['conversation_id' => $conversationB->id, 'kind' => 'note', 'body' => 'Remarque interne sur B']);
+
+        $this->actingAs($userA);
+        foreach (['admin.chats.index', 'admin.chats.live', 'admin.chats.export'] as $route) {
+            $this->get(route($route))->assertForbidden();
+        }
+        $this->get(route('admin.chats.show', $conversationB->id))->assertForbidden();
+        $this->get(route('admin.chats.transcript', $conversationB->id))->assertForbidden();
+        $this->post(route('admin.chats.note', $conversationB->id), ['body' => 'x'])->assertForbidden();
+        $this->post(route('admin.chats.summarize', $conversationB->id))->assertForbidden();
+
+        // Ni la page du client propriétaire, ni celle d'un autre client, ne montrent une note de l'équipe.
+        $this->actingAs($userB)->get(route('conversations.show', [$botB, $conversationB]))->assertOk()->assertDontSee('Remarque interne sur B');
+    }
 }

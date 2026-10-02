@@ -131,7 +131,8 @@ Priorités selon la méthode MoSCoW : **M** indispensable, **S** important, **C*
 | F4.8 | **Envois de l'équipe** : promotions, nouveautés, messages importants (audience, aperçu, essai, programmation, résultats) | S | Un client qui refuse les promotions n'en reçoit pas ; un message par jour au plus ; journal d'audit |
 | F4.9 | **E-mails de marque** : un gabarit, une version texte, aperçu et essai d'envoi dans l'administration | S | Aucun e-mail en texte brut ; chacun se voit avant d'être envoyé |
 | F4.10 | **Statistiques** maison (visiteurs, clics, affluence, provenance, parcours, santé des clients) | S | Aucune adresse IP gardée ; « Ne pas suivre » respecté ; refus possible en un clic |
-| F4.11 | **Aide et guides** (public : client, développeur avec PDF ; interne : équipe, super administrateur) | S | Chaque guide est à jour de l'application ; aucune adresse locale dans les PDF |
+| F4.11 | **Supervision des conversations** : toutes les conversations (visiteurs de Kouma et clients de chaque entreprise), signaux à surveiller, diagnostic, questions sans réponse, prospects, notes, exports | S | Super administrateur seulement ; chaque consultation journalisée ; numéros masqués ; résumé IA à la demande |
+| F4.12 | **Aide et guides** (public : client, développeur avec PDF ; interne : équipe, super administrateur) | S | Chaque guide est à jour de l'application ; aucune adresse locale dans les PDF |
 
 ## 6. Exigences non fonctionnelles
 
