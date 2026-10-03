@@ -186,9 +186,79 @@
                 <p class="text-xs text-slate-500">L'essai dit une phrase puis la réécoute, avec les réglages enregistrés (enregistrez avant de tester).</p>
             </section>
 
+            @php
+                $socialDefs = [
+                    'google' => ['Google', 'Console Google Cloud, « API et services », « Identifiants », « Créer des identifiants », « ID client OAuth », type « Application Web ».', [
+                        ['client_id', 'Identifiant client', false], ['client_secret', 'Code secret du client', true],
+                    ]],
+                    'apple' => ['Apple', 'Compte Apple Developer (payant), « Identifiers », un « Services ID » avec « Sign in with Apple », puis « Keys » : une clé « Sign in with Apple » dont on télécharge le fichier .p8 une seule fois.', [
+                        ['client_id', 'Identifiant de service (Services ID)', false], ['team_id', 'Identifiant d\'équipe (Team ID)', false], ['key_id', 'Identifiant de la clé (Key ID)', false], ['private_key', 'Clé privée (contenu du fichier .p8)', true],
+                    ]],
+                    'microsoft' => ['Microsoft', 'Portail Azure, « Microsoft Entra ID », « Inscriptions d\'applications », nouvelle inscription : comptes professionnels, scolaires et personnels. Puis « Certificats et secrets », nouveau secret client.', [
+                        ['client_id', 'Identifiant de l\'application (client)', false], ['client_secret', 'Valeur du secret client', true], ['tenant', 'Locataire (facultatif : laissez « common »)', false],
+                    ]],
+                ];
+            @endphp
+            <section id="connexion-externe" class="surface space-y-6 p-6">
+                <input type="hidden" name="social_form" value="1">
+                <div>
+                    <h2 class="font-display text-lg font-bold">Connexion avec Google, Apple, Microsoft, Facebook</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                        Vos clients s'inscrivent et se connectent en un geste, sans mot de passe à retenir, puis complètent leur entreprise et leur numéro WhatsApp. Un bouton n'apparaît sur les pages
+                        de connexion et d'inscription que pour un fournisseur réglé ci-dessous. Chacun demande de créer une « application » chez lui (gratuit, sauf Apple) et de lui indiquer l'adresse de retour affichée.
+                        Les secrets sont chiffrés et jamais réaffichés. Pas à pas : guide du super admin, section « Connexion avec Google, Apple... ».
+                    </p>
+                </div>
+
+                @foreach ($socialDefs as $key => [$label, $help, $fields])
+                    @php $configured = $social['providers'][$key]->isConfigured(); @endphp
+                    <div class="space-y-4 rounded-xl border border-slate-200 p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="font-display font-bold text-brand-950">{{ $label }}</h3>
+                            <x-badge :tone="$configured ? 'green' : 'gray'">{{ $configured ? 'Actif sur les pages de connexion' : 'Non réglé' }}</x-badge>
+                        </div>
+                        <p class="text-xs text-slate-500">{{ $help }}</p>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            @foreach ($fields as [$field, $fieldLabel, $secret])
+                                @php $name = 'social_'.$key.'_'.$field; @endphp
+                                <div class="{{ $field === 'private_key' ? 'sm:col-span-2' : '' }}">
+                                    <x-input-label for="{{ $name }}" value="{{ $fieldLabel }}" />
+                                    @if ($field === 'private_key')
+                                        <textarea id="{{ $name }}" name="{{ $name }}" rows="4" autocomplete="off" class="field font-mono text-xs" placeholder="{{ $social['secretSet'][$key] ? 'Enregistrée : laisser vide pour conserver' : '-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----' }}"></textarea>
+                                    @elseif ($secret)
+                                        <input id="{{ $name }}" name="{{ $name }}" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $social['secretSet'][$key] ? 'Enregistré : laisser vide pour conserver' : '' }}">
+                                    @else
+                                        <input id="{{ $name }}" name="{{ $name }}" class="field font-mono" value="{{ old($name, $values['social.'.$key.'.'.$field] ?? '') }}">
+                                    @endif
+                                    @error($name) <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="text-xs text-slate-500">Adresse de retour à déclarer chez {{ $label }} : <code class="select-all rounded bg-slate-100 px-1">{{ $social['redirects'][$key] }}</code></p>
+                        @if ($configured)
+                            <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="social_{{ $key }}_clear" value="1" class="rounded border-slate-300 text-red-600 focus:ring-red-500"> Retirer {{ $label }} (efface les identifiants et masque le bouton)</label>
+                        @endif
+                    </div>
+                @endforeach
+
+                <div class="space-y-3 rounded-xl border border-slate-200 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-display font-bold text-brand-950">Facebook</h3>
+                        <x-badge :tone="$social['providers']['facebook']->isConfigured() ? 'green' : 'gray'">{{ $social['providers']['facebook']->isConfigured() ? 'Actif sur les pages de connexion' : 'Non activé' }}</x-badge>
+                    </div>
+                    <p class="text-xs text-slate-500">Utilise l'application Meta réglée dans la section « Application Meta » plus bas (identifiant et clé secrète). Avant d'activer : passez l'application en mode « Production », ajoutez le produit « Facebook Login » et déclarez l'adresse de retour ci-dessous.</p>
+                    <label class="flex items-start gap-3 text-sm">
+                        <input type="hidden" name="social_facebook_login" value="0">
+                        <input type="checkbox" name="social_facebook_login" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('social_facebook_login', $social['facebookLogin']))>
+                        <span><strong class="font-semibold">Autoriser « Continuer avec Facebook »</strong><br><span class="text-slate-600">{{ $facebookConfigured ? 'L\'application Meta est réglée.' : 'Réglez d\'abord l\'application Meta plus bas.' }}</span></span>
+                    </label>
+                    <p class="text-xs text-slate-500">Adresse de retour à déclarer chez Meta (« URI de redirection OAuth valides ») : <code class="select-all rounded bg-slate-100 px-1">{{ $social['redirects']['facebook'] }}</code></p>
+                </div>
+            </section>
+
             <section class="surface space-y-5 p-6">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-display text-lg font-bold">Connexion Facebook (facultatif)</h2>
+                    <h2 class="font-display text-lg font-bold">Application Meta : pages Facebook (facultatif)</h2>
                     <x-badge :tone="$facebookConfigured ? 'green' : 'gray'">{{ $facebookConfigured ? 'Configurée' : 'Non configurée' }}</x-badge>
                 </div>
                 <p class="text-sm text-slate-600">

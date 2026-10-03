@@ -23,6 +23,7 @@
     ];
 
     $superNav = [
+        ['Utilisateurs', 'admin.people.index', 'users', 'admin.people.*'],
         ['Statistiques', 'admin.statistics.index', 'pulse', 'admin.statistics.*'],
         ['Conversations', 'admin.chats.index', 'chat', 'admin.chats.*'],
         ['Consommation', 'admin.consumption.index', 'chart', 'admin.consumption.*'],

@@ -45,6 +45,16 @@ class LoginRequest extends FormRequest
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
+            // Un compte créé par Google, Apple... n'a pas de mot de passe : on le dit au lieu d'un « identifiants incorrects » trompeur.
+            $user = \App\Models\User::where('email', $this->string('email')->lower()->toString())->first();
+            if ($user && ! $user->has_password) {
+                $names = $user->socialAccounts()->pluck('provider')->map(fn ($p) => ucfirst($p))->unique()->implode(', ');
+
+                throw ValidationException::withMessages([
+                    'email' => 'Ce compte se connecte avec '.($names ?: 'un compte externe').'. Utilisez le bouton correspondant, ou choisissez un mot de passe avec « Mot de passe oublié ».',
+                ]);
+            }
+
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);

@@ -27,6 +27,7 @@ Le menu de gauche, partie « Super admin », contient :
 | Demandes d'offre | Les changements d'offre et options à traiter |
 | Notifications | Les promotions, nouveautés et messages importants envoyés aux clients (aussi ouvert à l'équipe) |
 | Consommation | Coûts réels et estimés, marges, solde Twilio |
+| Utilisateurs | Les personnes inscrites : où elles en sont, qui contacter aujourd'hui, suivi et relances |
 | Statistiques | Audience, comportements, entonnoirs, santé des clients |
 | Conversations | Toutes les conversations : visiteurs de Kouma et clients de chaque entreprise, avec les signaux à surveiller |
 | Offres et tarifs | Les offres, leurs prix par devise, quotas et options |
@@ -379,7 +380,76 @@ Le panneau de droite regroupe :
 - La page **Confidentialité** du site indique que l'équipe peut lire des conversations pour la qualité et l'assistance. Faites relire cette mention, et vos conditions d'utilisation, par un juriste de votre pays : certains pays demandent d'en informer aussi les clients de vos clients.
 - Ne copiez pas d'échanges dans un outil extérieur (messagerie, tableur partagé) sans nécessité.
 
-## 11. Les e-mails et les notifications
+## 11. Les utilisateurs : suivre et contacter les inscrits
+
+La page **Utilisateurs** (réservée au super admin) montre **toutes les personnes inscrites** et sert à les aider à démarrer. Elle va plus loin que « Espaces clients », qui gère l'entreprise : ici, on suit **la personne**.
+
+- **En haut** : le nombre d'inscrits, les nouveaux de la semaine, les actifs du mois, les payants, et d'où viennent les inscriptions (e-mail, Google, Apple, Microsoft, Facebook).
+- **Les segments** répondent à une question : **Nouveaux**, **Profil à compléter** (arrivés par Google ou Apple mais arrêtés avant de donner leur entreprise et leur numéro), **Sans assistant**, **Assistant vide**, **À tester**, **Pas encore en ligne**, **En ligne, pas encore payants**, **Essai bientôt fini**, **Essai terminé**, **Dormants** (rien depuis 14 jours), **Payants**, **À relancer**, **Intéressés**, **Ne plus contacter**. Le nombre de chaque segment est affiché ; les plus urgents passent en rouge.
+- **La recherche** porte sur le nom, l'e-mail, le téléphone et l'entreprise ; on peut aussi filtrer par provenance, offre, suivi, état et responsable.
+
+### La fiche d'une personne
+
+Elle réunit tout ce qu'on sait : **où elle en est** (le stade se déduit de ce qui existe : assistant, connaissances, essais, vrais clients, offre), ses chiffres, ses assistants, **son parcours** daté (inscription, premier assistant, premier vrai client, paiements, application installée...), **d'où elle vient** (première visite, source, pays, appareil, quand la mesure l'a vue), son compte (e-mail, téléphone, connexions Google ou Apple, notifications) et son entreprise. Le bouton **Entrer dans son espace** permet de l'aider directement.
+
+### La contacter
+
+Le panneau **Contacter** propose un **modèle adapté à sa situation** (par exemple : « Votre premier assistant en dix minutes » pour quelqu'un sans assistant, « Votre essai gratuit se termine bientôt » avant la fin de l'essai). Vous le relisez et le modifiez avant l'envoi.
+
+- **E-mail** : envoyé dans le gabarit de la marque, avec « Bonjour Prénom, », et les réponses reviennent à l'adresse de contact public.
+- **WhatsApp** : ouvre une conversation WhatsApp avec le message déjà écrit (le numéro doit contenir l'indicatif du pays) et consigne le contact.
+- **Notification** : arrive dans sa cloche et sur ses téléphones activés.
+- **Noter** : une remarque interne (appel, rendez-vous, ce qu'elle cherche), jamais visible d'elle.
+
+Sous « Après ce contact », notez le **résultat** (a répondu, intéressé, sans réponse, pas intéressé, a pris une offre), le **statut** et la **prochaine relance**. Chaque contact est consigné (qui, quand, par quel moyen).
+
+### Le suivi
+
+Le **statut** : nouveau, contacté, intéressé, en discussion, client, perdu, **ne plus contacter**. La **prochaine relance** fait apparaître la personne dans « À relancer » le jour dit. Un **responsable** peut être désigné.
+
+> **Règles à respecter :** aidez, ne harcelez pas. À la demande d'une personne, passez-la en **Ne plus contacter** : plus aucun message n'est possible depuis la fiche (seule une note). Une adresse masquée par Apple (`privaterelay.appleid.com`) ne reçoit un e-mail que si votre domaine d'envoi est déclaré chez Apple : préférez WhatsApp ou la notification. Pour une annonce à beaucoup de monde, utilisez la page **Notifications**, qui respecte les choix de chacun.
+
+**Vie privée :** chaque fiche ouverte, chaque contact, chaque changement de suivi et chaque export (CSV : nom, e-mail, téléphone, étape, suivi) est inscrit au **Journal**. Les données sont personnelles : ne les copiez pas dans un outil extérieur sans nécessité.
+
+## 12. Connexion avec Google, Apple, Microsoft et Facebook
+
+Vos clients peuvent s'inscrire et se connecter **en un clic**, sans mot de passe à retenir, puis compléter leur **entreprise** et leur **numéro WhatsApp** juste après. Cela facilite beaucoup les inscriptions : une personne qui s'arrête en route reste visible dans **Utilisateurs**, segment « Profil à compléter », et vous pouvez la contacter.
+
+Rien n'apparaît tant que vous n'avez pas réglé un fournisseur : les boutons n'existent sur les pages de connexion et d'inscription que pour ceux qui sont réglés. Réglage : **Paramètres**, section « Connexion avec Google, Apple, Microsoft, Facebook ». Chaque fournisseur demande de créer une « application » chez lui et de lui donner l'**adresse de retour** affichée dans les Paramètres (de la forme `https://votre-site/auth/google/callback`). Les secrets sont chiffrés et jamais réaffichés. Après chaque réglage, essayez en **navigation privée**.
+
+### Google (gratuit)
+
+1. Console Google Cloud, créez un projet.
+2. « API et services », « Écran de consentement OAuth » : type **Externe**, nom de l'application, e-mail d'assistance, domaine du site, liens vers vos pages Confidentialité et Conditions. **Publiez** l'application (sinon seuls les testeurs peuvent s'en servir).
+3. « Identifiants », « ID client OAuth », type **Application Web**, avec l'adresse de retour de Google.
+4. Copiez l'**identifiant client** et le **code secret** dans les Paramètres.
+
+### Apple (compte développeur payant)
+
+1. Compte Apple Developer, « Identifiers » : créez un **App ID** avec « Sign in with Apple », puis un **Services ID** (c'est lui, l'identifiant de service) ; configurez-y votre domaine et l'adresse de retour d'Apple.
+2. « Keys » : créez une clé « Sign in with Apple » et **téléchargez le fichier .p8 (une seule fois)** ; notez l'identifiant de la clé (Key ID).
+3. Notez votre **Team ID**. Copiez ces quatre éléments (Services ID, Team ID, Key ID, contenu du .p8) dans les Paramètres.
+4. Apple permet à la personne de **masquer son e-mail** : voir la remarque de la section 11.
+
+### Microsoft (gratuit)
+
+1. Portail Azure, « Microsoft Entra ID », « Inscriptions d'applications », nouvelle inscription : comptes professionnels, scolaires **et personnels**, avec l'adresse de retour de Microsoft (type Web).
+2. Copiez l'**ID d'application (client)**. « Certificats et secrets », nouveau secret : copiez sa **valeur** tout de suite. Il **expire** (24 mois au plus) : notez la date pour le renouveler.
+
+### Facebook
+
+Facebook réutilise l'**application Meta** déjà utilisée pour les pages (section « Application Meta » des Paramètres). Chez Meta : ajoutez le produit **Connexion Facebook**, déclarez l'adresse de retour de Facebook, renseignez la politique de confidentialité, et passez l'application en mode **Production**. Puis cochez **Autoriser « Continuer avec Facebook »** dans les Paramètres.
+
+### Ce qui se passe, et les règles de sécurité
+
+- Une personne **nouvelle** reçoit un compte et un essai gratuit comme à l'inscription par e-mail, puis arrive sur la page « Terminer mon profil ». L'espace reste fermé tant que l'entreprise et le numéro ne sont pas donnés.
+- Une personne qui a **déjà un compte** avec la même adresse doit saisir **une fois le mot de passe** de ce compte pour le relier (sauf si ce compte n'a aucun mot de passe). C'est voulu : cela empêche quelqu'un d'hériter d'un compte avec l'adresse d'autrui.
+- Une **adresse de l'équipe** n'est **jamais** reliée automatiquement : l'équipe relie Google depuis son profil, une fois connectée.
+- Si le fournisseur ne donne pas d'adresse e-mail (Facebook parfois), elle est demandée. Aucun jeton n'est conservé : seuls l'identifiant chez le fournisseur, le nom, l'e-mail et la photo sont gardés.
+- Chaque personne gère ses liaisons dans **Mon profil**, rubrique « Connexions ». Elle ne peut pas retirer son dernier moyen de se connecter. Un compte sans mot de passe peut en choisir un ; « Mot de passe oublié » lui en donne un aussi.
+- **Mise à jour sans perte :** ces nouveautés ne font qu'**ajouter** des tables et des colonnes. Aucune inscription existante n'est modifiée ni supprimée.
+
+## 13. Les e-mails et les notifications
 
 ### Les e-mails
 
@@ -412,7 +482,7 @@ Le menu **Notifications** (ouvert à l'équipe) : écrire le message, choisir l'
 
 > **Attention :** un client doit avoir **activé** les notifications sur son appareil pour les recevoir sur l'écran. Les autres voient votre message dans la cloche à leur prochaine visite. La portée est affichée en haut de la page Notifications.
 
-## 12. Le journal d'audit
+## 14. Le journal d'audit
 
 Le **Journal** liste les actions sensibles : connexions du personnel, entrées dans un espace, paiements, changements d'offre, de devise, de rôle, création et révocation de clés d'API, activation de canaux, modèles créés, et **chaque consultation de conversation** (voir la section 10 : ouverture, note, signalement, résumé, export). Pour chacune : qui, quoi, dans quel espace, quand. Filtrez par type d'action.
 
@@ -426,7 +496,7 @@ Chaque ligne porte un **nom lisible** (« Rôle d'un membre changé », « Conve
 
 Consultez-le après tout incident, et régulièrement pour repérer une action inhabituelle (connexion à une heure inattendue, nombreux changements d'offre, une personne de l'équipe qui lit beaucoup de conversations).
 
-## 13. WhatsApp : mise en place complète
+## 15. WhatsApp : mise en place complète
 
 ### Meta direct (cas général)
 
@@ -454,7 +524,7 @@ Consultez-le après tout incident, et régulièrement pour repérer une action i
 - Le **nom d'affichage** doit correspondre à l'entreprise : un nom générique est refusé.
 - Les tarifs de Meta dépendent de la catégorie du message et du pays : mettez à jour les coûts unitaires des Paramètres quand ils changent.
 
-## 14. La sécurité
+## 16. La sécurité
 
 ### Les règles d'or
 
@@ -482,7 +552,7 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - Retirez les accès des anciens collaborateurs le jour de leur départ.
 - Relisez la liste de l'équipe à chaque trimestre.
 
-## 15. La qualité du service
+## 17. La qualité du service
 
 - **Relisez des conversations réelles** chaque semaine : sur quelques clients, regardez si l'assistant répond juste, s'il cite des prix à jour, s'il passe la main quand il le faut.
 - **Constituez un jeu de questions de référence** (une vingtaine de questions typiques avec la réponse attendue) pour chaque grande catégorie de client, et rejouez-le **après tout changement de modèle d'IA ou de consigne**.
@@ -490,17 +560,18 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - **Conversation libre** : surveillez les premiers jours que l'assistant n'invente pas d'information sur l'entreprise. Un client peut la désactiver dans ses réglages.
 - **Langues locales** : faites relire par des locuteurs avant de les promettre à grande échelle.
 
-## 16. Conformité et légal
+## 18. Conformité et légal
 
 - **Mentions légales** : raison sociale, immatriculation, adresse, e-mail légal (Paramètres). Faites relire les pages Conditions d'utilisation et Confidentialité par un juriste.
 - **Données personnelles** : les clients de vos clients écrivent à des assistants et leurs messages sont enregistrés dans l'espace du client. Précisez dans les conditions les rôles de chacun (le client est responsable de ses données, la plateforme est son prestataire).
 - **Mesure d'audience** : voir la section 9.
+- **Suivi des inscrits et connexion avec Google, Apple...** : voir les sections 11 et 12. Les personnes sont informées dans la page Confidentialité ; faites-la relire.
 - **Lecture des conversations par l'équipe** : voir la section 10. Elle est réservée au super admin, journalisée et mentionnée dans la page Confidentialité ; faites valider cette mention et vos conditions d'utilisation.
 - **Messages marketing sur WhatsApp** : réservés aux personnes qui ont accepté d'en recevoir.
 - **Durées de conservation** : définissez et appliquez des durées pour les conversations et les statistiques ; informez-en les clients.
 - **Suppression** : un client peut supprimer ses assistants et son compte ; documentez ce qui est effacé et ce qui est conservé pour des raisons légales (paiements).
 
-## 17. Les listes de contrôle
+## 19. Les listes de contrôle
 
 ### Avant le lancement
 
@@ -530,7 +601,7 @@ La clé de chiffrement `APP_KEY` protège les identifiants chiffrés en base : n
 - [ ] Revue du journal d'audit.
 - [ ] Révision des textes du site et des guides.
 
-## 18. Aide-mémoire des commandes
+## 20. Aide-mémoire des commandes
 
 Ces commandes se lancent avec `php artisan` dans un environnement avec accès au terminal (poste de développement). Chez LWS, sans SSH, utilisez la console et les procédures ci-dessus.
 

@@ -24,8 +24,8 @@
             <div class="wax relative hidden flex-col justify-between gap-8 overflow-hidden p-10 text-white lg:flex" data-ripple-field>
                 <a href="{{ route('home') }}" class="relative"><x-logo tone="light" size="lg" /></a>
                 <div class="relative max-w-md">
-                    <p class="font-display text-4xl font-bold leading-[1.1]">Vos clients écrivent à toute heure. Votre assistant répond.</p>
-                    <p class="mt-5 text-lg text-white/80">Donnez-lui vos tarifs, vos photos, votre site. En dix minutes, il répond sur votre site et sur WhatsApp.</p>
+                    <p class="font-display text-4xl font-bold leading-[1.1]">Vos clients écrivent sur WhatsApp à toute heure. Votre assistant répond.</p>
+                    <p class="mt-5 text-lg text-white/80">Donnez-lui vos tarifs, vos photos, votre site. En dix minutes, il répond sur WhatsApp, et sur votre site si vous en avez un.</p>
                 </div>
                 <div class="relative mx-auto hidden w-[19rem] max-w-full [@media(min-height:860px)]:block"><x-chat-demo /></div>
                 <p class="relative text-sm text-white/60">{{ $brand['name'] }} : {{ config('brand.meaning') }}.</p>

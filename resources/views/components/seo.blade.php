@@ -26,7 +26,7 @@
 <meta property="og:image" content="{{ $image }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{ $brandName }} : l'assistant qui répond à vos clients, sur votre site et sur WhatsApp">
+<meta property="og:image:alt" content="{{ $brandName }} : {{ $brand['tagline'] ?? config('brand.tagline') }}">
 @if ($modified)
     <meta property="article:modified_time" content="{{ $modified }}">
 @endif

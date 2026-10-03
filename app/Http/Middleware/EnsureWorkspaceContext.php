@@ -38,6 +38,11 @@ class EnsureWorkspaceContext
 
         abort_unless($user->workspace_id, 403, "Ce compte n'est rattaché à aucun espace.");
 
+        // Inscrit par Google, Apple... : il manque l'entreprise et le numéro avant d'entrer dans l'espace.
+        if ($user->needs_profile && ! $request->routeIs('account.complete*', 'profile.*', 'logout')) {
+            return redirect()->route('account.complete');
+        }
+
         if ($user->workspace?->is_suspended && ! $request->routeIs('billing.*', 'profile.*', 'logout')) {
             return response()->view('account.suspended', ['workspace' => $user->workspace], 403);
         }

@@ -38,6 +38,21 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    /**
+     * La confirmation d'un geste sensible : le mot de passe actuel, ou, pour un compte arrivé par Google, Apple... et
+     * sans mot de passe, la saisie de son adresse e-mail.
+     *
+     * @return list<mixed>
+     */
+    private function confirmation(Request $request): array
+    {
+        $user = $request->user();
+
+        return $user->has_password
+            ? ['required', 'current_password']
+            : ['required', fn ($attribute, $value, $fail) => strcasecmp(trim((string) $value), $user->email) === 0 || $fail('Saisissez l\'adresse e-mail de votre compte pour confirmer.')];
+    }
+
     /** « Mot de passe oublié » depuis le profil : le lien de réinitialisation part vers l'adresse du compte. */
     public function sendPasswordLink(Request $request): RedirectResponse
     {
@@ -49,7 +64,7 @@ class ProfileController extends Controller
     /** Ferme toutes les sessions de la personne sauf celle-ci, et invalide les cookies « rester connecté ». */
     public function logoutOthers(Request $request): RedirectResponse
     {
-        $request->validateWithBag('logoutOthers', ['password' => ['required', 'current_password']]);
+        $request->validateWithBag('logoutOthers', ['password' => $this->confirmation($request)]);
 
         $user = $request->user();
         if (config('session.driver') === 'database') {
@@ -66,7 +81,7 @@ class ProfileController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+            'password' => $this->confirmation($request),
         ]);
 
         $user = $request->user();

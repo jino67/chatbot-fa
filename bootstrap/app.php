@@ -33,11 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Mesure des actions importantes (voir config/analytics.php, « actions »).
         $middleware->appendToGroup('web', RecordActions::class);
 
-        // Les webhooks WhatsApp sont authentifies par signature, pas par session : pas de jeton CSRF.
-        $middleware->validateCsrfTokens(except: ['webhooks/*', 'a/e']);
+        // Les webhooks WhatsApp sont authentifies par signature, pas par session : pas de jeton CSRF. Le retour d'Apple (formulaire
+        // POST venu d'apple.com) est reconnu par son état à usage unique et son cookie (voir SocialLogin::consume).
+        $middleware->validateCsrfTokens(except: ['webhooks/*', 'a/e', 'auth/apple/callback']);
 
         // Les identifiants de mesure d'audience sont aléatoires et lisibles par le serveur : ni chiffrés ni signés.
-        $middleware->encryptCookies(except: ['_kv', '_ks', '_ko']);
+        $middleware->encryptCookies(except: ['_kv', '_ks', '_ko', 'kouma_oauth']);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

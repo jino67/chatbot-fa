@@ -4,6 +4,12 @@
 
     <x-auth-session-status class="mt-4" :status="session('status')" />
 
+    @if ($errors->has('social'))
+        <p class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ $errors->first('social') }}</p>
+    @endif
+
+    <x-social-buttons />
+
     <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5">
         @csrf
 

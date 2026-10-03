@@ -3,10 +3,19 @@
         $requestOpen = $request && in_array($request->status, ['requested', 'in_progress']);
     @endphp
 
+    {{-- Partager le lien de discussion --}}
+    <section id="partager" class="surface mb-6 space-y-4 p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-display text-lg font-bold">Partager votre assistant</h2>
+            <x-badge tone="green">Sans rien installer</x-badge>
+        </div>
+        <x-share-chat :bot="$bot" />
+    </section>
+
     <div class="grid gap-6 lg:grid-cols-2">
 
         {{-- Site web --}}
-        <section class="surface space-y-4 p-6">
+        <section class="surface min-w-0 space-y-4 p-6">
             <div class="flex items-center justify-between">
                 <h2 class="font-display text-lg font-bold">Votre site web</h2>
                 <x-badge tone="green">Disponible</x-badge>
@@ -39,7 +48,7 @@
         </section>
 
         {{-- WhatsApp --}}
-        <section class="surface space-y-4 p-6">
+        <section class="surface min-w-0 space-y-4 p-6">
             <div class="flex items-center justify-between">
                 <h2 class="font-display text-lg font-bold">WhatsApp</h2>
                 @if ($whatsapp?->isActive()) <x-badge tone="green">Actif</x-badge>

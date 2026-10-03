@@ -11,6 +11,7 @@ use App\Speech\SpeechException;
 use App\Speech\SpeechFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
+use App\Social\Auth\SocialLogin;
 use App\Social\FacebookGraph;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,9 +29,19 @@ class SettingsController extends Controller
         'costs.twilio_fee', 'costs.meta_service', 'costs.meta_utility', 'costs.meta_marketing', 'costs.rate_usd', 'costs.rate_mad',
         'speech.stt_model', 'speech.tts_model', 'speech.local_url', 'speech.local_model',
         'analytics.enabled', 'analytics.retention_days', 'analytics.digest',
+        'social.google.client_id', 'social.apple.client_id', 'social.apple.team_id', 'social.apple.key_id', 'social.microsoft.client_id', 'social.microsoft.tenant',
     ];
 
-    public function edit(PlatformSettings $settings, FacebookGraph $facebook)
+    /** Connexion externe : les champs ordinaires et les secrets (jamais réaffichés) de chaque fournisseur. */
+    private const SOCIAL_FIELDS = [
+        'google' => ['client_id'],
+        'apple' => ['client_id', 'team_id', 'key_id'],
+        'microsoft' => ['client_id', 'tenant'],
+    ];
+
+    private const SOCIAL_SECRETS = ['google' => 'client_secret', 'apple' => 'private_key', 'microsoft' => 'client_secret'];
+
+    public function edit(PlatformSettings $settings, FacebookGraph $facebook, SocialLogin $login)
     {
         return view('admin.settings', [
             'values' => collect(self::KEYS)->mapWithKeys(fn ($k) => [$k => $settings->get($k)])->all(),
@@ -43,6 +54,12 @@ class SettingsController extends Controller
             'speechLocalKeySet' => $settings->has('speech.local_key'),
             'speechCloudReady' => (bool) app(SpeechFactory::class)->cloudKey(),
             'callbackUrl' => route('facebook.callback'),
+            'social' => [
+                'providers' => $login->all(),
+                'redirects' => collect(array_keys(SocialLogin::PROVIDERS))->mapWithKeys(fn ($key) => [$key => $login->redirectUri($key)])->all(),
+                'secretSet' => collect(self::SOCIAL_SECRETS)->mapWithKeys(fn ($field, $provider) => [$provider => $settings->has("social.{$provider}.{$field}")])->all(),
+                'facebookLogin' => $login->facebookLoginEnabled(),
+            ],
         ]);
     }
 
@@ -87,6 +104,17 @@ class SettingsController extends Controller
             'analytics_enabled' => ['nullable', 'boolean'],
             'analytics_digest' => ['nullable', 'boolean'],
             'analytics_retention_days' => ['nullable', 'integer', 'min:30', 'max:1095'],
+            // Connexion avec Google, Apple, Microsoft, Facebook (voir docs/SOCIAL.md)
+            'social_google_client_id' => ['nullable', 'string', 'max:200'],
+            'social_google_client_secret' => ['nullable', 'string', 'max:200'],
+            'social_apple_client_id' => ['nullable', 'string', 'max:200'],
+            'social_apple_team_id' => ['nullable', 'string', 'max:40'],
+            'social_apple_key_id' => ['nullable', 'string', 'max:40'],
+            'social_apple_private_key' => ['nullable', 'string', 'max:4000'],
+            'social_microsoft_client_id' => ['nullable', 'string', 'max:200'],
+            'social_microsoft_client_secret' => ['nullable', 'string', 'max:300'],
+            'social_microsoft_tenant' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z0-9.-]+$/'],
+            'social_facebook_login' => ['nullable', 'boolean'],
         ]);
 
         foreach ([
@@ -115,6 +143,23 @@ class SettingsController extends Controller
         }
         if ($request->has('analytics_retention_days')) {
             $settings->set('analytics.retention_days', $data['analytics_retention_days'] ?? null);
+        }
+
+        // Connexion externe : champs envoyés par la section dédiée seulement. « Effacer » retire un fournisseur en entier.
+        if ($request->boolean('social_form')) {
+            foreach (self::SOCIAL_FIELDS as $provider => $fields) {
+                $clear = $request->boolean("social_{$provider}_clear");
+                foreach ($fields as $field) {
+                    $settings->set("social.{$provider}.{$field}", $clear ? null : (trim((string) ($data["social_{$provider}_{$field}"] ?? '')) ?: null));
+                }
+                $secret = self::SOCIAL_SECRETS[$provider];
+                if ($clear) {
+                    $settings->set("social.{$provider}.{$secret}", null);
+                } elseif (filled($data["social_{$provider}_{$secret}"] ?? null)) {
+                    $settings->set("social.{$provider}.{$secret}", trim($data["social_{$provider}_{$secret}"]), secret: true);
+                }
+            }
+            $settings->set('social.facebook.login', $request->boolean('social_facebook_login'));
         }
 
         // Secrets : laisses vides, ils restent tels quels et ne sont jamais reaffiches.

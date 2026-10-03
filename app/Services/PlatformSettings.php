@@ -105,9 +105,11 @@ class PlatformSettings
     /** Marque affichee partout : nom, accroche, contact d'assistance. */
     public function brand(): array
     {
+        $tagline = trim((string) $this->get('brand.tagline', config('brand.tagline')));
+
         return [
             'name' => (string) $this->get('brand.name', config('brand.name')),
-            'tagline' => (string) $this->get('brand.tagline', config('brand.tagline')),
+            'tagline' => $tagline === '' || in_array($tagline, (array) config('brand.legacy_taglines', []), true) ? (string) config('brand.tagline') : $tagline,
             'url' => (string) $this->get('brand.url', config('app.url')),
             'whatsapp' => preg_replace('/\D/', '', (string) $this->get('brand.whatsapp', config('brand.whatsapp', ''))),
             'email' => (string) $this->get('brand.email', config('brand.email', '')),

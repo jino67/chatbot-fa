@@ -3,7 +3,7 @@
         <span class="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand-50 transition-all duration-300 group-hover:rounded-2xl group-hover:rounded-bl-sm"><x-illus name="shield" class="h-9 w-9" /></span>
         <div>
             <h2 class="font-display text-lg font-bold text-brand-950">Mot de passe</h2>
-            <p class="mt-1 text-sm text-slate-600">Choisissez un mot de passe long et unique : au moins 8 caractères, en mélangeant lettres et chiffres.</p>
+            <p class="mt-1 text-sm text-slate-600">@if ($user->has_password) Choisissez un mot de passe long et unique : au moins 8 caractères, en mélangeant lettres et chiffres. @else Vous vous connectez avec un compte externe : un mot de passe est facultatif, mais utile si vous perdez l'accès à ce compte. @endif</p>
         </div>
     </header>
 
@@ -11,8 +11,10 @@
         @csrf
         @method('put')
 
-        <x-password-input id="update_password_current_password" name="current_password" label="Mot de passe actuel" autocomplete="current-password"
-                          :messages="$errors->updatePassword->get('current_password')" />
+        @if ($user->has_password)
+            <x-password-input id="update_password_current_password" name="current_password" label="Mot de passe actuel" autocomplete="current-password"
+                              :messages="$errors->updatePassword->get('current_password')" />
+        @endif
 
         <div class="grid gap-5 sm:grid-cols-2">
             <x-password-input id="update_password_password" name="password" label="Nouveau mot de passe" :meter="true"
@@ -22,11 +24,12 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <x-primary-button>Changer le mot de passe</x-primary-button>
+            <x-primary-button>{{ $user->has_password ? 'Changer le mot de passe' : 'Choisir un mot de passe' }}</x-primary-button>
         </div>
     </form>
 
     {{-- Mot de passe actuel oublié : un lien part vers l'adresse du compte, sans qu'il faille l'ancien mot de passe. --}}
+    @if ($user->has_password)
     <div class="mt-8 rounded-2xl rounded-bl-md bg-slate-50 p-5">
         <p class="text-sm font-semibold text-brand-950">Vous ne vous souvenez plus de votre mot de passe actuel ?</p>
         <p class="mt-1 text-sm text-slate-600">Nous envoyons un lien à <strong class="font-semibold text-slate-800">{{ $user->email }}</strong> pour en choisir un nouveau, sans avoir besoin de l'ancien.</p>
@@ -35,4 +38,5 @@
             <button class="btn-outline px-4 py-2">M'envoyer le lien par e-mail</button>
         </form>
     </div>
+    @endif
 </section>

@@ -18,11 +18,11 @@
 
             <h2 class="font-display text-lg font-bold text-brand-950">Supprimer définitivement votre compte ?</h2>
 
-            <p class="mt-2 text-sm text-slate-600">Cette action ne peut pas être annulée. Saisissez votre mot de passe pour confirmer.</p>
+            <p class="mt-2 text-sm text-slate-600">Cette action ne peut pas être annulée. {{ $user->has_password ? 'Saisissez votre mot de passe pour confirmer.' : 'Saisissez l\'adresse e-mail de votre compte pour confirmer.' }}</p>
 
             <div class="mt-6">
-                <x-input-label for="password" value="Mot de passe" class="sr-only" />
-                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full sm:w-3/4" placeholder="Votre mot de passe" />
+                <x-input-label for="password" value="{{ $user->has_password ? 'Mot de passe' : 'Adresse e-mail' }}" class="sr-only" />
+                <x-text-input id="password" name="password" :type="$user->has_password ? 'password' : 'email'" class="mt-1 block w-full sm:w-3/4" :placeholder="$user->has_password ? 'Votre mot de passe' : $user->email" />
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
             </div>
 

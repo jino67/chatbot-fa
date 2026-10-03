@@ -41,6 +41,8 @@ class User extends Authenticatable
     protected $attributes = [
         'role' => self::CLIENT,
         'is_active' => true,
+        'has_password' => true,
+        'needs_profile' => false,
     ];
 
     /**
@@ -64,8 +66,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'has_password' => 'boolean',
+            'needs_profile' => 'boolean',
             'last_login_at' => 'datetime',
             'pwa_installed_at' => 'datetime',
+            'crm_next_follow_up_at' => 'datetime',
+            'crm_last_contacted_at' => 'datetime',
             'notification_prefs' => 'array',
         ];
     }
@@ -75,6 +81,18 @@ class User extends Authenticatable
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** Les comptes Google, Apple, Microsoft ou Facebook reliés à celui-ci. */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /** Comment la personne s'est inscrite (les comptes d'avant la connexion externe n'ont pas de valeur : e-mail). */
+    public function signupSource(): string
+    {
+        return $this->signup_source ?: ($this->isStaff() ? 'team' : 'email');
     }
 
     /** Les appareils de cette personne qui acceptent les notifications. */

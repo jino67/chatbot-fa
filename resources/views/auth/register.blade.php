@@ -2,6 +2,8 @@
     <h1 class="font-display text-3xl font-bold text-brand-950">Créez votre assistant</h1>
     <p class="mt-2 text-slate-600">Gratuit pour démarrer, sans carte bancaire. Dix minutes suffisent.</p>
 
+    <x-social-buttons divider="ou avec votre e-mail" />
+
     <form method="POST" action="{{ route('register') }}" class="mt-8 space-y-5">
         @csrf
 

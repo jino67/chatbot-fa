@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AccountCompletionController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BotController;
@@ -28,7 +31,9 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PlaygroundController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PwaController;
+use App\Http\Controllers\PublicChatController;
 use App\Http\Controllers\SeoPageController;
+use App\Http\Controllers\ShareController;
 use App\Http\Controllers\SourceController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\Webhooks\MetaWebhookController;
@@ -78,11 +83,38 @@ Route::get('/media/voice/{name}', [MediaController::class, 'voice'])->middleware
 // Page de demonstration partageable : le widget d'un assistant sur une page vierge.
 Route::get('/demo/{publicKey}', [DemoController::class, 'show'])->name('demo');
 
+// Lien de discussion d'un assistant, a partager avec ses clients (statut WhatsApp, Facebook, QR code).
+Route::get('/chat/{publicKey}', [PublicChatController::class, 'show'])->where('publicKey', 'pk_[A-Za-z0-9]+')->name('chat.public');
+
 // Webhooks WhatsApp (authentifies par signature, hors CSRF : voir bootstrap/app.php).
 Route::prefix('webhooks/whatsapp')->group(function () {
     Route::get('meta', [MetaWebhookController::class, 'verify']);
     Route::post('meta', [MetaWebhookController::class, 'receive']);
     Route::post('twilio/{channel}', [TwilioWebhookController::class, 'receive']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Connexion avec Google, Apple, Microsoft ou Facebook (voir App\Social\Auth et docs/SOCIAL.md)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('auth')->group(function () {
+    Route::get('{provider}/redirect', [SocialAuthController::class, 'redirect'])->whereIn('provider', ['google', 'apple', 'microsoft', 'facebook'])->middleware('throttle:20,1')->name('social.redirect');
+    // Apple revient par un formulaire POST (hors CSRF : voir bootstrap/app.php), les autres par une adresse.
+    Route::match(['get', 'post'], '{provider}/callback', [SocialAuthController::class, 'callback'])->whereIn('provider', ['google', 'apple', 'microsoft', 'facebook'])->middleware('throttle:30,1')->name('social.callback');
+    Route::get('confirmer', [SocialAuthController::class, 'confirmForm'])->name('social.confirm');
+    Route::post('confirmer', [SocialAuthController::class, 'confirmStore'])->middleware('throttle:10,1')->name('social.confirm.store');
+    Route::get('email', [SocialAuthController::class, 'emailForm'])->name('social.email');
+    Route::post('email', [SocialAuthController::class, 'emailStore'])->middleware('throttle:10,1')->name('social.email.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('auth/{provider}/lier', [SocialAuthController::class, 'link'])->whereIn('provider', ['google', 'apple', 'microsoft', 'facebook'])->middleware('throttle:20,1')->name('social.link');
+    Route::delete('profile/connexions/{provider}', [SocialAccountController::class, 'destroy'])->whereIn('provider', ['google', 'apple', 'microsoft', 'facebook'])->name('social.unlink');
+
+    // Dernière étape d'une inscription par un fournisseur : entreprise et numéro WhatsApp.
+    Route::get('compte/terminer', [AccountCompletionController::class, 'show'])->name('account.complete');
+    Route::post('compte/terminer', [AccountCompletionController::class, 'store'])->name('account.complete.store');
 });
 
 /*
@@ -111,6 +143,9 @@ Route::middleware(['auth', 'workspace'])->group(function () {
     Route::resource('bots', BotController::class)->except(['show']);
 
     Route::prefix('bots/{bot}')->scopeBindings()->group(function () {
+        Route::get('qr.svg', [ShareController::class, 'qr'])->name('share.qr');
+        Route::get('affiche', [ShareController::class, 'poster'])->name('share.poster');
+
         Route::get('sources', [SourceController::class, 'index'])->name('sources.index');
         Route::post('sources', [SourceController::class, 'store'])->name('sources.store');
         Route::get('modele-catalogue', [SourceController::class, 'template'])->name('sources.template');
@@ -281,6 +316,13 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('statistiques', [Admin\StatisticsController::class, 'index'])->name('statistics.index');
         Route::get('statistiques/direct', [Admin\StatisticsController::class, 'live'])->name('statistics.live');
         Route::get('statistiques/export/{table}', [Admin\StatisticsController::class, 'export'])->name('statistics.export');
+
+        // Les personnes inscrites : parcours, suivi et contact (voir docs/PEOPLE.md).
+        Route::get('utilisateurs', [Admin\PeopleController::class, 'index'])->name('people.index');
+        Route::get('utilisateurs/export', [Admin\PeopleController::class, 'export'])->middleware('throttle:10,1')->name('people.export');
+        Route::get('utilisateurs/{id}', [Admin\PeopleController::class, 'show'])->whereNumber('id')->name('people.show');
+        Route::post('utilisateurs/{id}/contact', [Admin\PeopleController::class, 'contact'])->whereNumber('id')->middleware('throttle:30,1')->name('people.contact');
+        Route::put('utilisateurs/{id}/suivi', [Admin\PeopleController::class, 'crm'])->whereNumber('id')->name('people.crm');
 
         // Supervision de toutes les conversations (assistant de Kouma et assistants des clients) : voir docs/SUPERVISION.md.
         Route::get('conversations', [Admin\ChatSupervisionController::class, 'index'])->name('chats.index');

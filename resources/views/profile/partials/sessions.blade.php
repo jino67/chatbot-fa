@@ -35,8 +35,8 @@
         <form method="post" action="{{ route('profile.logout-others') }}" class="mt-5 flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-[14rem] flex-1">
-                <x-input-label for="logout_others_password" value="Votre mot de passe, pour confirmer" />
-                <x-text-input id="logout_others_password" name="password" type="password" class="mt-1 block w-full" autocomplete="current-password" required />
+                <x-input-label for="logout_others_password" value="{{ $user->has_password ? 'Votre mot de passe, pour confirmer' : 'Votre adresse e-mail, pour confirmer' }}" />
+                <x-text-input id="logout_others_password" name="password" :type="$user->has_password ? 'password' : 'email'" class="mt-1 block w-full" :autocomplete="$user->has_password ? 'current-password' : 'email'" required />
                 <x-input-error :messages="$errors->logoutOthers->get('password')" class="mt-2" />
             </div>
             <x-secondary-button type="submit">Déconnecter les autres appareils</x-secondary-button>

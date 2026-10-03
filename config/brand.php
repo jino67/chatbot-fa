@@ -6,7 +6,12 @@
 */
 return [
     'name' => 'Kouma',
-    'tagline' => "L'assistant qui répond à vos clients, sur votre site et sur WhatsApp",
+    'tagline' => 'Le chatbot WhatsApp qui répond à vos clients à toute heure',
+    // Anciennes accroches : une valeur enregistrée dans les Paramètres qui reprend l'une d'elles est remplacée par la
+    // nouvelle (le formulaire de Paramètres a pu l'enregistrer telle quelle, sans que personne ne l'ait choisie).
+    'legacy_taglines' => [
+        "L'assistant qui répond à vos clients, sur votre site et sur WhatsApp",
+    ],
     // « kuma » signifie « la parole » en bambara et en dioula.
     'meaning' => 'kouma vient de « kuma », la parole en bambara et en dioula',
     // Autres graphies sous lesquelles on cherchera la marque. Reprises dans la page d'accueil (donnees structurees,

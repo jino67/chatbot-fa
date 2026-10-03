@@ -30,7 +30,7 @@ Aucune compétence technique n'est nécessaire. Pour afficher l'assistant sur vo
 | 2 | Créer votre assistant | Assistants, « Nouvel assistant » |
 | 3 | Lui donner vos connaissances | Assistants, onglet « Connaissances » |
 | 4 | Le tester comme un client | Onglet « Tester » |
-| 5 | Le mettre sur votre site et sur WhatsApp | Onglet « Canaux » |
+| 5 | Le mettre sur WhatsApp et sur votre site, ou partager son lien | Onglet « Canaux », bouton « Partager le lien » |
 | 6 | Suivre vos conversations et vos demandes | « Conversations », « Demandes », « Analytique » |
 
 > **Astuce :** sur votre tableau de bord, la barre « Mise en route » vous montre où vous en êtes et vous ramène à la prochaine étape. Votre progression est enregistrée : vous pouvez fermer la page et reprendre plus tard, sur ce téléphone ou sur un autre appareil.
@@ -40,14 +40,20 @@ Aucune compétence technique n'est nécessaire. Pour afficher l'assistant sur vo
 ### Créer votre compte
 
 1. Ouvrez le site et cliquez sur **Créer un compte**.
-2. Renseignez votre nom, votre adresse e-mail, le nom de votre entreprise et un mot de passe.
-3. Validez : votre espace est créé et vous arrivez sur votre tableau de bord.
+2. Deux façons de vous inscrire :
+   - **Avec votre e-mail** : renseignez votre nom, votre adresse e-mail, le nom de votre entreprise et un mot de passe, puis validez.
+   - **Avec Google, Apple, Microsoft ou Facebook** (les boutons apparaissent quand ils sont disponibles) : un clic, sans mot de passe à retenir. Le fournisseur nous donne votre nom et votre adresse ; il ne nous donne jamais son mot de passe.
+3. Après un clic sur Google, Apple... une dernière page vous demande le **nom de votre entreprise** et votre **numéro WhatsApp** : l'assistant en a besoin pour se présenter. Votre espace s'ouvre ensuite sur votre tableau de bord.
 
 Vous commencez par une **période d'essai gratuite**, sans carte bancaire. Sa durée est indiquée à l'inscription et sur votre tableau de bord. À la fin de l'essai, l'assistant se met en pause jusqu'à ce que vous choisissiez une offre : vos données, vos documents et vos conversations restent intacts et accessibles.
 
 ### Vous connecter
 
-Rendez-vous sur la page **Se connecter** avec votre adresse e-mail et votre mot de passe.
+Rendez-vous sur la page **Se connecter** avec votre adresse e-mail et votre mot de passe, ou cliquez sur le bouton **Continuer avec Google** (ou Apple, Microsoft, Facebook) si vous vous êtes inscrit ainsi.
+
+Vous aviez déjà un compte avec votre e-mail et vous cliquez sur Google ? Nous vous demandons une fois le mot de passe de ce compte pour être certains que c'est bien le vôtre, puis nous relions les deux : un seul bouton suffira ensuite. Vos données restent celles du même compte.
+
+Vous vous êtes inscrit avec Google et n'avez pas de mot de passe ? C'est normal. Vous pouvez en choisir un dans **Mon profil**, rubrique « Mot de passe », ou utiliser « Mot de passe oublié ».
 
 ### Mot de passe oublié
 
@@ -325,7 +331,22 @@ Où coller la ligne selon votre outil :
 
 > **Attention :** avant la mise en ligne, indiquez votre domaine dans **Réglages**, rubrique « Sites autorisés ». Sinon, un autre site pourrait afficher votre assistant et consommer votre volume de réponses.
 
-Un lien **Ouvrir la page de démonstration à partager** vous donne une page vierge avec votre assistant, que vous pouvez montrer à un collègue ou à un client avant de modifier votre site. Votre webmaster peut aussi s'appuyer sur le guide du développeur.
+Un lien **Ouvrir la page de démonstration à partager** vous donne une page vierge avec votre assistant, que vous pouvez montrer à un collègue avant de modifier votre site. Votre webmaster peut aussi s'appuyer sur le guide du développeur.
+
+### Partager le lien de discussion de votre assistant
+
+Pas de site web ? Pas besoin : votre assistant a **son propre lien**, à donner à vos clients. Ils l'ouvrent sur leur téléphone, la discussion démarre, rien à installer.
+
+Le bouton **Partager le lien**, en haut de chaque page de votre assistant, et le bloc **Partager votre assistant** de l'onglet Canaux vous donnent :
+
+- **le lien** (bouton **Copier**), à mettre sur votre statut WhatsApp, votre page Facebook, votre biographie Instagram, vos factures, votre signature d'e-mail ;
+- des boutons pour l'envoyer directement par **WhatsApp**, **Facebook**, **e-mail**, **SMS** ou **Telegram**, et **Autres...** sur téléphone (le menu de partage de votre appareil) ;
+- un **QR code** : vos clients le scannent avec l'appareil photo de leur téléphone et la discussion s'ouvre. Téléchargez-le en **PNG** ou en **SVG** ;
+- une **affiche à imprimer** (format A4) avec le nom de votre entreprise et le QR code, à coller sur votre vitrine, votre comptoir ou vos emballages. Si WhatsApp est activé sur votre compte, une seconde affiche envoie directement vers votre numéro WhatsApp.
+
+Sur la page de discussion, vos clients voient le nom de votre entreprise, le message d'accueil de votre assistant et un bouton **Continuer sur WhatsApp** (si WhatsApp est actif). Si l'assistant est en pause, ou si l'essai est terminé, la page l'indique poliment au lieu d'une erreur.
+
+> **À savoir :** le lien fonctionne même si vous avez limité les « Sites autorisés » dans les Réglages : cette liste ne protège que l'affichage de la bulle sur d'autres sites. La mention « Propulsé par Kouma » en bas de page peut être retirée par certaines offres.
 
 ### Sur WhatsApp
 
@@ -539,7 +560,8 @@ Cette devise est **propre à votre compte** : elle ne change rien pour les autre
 Cliquez sur l'engrenage en bas du menu, ou sur **Mon profil**. La page est organisée en rubriques :
 
 - **Mes informations** : votre nom, votre adresse e-mail (elle sert à vous connecter et à vous prévenir), et votre **numéro WhatsApp** (facultatif) pour recevoir vos alertes.
-- **Mot de passe** : changez-le avec l'ancien, ou demandez un lien par e-mail. Choisissez un mot de passe long et unique.
+- **Mot de passe** : changez-le avec l'ancien, ou demandez un lien par e-mail. Choisissez un mot de passe long et unique. Si vous vous êtes inscrit avec Google, Apple... et n'avez pas encore de mot de passe, vous pouvez en choisir un premier ici, sans mot de passe actuel.
+- **Connexions** : les comptes Google, Apple, Microsoft ou Facebook reliés au vôtre. **Relier** ajoute un moyen de vous connecter ; **Retirer** l'enlève (impossible s'il est votre seul moyen : choisissez d'abord un mot de passe). Cette rubrique n'apparaît que si au moins un de ces services est disponible.
 - **Mes alertes** : un raccourci vers la page Alertes.
 - **Application** : installer Kouma sur votre téléphone, **activer les notifications** sur cet appareil et choisir ce que vous recevez (section 8).
 - **Appareils connectés** : les téléphones et navigateurs où votre compte est ouvert. Vous ne reconnaissez pas un appareil ? **Déconnectez les autres appareils**, puis changez votre mot de passe.
@@ -582,6 +604,12 @@ Environ une demi-heure si vos documents sont prêts. Et si vous préférez, notr
 
 **Dois-je savoir programmer ?**
 Non. Pour votre site, il suffit de copier une ligne de code ; pour WhatsApp, notre équipe s'en charge.
+
+**Je n'ai pas de site web. Mes clients peuvent-ils quand même parler à l'assistant ?**
+Oui : donnez-leur le **lien de discussion** de votre assistant (bouton **Partager le lien**) ou imprimez l'**affiche avec QR code**. Ils discutent depuis leur téléphone, sans rien installer.
+
+**Puis-je me connecter avec mon compte Google ou Apple ?**
+Oui, quand ces boutons apparaissent sur la page de connexion. Vous pouvez aussi relier un compte à un compte existant depuis Mon profil, rubrique Connexions.
 
 **L'assistant peut-il se tromper ?**
 Il répond d'après vos documents. S'ils sont exacts et à jour, ses réponses le sont. Testez-le, relisez des conversations, et complétez les questions sans réponse. En cas de doute, il le dit et vous prévient.

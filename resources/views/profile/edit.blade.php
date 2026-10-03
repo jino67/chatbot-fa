@@ -1,11 +1,14 @@
 @php
     $workspace = $user->currentWorkspace();
     $plan = $workspace?->planModel();
+    $socialAccounts = $user->socialAccounts()->get();
+    $showConnections = ! empty(app(\App\Social\Auth\SocialLogin::class)->enabled()) || $socialAccounts->isNotEmpty();
 
     // Sommaire de la page : chaque entrée renvoie vers une section, et la section lue s'allume (voir x-init).
     $menu = array_filter([
         'infos' => ['Mes informations', 'users'],
         'securite' => ['Mot de passe', 'shield'],
+        $showConnections ? 'connexions' : null => ['Connexions', 'link'],
         $workspace ? 'alertes' : null => ['Mes alertes', 'bolt'],
         'application' => ['Application', 'phone'],
         $sessions->isNotEmpty() ? 'appareils' : null => ['Appareils connectés', 'globe'],
@@ -74,6 +77,12 @@
                 <section id="securite" data-spy class="surface-link group scroll-mt-24 p-6 sm:p-8">
                     @include('profile.partials.update-password-form')
                 </section>
+
+                @if ($showConnections)
+                    <section id="connexions" data-spy class="surface group scroll-mt-24 p-6 sm:p-8">
+                        @include('profile.partials.social-accounts')
+                    </section>
+                @endif
 
                 @if ($workspace)
                     <section id="alertes" data-spy class="surface-link group scroll-mt-24 p-6 sm:p-8">

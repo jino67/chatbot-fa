@@ -40,7 +40,7 @@
         @if ($errors->any()) <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800" role="alert">{{ $errors->first() }}</div> @endif
 
         <div class="grid gap-6 lg:grid-cols-3">
-            <div class="space-y-6 lg:col-span-2">
+            <div class="min-w-0 space-y-6 lg:col-span-2">
 
                 {{-- Diagnostic --}}
                 <section class="surface">
@@ -138,7 +138,7 @@
                 </section>
             </div>
 
-            <aside class="space-y-6">
+            <aside class="min-w-0 space-y-6">
                 {{-- Contact --}}
                 <section class="surface space-y-1.5 p-5 text-sm">
                     <h3 class="font-display font-bold text-brand-950">Qui</h3>

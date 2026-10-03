@@ -15,14 +15,15 @@ class PasswordController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
+        // Arrivée par Google, Apple... : il n'y a pas de mot de passe actuel à confirmer, on en définit un premier.
         $validated = $request->validateWithBag('updatePassword', [
-            'current_password' => ['required', 'current_password'],
+            'current_password' => $user->has_password ? ['required', 'current_password'] : ['nullable'],
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user->forceFill(['password' => Hash::make($validated['password']), 'has_password' => true])->save();
 
         return back()->with('status', 'password-updated');
     }

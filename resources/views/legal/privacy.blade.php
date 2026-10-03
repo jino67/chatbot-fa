@@ -33,6 +33,13 @@
             Assurer la qualité du service et l'assistance : l'équipe de la plateforme peut lire des conversations (pour comprendre une panne ou une réclamation, ou pour améliorer un assistant).
             Cet accès est réservé à des personnes habilitées, les numéros de téléphone des clients des entreprises y sont partiellement masqués, et chaque consultation est inscrite dans un journal.
         </li>
+        <li>
+            Vous accompagner : si vous avez créé un compte, l'équipe peut vous écrire (e-mail, WhatsApp, notification) ou vous appeler pour vous aider à démarrer et vous informer du service.
+            Dites-nous de ne plus vous contacter et nous cesserons. Chaque contact est consigné.
+        </li>
+        <li>
+            Connexion avec Google, Apple, Microsoft ou Facebook : si vous choisissez ce moyen, le service reçoit votre nom, votre adresse e-mail et, selon le cas, votre photo. Il ne reçoit jamais le mot de passe de ce compte et n'en garde aucun jeton d'accès.
+        </li>
     </ul>
 
     <h2>4. Intelligence artificielle et sous-traitants</h2>

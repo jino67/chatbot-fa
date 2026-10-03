@@ -22,9 +22,14 @@
                     @unless ($bot->is_active) <x-badge tone="amber">En pause</x-badge> @endunless
                 </h1>
             </div>
-            <a href="{{ route('demo', $bot->public_key) }}" target="_blank" rel="noopener" class="btn-outline text-xs">
-                Page de démonstration <x-icon name="external" class="h-3.5 w-3.5" />
-            </a>
+            <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                <button type="button" @click="open = ! open" :aria-expanded="open" class="btn-primary text-sm">
+                    <x-icon name="link" class="h-4 w-4" /> Partager le lien
+                </button>
+                <div x-show="open" x-cloak x-transition.opacity class="absolute left-0 z-30 mt-2 w-[22rem] sm:left-auto sm:right-0 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-4 shadow-xl ring-1 ring-slate-200">
+                    <x-share-chat :bot="$bot" variant="menu" />
+                </div>
+            </div>
         </div>
         <nav class="-mb-6 mt-5 flex gap-1 overflow-x-auto" aria-label="Sections de l'assistant">
             @foreach ($tabs as $key => [$label, $url])

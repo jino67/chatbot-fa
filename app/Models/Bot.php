@@ -186,6 +186,21 @@ class Bot extends Model
         return strlen($digits) >= 8 ? $digits : null;
     }
 
+    /** Le lien public de discussion : une page légère à partager (WhatsApp, Facebook, QR code), sans rien à installer. */
+    public function chatUrl(): string
+    {
+        return route('chat.public', $this->public_key);
+    }
+
+    /** L'origine (schéma et hôte) de la plateforme, en minuscules et sans barre finale. */
+    private function platformOrigin(): string
+    {
+        $url = (string) (app(PlatformSettings::class)->brand()['url'] ?: config('app.url'));
+        $parts = parse_url($url) ?: [];
+
+        return strtolower(($parts['scheme'] ?? 'https').'://'.($parts['host'] ?? '').(isset($parts['port']) ? ':'.$parts['port'] : ''));
+    }
+
     /** Une origine est autorisee si la liste est vide (mode ouvert) ou la contient. */
     public function allowsOrigin(?string $origin): bool
     {
@@ -196,6 +211,11 @@ class Bot extends Model
         }
 
         $origin = rtrim(strtolower($origin), '/');
+
+        // Les pages de la plateforme elle-même (lien de discussion à partager, démonstration) ne dépendent pas du site du client.
+        if ($origin === $this->platformOrigin()) {
+            return true;
+        }
 
         foreach ($allowed as $candidate) {
             $candidate = rtrim(strtolower(trim($candidate)), '/');
