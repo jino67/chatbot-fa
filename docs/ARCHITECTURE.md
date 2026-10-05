@@ -306,6 +306,22 @@ Toutes les tables « métier » portent `workspace_id`.
 
 **Garde-fous.** Route réservée au super administrateur ; chaque ouverture, note, signalement, résumé et export est inscrit au journal (l'ouverture une fois par heure et par conversation) ; numéros masqués hors visiteurs de Kouma ; export CSV sans e-mail et à cellules neutralisées ; résumé jamais imputé au client ; mention dans la page Confidentialité. Détails et limites : `docs/SUPERVISION.md`.
 
+### D29. Un lien de discussion public et léger, partagé par QR code
+
+**Décision.** Chaque assistant a une page publique `/chat/{publicKey}` (`PublicChatController`) qui ne charge que le CSS et le widget : pas de mesure d'audience (les clients des clients ne sont pas mesurés), ouverture rapide sur un téléphone à connexion lente. Le menu « Partager le lien », le QR code et l'affiche A4 (`ShareController`, `App\Support\QrCode`) s'appuient sur elle. Le QR code est écrit sans bibliothèque (octets, correction M, versions 1 à 10) et relu avec un lecteur indépendant. `Bot::allowsOrigin` accepte toujours l'origine de la plateforme : la page fonctionne même si le client a limité les « sites autorisés » à son propre site.
+
+### D30. La connexion externe est écrite sans bibliothèque, avec des règles de liaison strictes
+
+**Décision.** Google, Apple, Microsoft et Facebook passent par `App\Social\Auth` : état à usage unique et cookie de liaison, PKCE, jeton d'identité reçu du fournisseur (signature non relue, revendications vérifiées). `SocialSignIn` ne relie jamais un compte de l'équipe, et ne relie un compte client par son adresse que si le fournisseur la certifie et que le compte n'a pas de mot de passe ; sinon le mot de passe est exigé. Un compte arrivé par un fournisseur finit son profil (entreprise, numéro) avant d'entrer. Détails : `docs/SOCIAL.md`.
+
+### D31. Le suivi des inscrits se déduit des données et reste réservé au super administrateur
+
+**Décision.** La page Utilisateurs calcule le stade de chaque personne à partir de ce qui existe (assistant, connaissances, essais, vraies conversations, offre), propose un modèle de message adapté, et consigne chaque contact (`customer_contacts`, `users.crm_*`). Tout est journalisé, « Ne plus contacter » est respecté partout. Détails : `docs/PEOPLE.md`.
+
+### D32. Changer de domaine sans rien casser, et un expéditeur d'e-mail qui ne dépend d'aucune variable
+
+**Décision.** `RedirectLegacyHost` redirige les pages d'un ancien nom de domaine (`PLATFORM_LEGACY_HOSTS`) vers `APP_URL` et laisse servi ce que les programmes appellent (widget, API, webhooks, service worker). `MailSender` remplace tout nom d'expéditeur factice (`${APP_NAME}`) par le nom de la marque à chaque envoi, et `MailHealth` (page E-mails, `mail:check`) lit SPF, DKIM et DMARC. Détails et marche à suivre : `docs/DOMAINE.md`.
+
 ## 6. Sécurité : synthèse
 
 | Menace | Mesure | Où |

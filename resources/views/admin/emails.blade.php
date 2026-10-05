@@ -18,6 +18,34 @@
             <p class="text-sm text-slate-600">Envoi par « {{ $driver }} », depuis <strong>{{ $from }}</strong>. Si un essai n'arrive pas, regardez les courriers indésirables, puis la procédure du guide du super admin (SPF, DKIM, mot de passe de la boîte).</p>
         @endif
 
+        {{-- Délivrabilité : pourquoi les e-mails peuvent finir dans les courriers indésirables --}}
+        <details class="surface" @if ($healthSummary['level'] !== 'ok') open @endif>
+            <summary class="flex cursor-pointer flex-wrap items-center justify-between gap-3 px-6 py-4">
+                <span class="font-display text-lg font-bold text-brand-950">Arrivent-ils bien dans la boîte de réception ?</span>
+                <span class="flex items-center gap-2">
+                    <x-badge :tone="['ok' => 'green', 'warn' => 'amber', 'bad' => 'red'][$healthSummary['level']]">{{ $healthSummary['label'] }} ({{ $healthSummary['score'] }}/100)</x-badge>
+                </span>
+            </summary>
+            <div class="border-t border-slate-100 px-6 py-4">
+                <p class="text-sm text-slate-600">La plateforme lit la zone DNS de <strong>{{ (new \App\Support\MailHealth)->domain() ?? 'votre domaine' }}</strong> : SPF, DKIM et DMARC sont les trois preuves que Gmail et Outlook demandent pour ne pas classer vos messages en indésirables. Une correction DNS met de quelques minutes à quelques heures à se voir.</p>
+                <ul class="mt-4 space-y-3">
+                    @foreach ($health as $check)
+                        <li class="flex items-start gap-3 text-sm">
+                            <x-badge :tone="['ok' => 'green', 'warn' => 'amber', 'bad' => 'red', 'info' => 'gray'][$check['status']]" class="mt-0.5 shrink-0">{{ ['ok' => 'OK', 'warn' => 'À voir', 'bad' => 'À corriger', 'info' => 'Info'][$check['status']] }}</x-badge>
+                            <div class="min-w-0">
+                                <p class="font-medium text-slate-900">{{ $check['label'] }}</p>
+                                <p class="break-words text-slate-600">{{ $check['detail'] }}</p>
+                                @if ($check['fix'] && $check['status'] !== 'ok') <p class="mt-0.5 text-slate-700"><strong>Que faire :</strong> {{ $check['fix'] }}</p> @endif
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <a href="{{ route('admin.emails.index', ['modele' => $current, 'verifier' => 1]) }}" class="btn-outline">Vérifier à nouveau</a>
+                    <a href="{{ route('staff.guide', 'super-admin') }}#13-les-e-mails-et-les-notifications" class="text-sm font-medium text-brand-700 underline">Pas à pas dans le guide</a>
+                </div>
+            </div>
+        </details>
         <div class="grid gap-6 lg:grid-cols-3">
             <nav class="space-y-5 lg:col-span-1" aria-label="Modèles d'e-mails">
                 @foreach ($groups as $groupKey => $groupLabel)

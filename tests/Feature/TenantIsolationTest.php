@@ -215,4 +215,26 @@ class TenantIsolationTest extends TestCase
         // Ni la page du client propriétaire, ni celle d'un autre client, ne montrent une note de l'équipe.
         $this->actingAs($userB)->get(route('conversations.show', [$botB, $conversationB]))->assertOk()->assertDontSee('Remarque interne sur B');
     }
+
+    public function test_linked_provider_accounts_and_follow_up_notes_belong_to_their_owner_only(): void
+    {
+        [, $userA] = $this->tenant('Client A');
+        [, $userB] = $this->tenant('Client B');
+        \App\Models\SocialAccount::create(['user_id' => $userB->id, 'provider' => 'google', 'provider_user_id' => 'g-b', 'email' => 'secret-b@exemple.bf']);
+        \App\Models\CustomerContact::create(['user_id' => $userB->id, 'channel' => 'note', 'body' => 'Note de suivi sur B']);
+        $userB->forceFill(['crm_status' => 'interesse', 'crm_next_follow_up_at' => now()])->save();
+
+        $this->actingAs($userA);
+
+        // A ne voit pas la liaison de B dans son profil et ne peut pas la retirer.
+        $this->get(route('profile.edit'))->assertOk()->assertDontSee('secret-b@exemple.bf');
+        $this->delete(route('social.unlink', 'google'))->assertNotFound();
+        $this->assertSame(1, \App\Models\SocialAccount::where('user_id', $userB->id)->count());
+
+        // Le suivi de l'équipe n'apparaît dans aucune page cliente, et ses pages sont fermées.
+        $this->get(route('dashboard'))->assertDontSee('Note de suivi sur B');
+        $this->get(route('admin.people.show', $userB->id))->assertForbidden();
+        $this->post(route('admin.people.contact', $userB->id), ['channel' => 'note', 'body' => 'x'])->assertForbidden();
+        $this->assertSame(1, \App\Models\CustomerContact::count());
+    }
 }

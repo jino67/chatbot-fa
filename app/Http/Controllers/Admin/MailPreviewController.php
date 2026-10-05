@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Support\MailCatalog;
+use App\Support\MailHealth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -19,6 +21,12 @@ class MailPreviewController extends Controller
     {
         $key = MailCatalog::exists((string) $request->query('modele')) ? $request->query('modele') : 'welcome';
 
+        // Les recherches DNS prennent quelques secondes : on garde le résultat dix minutes, et « Vérifier à nouveau » le recalcule.
+        if ($request->boolean('verifier')) {
+            Cache::forget('mail.health');
+        }
+        $health = Cache::remember('mail.health', 600, fn () => (new MailHealth)->checks());
+
         return view('admin.emails', [
             'catalog' => MailCatalog::all(),
             'groups' => MailCatalog::GROUPS,
@@ -26,6 +34,8 @@ class MailPreviewController extends Controller
             'subject' => MailCatalog::subject($key),
             'driver' => (string) config('mail.default'),
             'from' => (string) config('mail.from.address'),
+            'health' => $health,
+            'healthSummary' => MailHealth::summary($health),
         ]);
     }
 

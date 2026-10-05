@@ -12,12 +12,15 @@ use App\Retrieval\SqlHybridStore;
 use App\Services\PlatformSettings;
 use App\Services\UsageMeter;
 use App\Services\UsageService;
+use App\Support\MailSender;
 use App\Speech\SpeechClient;
 use App\Speech\SpeechFactory;
 use App\Speech\VoiceService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -57,6 +60,9 @@ class AppServiceProvider extends ServiceProvider
             URL::forceRootUrl(config('app.url'));
             URL::forceScheme('https');
         }
+
+        // Le nom affiché à côté de l'adresse d'expédition : jamais « ${APP_NAME} » ni « Example » (voir MailSender).
+        Event::listen(MessageSending::class, fn (MessageSending $event) => MailSender::fix($event->message));
 
         // API publique du widget : limitee par IP, puis par assistant (protege la facture IA du client).
         RateLimiter::for('widget', fn (Request $request) => [

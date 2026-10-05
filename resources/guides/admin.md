@@ -18,6 +18,7 @@ Deux rôles existent dans l'équipe :
 | Paramètres de la plateforme | non | oui |
 | Journal d'audit | non | oui |
 | Lire toutes les conversations de la plateforme | non | oui |
+| Suivre et contacter les inscrits (page Utilisateurs) | non | oui |
 
 Votre rôle est affiché sous votre nom en bas du menu de gauche. Les entrées réservées au super admin n'apparaissent pas pour un admin.
 

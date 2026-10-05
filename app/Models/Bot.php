@@ -192,15 +192,27 @@ class Bot extends Model
         return route('chat.public', $this->public_key);
     }
 
-    /** L'origine (schéma et hôte) de la plateforme, en minuscules et sans barre finale. */
-    private function platformOrigin(): string
+    /**
+     * Les origines (schéma et hôte, en minuscules, sans barre finale) de la plateforme : son adresse officielle, et ses anciens
+     * noms de domaine tant qu'ils sont servis (voir docs/DOMAINE.md).
+     *
+     * @return list<string>
+     */
+    private function platformOrigins(): array
     {
         $url = (string) (app(PlatformSettings::class)->brand()['url'] ?: config('app.url'));
         $parts = parse_url($url) ?: [];
+        $origins = [strtolower(($parts['scheme'] ?? 'https').'://'.($parts['host'] ?? '').(isset($parts['port']) ? ':'.$parts['port'] : ''))];
 
-        return strtolower(($parts['scheme'] ?? 'https').'://'.($parts['host'] ?? '').(isset($parts['port']) ? ':'.$parts['port'] : ''));
+        foreach ((array) config('platform.legacy_hosts', []) as $host) {
+            $host = strtolower(preg_replace('/^www\./', '', trim((string) $host)));
+            if ($host !== '') {
+                array_push($origins, 'https://'.$host, 'https://www.'.$host);
+            }
+        }
+
+        return $origins;
     }
-
     /** Une origine est autorisee si la liste est vide (mode ouvert) ou la contient. */
     public function allowsOrigin(?string $origin): bool
     {
@@ -213,7 +225,7 @@ class Bot extends Model
         $origin = rtrim(strtolower($origin), '/');
 
         // Les pages de la plateforme elle-même (lien de discussion à partager, démonstration) ne dépendent pas du site du client.
-        if ($origin === $this->platformOrigin()) {
+        if (in_array($origin, $this->platformOrigins(), true)) {
             return true;
         }
 

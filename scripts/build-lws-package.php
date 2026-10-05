@@ -401,7 +401,7 @@ MAIL_USERNAME={$boite}
 # sinon plus aucune alerte ni reinitialisation de mot de passe ne part.
 MAIL_PASSWORD={$quote($cfg['boite_mot_de_passe'])}
 MAIL_FROM_ADDRESS="{$boite}"
-MAIL_FROM_NAME="\${APP_NAME}"
+MAIL_FROM_NAME="Kouma"
 
 VITE_APP_NAME="\${APP_NAME}"
 

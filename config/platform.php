@@ -16,6 +16,10 @@ return [
     // Adresse notifiee des demandes clients et des bascules de fournisseur IA.
     'admin_email' => env('PLATFORM_ADMIN_EMAIL'),
 
+    // Anciens noms de domaine (séparés par des virgules) : leurs pages sont redirigées vers APP_URL, mais le widget, l'API et les
+    // webhooks y restent servis (voir App\Http\Middleware\RedirectLegacyHost et docs/DOMAINE.md).
+    'legacy_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('PLATFORM_LEGACY_HOSTS', ''))))),
+
     // Compte super admin cree a l'installation (php artisan migrate --seed).
     // Sans mot de passe fourni, il est genere et affiche une seule fois.
     'admin_name' => env('PLATFORM_ADMIN_NAME', 'Super admin'),

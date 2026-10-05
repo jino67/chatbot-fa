@@ -132,6 +132,10 @@ Priorités selon la méthode MoSCoW : **M** indispensable, **S** important, **C*
 | F4.9 | **E-mails de marque** : un gabarit, une version texte, aperçu et essai d'envoi dans l'administration | S | Aucun e-mail en texte brut ; chacun se voit avant d'être envoyé |
 | F4.10 | **Statistiques** maison (visiteurs, clics, affluence, provenance, parcours, santé des clients) | S | Aucune adresse IP gardée ; « Ne pas suivre » respecté ; refus possible en un clic |
 | F4.11 | **Supervision des conversations** : toutes les conversations (visiteurs de Kouma et clients de chaque entreprise), signaux à surveiller, diagnostic, questions sans réponse, prospects, notes, exports | S | Super administrateur seulement ; chaque consultation journalisée ; numéros masqués ; résumé IA à la demande |
+| F4.13 | **Lien de discussion à partager** : page publique légère, menu Partager, QR code, affiche à imprimer | S | Fonctionne sans site web ; jamais de mesure d'audience sur cette page |
+| F4.14 | **Connexion avec Google, Apple, Microsoft, Facebook** et étape « terminer mon profil » | S | Jamais de liaison automatique à un compte de l'équipe ; mot de passe exigé pour relier un compte existant ; aucun jeton conservé |
+| F4.15 | **Suivi des inscrits** : segments, fiche, contact (e-mail, WhatsApp, notification), relances, export | S | Super administrateur ; journalisé ; « Ne plus contacter » respecté |
+| F4.16 | **Changement de domaine** sans rupture et **diagnostic de délivrabilité** (SPF, DKIM, DMARC) | S | Widget, API et webhooks servis sur l'ancien nom ; pages redirigées en 301 |
 | F4.12 | **Aide et guides** (public : client, développeur avec PDF ; interne : équipe, super administrateur) | S | Chaque guide est à jour de l'application ; aucune adresse locale dans les PDF |
 
 ## 6. Exigences non fonctionnelles

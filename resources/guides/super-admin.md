@@ -461,6 +461,20 @@ Le menu **E-mails** les montre tous avec des données d'exemple. Cliquez sur **M
 
 Si un e-mail n'arrive pas : vérifiez les courriers indésirables, le mot de passe de la boîte, puis les enregistrements **SPF** et **DKIM** de votre domaine chez l'hébergeur (ils prouvent que le message vient bien de vous).
 
+### Mes e-mails tombent en courrier indésirable
+
+La page **E-mails** commence par un bloc **« Arrivent-ils bien dans la boîte de réception ? »**. La plateforme y lit la zone DNS du domaine d'envoi et dit, ligne par ligne, ce qui est bon (OK), à voir ou à corriger, avec quoi faire :
+
+- **Nom de l'expéditeur** : il doit être le nom de la marque (« Kouma »), jamais « ${APP_NAME} » ni « Example ». La plateforme le corrige elle-même à l'envoi ; écrivez tout de même `MAIL_FROM_NAME="Kouma"` dans le fichier `.env`.
+- **Adresse de l'expéditeur et site** : la boîte d'envoi doit être du même domaine que le site (jamais une adresse Gmail).
+- **MX, SPF, DKIM, DMARC** : les trois preuves que Gmail et Outlook demandent. Le bouton **Vérifier à nouveau** relit le DNS (une correction met de quelques minutes à quelques heures à se voir). La commande `php artisan mail:check` donne le même bilan.
+
+Quand tout est vert et que les messages tombent encore en indésirables, la cause est la **réputation** : domaine récent, extension `.site` souvent utilisée pour le courrier non sollicité, peu d'envois. Pour trancher sur un message : ouvrez-le dans Gmail, « Afficher l'original », et lisez `SPF`, `DKIM` et `DMARC` (ils doivent dire PASS). Ensuite : un domaine en `.com`, une montée en charge progressive, des messages courts et utiles au début, et demandez aux premiers destinataires de répondre ou de cliquer « Pas un spam ». Pas à pas complet : `docs/DOMAINE.md`.
+
+### Changer de nom de domaine
+
+Quand vous aurez votre nouveau domaine, l'ancien reste utile : des sites de clients affichent le widget, des affiches avec QR code sont imprimées, des téléphones ont installé l'application. Le réglage `PLATFORM_LEGACY_HOSTS=kouma.site` (dans `.env`) redirige les **pages** de l'ancien nom vers le nouveau (liens, favoris, liens de discussion, QR codes) mais continue de servir ce que les programmes appellent : widget, API, webhooks Meta et Twilio, application installée. Les nouvelles adresses de retour de Google, Apple, Facebook et Microsoft sont à **ajouter avant** le changement. La marche à suivre complète est dans `docs/DOMAINE.md` ; gardez l'ancien domaine renouvelé au moins un an.
+
 ### Les notifications sur les téléphones
 
 Les clients et l'équipe reçoivent des **notifications sur leur téléphone** (même application fermée), avec le **nombre de messages à lire sur l'icône** de l'application installée, et une **cloche** dans l'application. Détails techniques : `docs/NOTIFICATIONS.md`.

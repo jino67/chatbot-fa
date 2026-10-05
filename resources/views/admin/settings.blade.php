@@ -105,6 +105,8 @@
                     <div><x-input-label for="meta_system_token" value="Meta : jeton d'utilisateur système" /><input id="meta_system_token" name="meta_system_token" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $metaTokenSet ? 'Enregistré : laisser vide pour conserver' : '' }}"></div>
                     <div><x-input-label for="twilio_account_sid" value="Twilio : Account SID" /><input id="twilio_account_sid" name="twilio_account_sid" class="field font-mono" value="{{ old('twilio_account_sid', $values['whatsapp.twilio.account_sid']) }}"></div>
                     <div><x-input-label for="twilio_auth_token" value="Twilio : Auth Token" /><input id="twilio_auth_token" name="twilio_auth_token" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $twilioTokenSet ? 'Enregistré : laisser vide pour conserver' : '' }}"></div>
+                    <div><x-input-label for="twilio_balance_sid" value="Twilio : SID du compte principal (pour lire le solde)" /><input id="twilio_balance_sid" name="twilio_balance_sid" class="field font-mono" value="{{ old('twilio_balance_sid', $values['whatsapp.twilio.balance_sid']) }}" placeholder="Seulement si le compte ci-dessus est un sous-compte"></div>
+                    <div><x-input-label for="twilio_balance_token" value="Twilio : jeton du compte principal" /><input id="twilio_balance_token" name="twilio_balance_token" type="password" autocomplete="new-password" class="field font-mono" placeholder="{{ $twilioBalanceTokenSet ? 'Enregistré : laisser vide pour conserver' : '' }}"></div>
                 </div>
 
                 <div>

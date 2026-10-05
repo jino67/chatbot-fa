@@ -25,7 +25,7 @@ class SettingsController extends Controller
         'billing.instructions',
         'legal.company', 'legal.address', 'legal.registration', 'legal.email',
         'facebook.app_id',
-        'whatsapp.provider', 'whatsapp.meta.waba_id', 'whatsapp.twilio.account_sid', 'wallet.alert_below',
+        'whatsapp.provider', 'whatsapp.meta.waba_id', 'whatsapp.twilio.account_sid', 'whatsapp.twilio.balance_sid', 'wallet.alert_below',
         'costs.twilio_fee', 'costs.meta_service', 'costs.meta_utility', 'costs.meta_marketing', 'costs.rate_usd', 'costs.rate_mad',
         'speech.stt_model', 'speech.tts_model', 'speech.local_url', 'speech.local_model',
         'analytics.enabled', 'analytics.retention_days', 'analytics.digest',
@@ -50,6 +50,7 @@ class SettingsController extends Controller
             'facebookSecretSet' => $settings->has('facebook.app_secret'),
             'metaTokenSet' => $settings->has('whatsapp.meta.system_token'),
             'twilioTokenSet' => $settings->has('whatsapp.twilio.auth_token'),
+            'twilioBalanceTokenSet' => $settings->has('whatsapp.twilio.balance_token'),
             'speechKeySet' => $settings->has('speech.api_key'),
             'speechLocalKeySet' => $settings->has('speech.local_key'),
             'speechCloudReady' => (bool) app(SpeechFactory::class)->cloudKey(),
@@ -86,6 +87,8 @@ class SettingsController extends Controller
             'meta_system_token' => ['nullable', 'string', 'max:1000'],
             'twilio_account_sid' => ['nullable', 'string', 'max:64'],
             'twilio_auth_token' => ['nullable', 'string', 'max:200'],
+            'twilio_balance_sid' => ['nullable', 'string', 'max:64'],
+            'twilio_balance_token' => ['nullable', 'string', 'max:200'],
             'wallet_alert_below' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'cost_twilio_fee' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'cost_meta_service' => ['nullable', 'numeric', 'min:0', 'max:1'],
@@ -125,7 +128,7 @@ class SettingsController extends Controller
             'legal.registration' => 'legal_registration', 'legal.email' => 'legal_email',
             'facebook.app_id' => 'facebook_app_id',
             'whatsapp.provider' => 'whatsapp_provider', 'whatsapp.meta.waba_id' => 'meta_waba_id',
-            'whatsapp.twilio.account_sid' => 'twilio_account_sid', 'wallet.alert_below' => 'wallet_alert_below',
+            'whatsapp.twilio.account_sid' => 'twilio_account_sid', 'whatsapp.twilio.balance_sid' => 'twilio_balance_sid', 'wallet.alert_below' => 'wallet_alert_below',
             'costs.twilio_fee' => 'cost_twilio_fee', 'costs.meta_service' => 'cost_meta_service',
             'costs.meta_utility' => 'cost_meta_utility', 'costs.meta_marketing' => 'cost_meta_marketing',
             'costs.rate_usd' => 'rate_usd', 'costs.rate_mad' => 'rate_mad',
@@ -164,7 +167,7 @@ class SettingsController extends Controller
 
         // Secrets : laisses vides, ils restent tels quels et ne sont jamais reaffiches.
         foreach ([
-            'whatsapp.meta.system_token' => 'meta_system_token', 'whatsapp.twilio.auth_token' => 'twilio_auth_token',
+            'whatsapp.meta.system_token' => 'meta_system_token', 'whatsapp.twilio.auth_token' => 'twilio_auth_token', 'whatsapp.twilio.balance_token' => 'twilio_balance_token',
             'speech.api_key' => 'speech_api_key', 'speech.local_key' => 'speech_local_key',
         ] as $key => $field) {
             if (filled($data[$field] ?? null)) {

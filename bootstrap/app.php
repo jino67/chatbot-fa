@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureStaff;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureWorkspaceContext;
 use App\Http\Middleware\RecordActions;
+use App\Http\Middleware\RedirectLegacyHost;
 use App\Http\Middleware\ResolveWidgetBot;
 use App\Http\Middleware\SetCurrency;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'widget.bot' => ResolveWidgetBot::class,
             'api.key' => AuthenticateApiKey::class,
         ]);
+
+        // Après un changement de domaine : l'ancien nom redirige ses pages vers le nouveau (voir docs/DOMAINE.md).
+        $middleware->prepend(RedirectLegacyHost::class);
 
         // Devise d'affichage choisie par le lien ?devise=EUR (pages de tarifs).
         $middleware->appendToGroup('web', SetCurrency::class);
