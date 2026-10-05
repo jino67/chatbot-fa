@@ -11,6 +11,7 @@ use App\Notify\Notifier;
 use App\Services\Analytics\ClientStats;
 use App\Services\PlatformSettings;
 use App\Services\UsageService;
+use App\Services\Users\ContactSender;
 use App\Services\Users\UserFilters;
 use App\Services\Users\UserQuery;
 use App\Services\Users\UserStage;
@@ -120,12 +121,12 @@ class PeopleController extends Controller
         try {
             switch ($channel) {
                 case 'email':
-                    $this->sendEmail($customer, $staff, $subject, $body, $data['template'] ?? null);
+                    app(ContactSender::class)->email($customer, $staff, $subject, $body, $data['template'] ?? null);
                     $feedback = 'E-mail envoyé à '.$customer->email.'.';
                     break;
 
                 case 'push':
-                    $notification = app(Notifier::class)->toUser($customer, 'system', Str::limit($subject !== '' ? $subject : 'Un message de l\'équipe', 65, ''), Str::limit($body, 178, ''), route('dashboard', [], false), ['workspace_id' => $customer->workspace_id, 'sync' => true, 'urgent' => true]);
+                    $notification = app(ContactSender::class)->push($customer, $subject, $body);
                     $feedback = $notification?->pushed_at
                         ? 'Notification envoyée sur ses appareils.'
                         : 'Notification déposée dans sa cloche : aucun appareil ne l\'a reçue (aucun n\'est activé, ou les notifications sont bloquées).';
@@ -146,13 +147,9 @@ class PeopleController extends Controller
             return back()->withInput()->with('error', 'Le message n\'a pas pu partir : '.($channel === 'email' ? 'vérifiez la configuration de l\'e-mail (Paramètres).' : 'réessayez dans un instant.'));
         }
 
-        CustomerContact::create([
-            'user_id' => $customer->id, 'staff_id' => $staff->id, 'channel' => $channel,
-            'subject' => $subject !== '' ? $subject : null, 'body' => $body !== '' ? $body : null,
-            'outcome' => $data['outcome'] ?? null, 'template' => ContactTemplates::exists((string) ($data['template'] ?? '')) ? $data['template'] : null,
-        ]);
-
-        $this->updateFollowUp($customer, $channel, $data);
+        $sender = app(ContactSender::class);
+        $sender->record($customer, $staff, $channel, $subject, $body, $data['outcome'] ?? null, $data['template'] ?? null);
+        $sender->afterContact($customer, $channel, $data);
         AuditLog::record('user.contacted', $customer->email, ['canal' => $channel, 'resultat' => $data['outcome'] ?? null], $customer->workspace_id);
 
         // Pour WhatsApp, la page s'ouvre dans un nouvel onglet : la fiche garde l'enregistrement, WhatsApp s'ouvre à côté.
@@ -307,55 +304,4 @@ class PeopleController extends Controller
         return strlen((string) $digits) >= 8 ? $digits : null;
     }
 
-    private function sendEmail(User $customer, User $staff, string $subject, string $body, ?string $template): void
-    {
-        $brand = app(PlatformSettings::class)->brand();
-        $paragraphs = array_values(array_filter(array_map('trim', preg_split('/\R{2,}/', $body) ?: [])));
-        $action = ContactTemplates::exists((string) $template) ? ContactTemplates::render((string) $template, $customer, $staff) : null;
-
-        $notice = new Notice(
-            subjectLine: $subject,
-            heading: $subject,
-            paragraphs: $paragraphs,
-            actionLabel: $action['action_label'] ?? null,
-            actionUrl: $action['action_url'] ?? null,
-            greetingName: $customer->name,
-            reason: 'Message de l\'équipe '.$brand['name'].' : répondez simplement à cet e-mail pour nous écrire.',
-            settings: false,
-        );
-        $notice->replyTo($brand['email'] ?: $staff->email, $brand['name']);
-
-        Mail::to($customer->email)->send($notice);
-    }
-
-    /** Après un contact : date du dernier contact, relance prévue ou faite, statut de la relation. @param array<string,mixed> $data */
-    private function updateFollowUp(User $customer, string $channel, array $data): void
-    {
-        $changes = [];
-
-        if ($channel !== 'note') {
-            $changes['crm_last_contacted_at'] = now();
-        }
-
-        if (filled($data['follow_up'] ?? null)) {
-            $changes['crm_next_follow_up_at'] = Carbon::parse($data['follow_up'])->setTime(9, 0);
-        } elseif ($channel !== 'note' && $customer->crm_next_follow_up_at && $customer->crm_next_follow_up_at->isPast()) {
-            $changes['crm_next_follow_up_at'] = null; // la relance prévue vient d'être faite
-        }
-
-        $status = $data['status'] ?? match ($data['outcome'] ?? null) {
-            'interested' => 'interesse',
-            'converted' => 'client',
-            'not_interested' => 'perdu',
-            'replied' => in_array($customer->crm_status, [null, 'contacte'], true) ? 'en_discussion' : null,
-            default => $channel !== 'note' && $customer->crm_status === null ? 'contacte' : null,
-        };
-        if ($status) {
-            $changes['crm_status'] = $status === 'nouveau' ? null : $status;
-        }
-
-        if ($changes) {
-            $customer->forceFill($changes)->save();
-        }
-    }
 }

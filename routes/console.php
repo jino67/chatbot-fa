@@ -24,5 +24,8 @@ Schedule::command('platform:check-wallets')->hourly()->withoutOverlapping();
 Schedule::command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
 Schedule::command('analytics:digest')->weeklyOn(1, '07:00')->withoutOverlapping();
 
+// Relances de l'équipe aux inscrits (page Utilisateurs) : chaque matin, qui doit être rappelé aujourd'hui.
+Schedule::command('people:remind')->dailyAt('08:30')->withoutOverlapping();
+
 // Notifications : celles retardées par les heures calmes, et les campagnes de l'équipe (programmées ou envoyées par morceaux).
 Schedule::command('notifications:dispatch')->everyMinute()->withoutOverlapping();

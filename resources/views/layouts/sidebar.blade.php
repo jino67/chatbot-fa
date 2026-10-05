@@ -73,6 +73,9 @@
                             <li>
                                 <a href="{{ $href }}" @class(['flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 hover:translate-x-0.5', 'relative bg-white/15 text-white ring-1 ring-inset ring-white/10 before:absolute before:-left-3 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-accent-400' => $active, 'text-white/75 hover:bg-white/10 hover:text-white' => ! $active])>
                                     <x-icon :name="$icon" class="h-[18px] w-[18px] {{ $active ? 'text-accent-400' : '' }}" /> {{ $label }}
+                                    @if ($label === 'Utilisateurs' && ($followUps = \Illuminate\Support\Facades\Cache::remember('people.followups.due', 60, fn () => \App\Models\User::where('role', 'client')->where('is_active', true)->whereNotNull('crm_next_follow_up_at')->where('crm_next_follow_up_at', '<=', now())->where(fn ($q) => $q->whereNull('crm_status')->orWhereNotIn('crm_status', ['stop', 'perdu', 'client']))->count())) > 0)
+                                        <span class="ms-auto grid h-5 min-w-5 place-items-center rounded-full bg-hibiscus-500 px-1.5 text-[11px] font-bold text-white" title="Relances à faire">{{ $followUps }}</span>
+                                    @endif
                                 </a>
                             </li>
                         @endforeach

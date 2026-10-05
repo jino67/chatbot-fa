@@ -13,6 +13,9 @@
     <x-slot name="header">
         <x-page-header title="Utilisateurs" subtitle="Toutes les personnes inscrites : d'où elles viennent, où elles en sont, et qui contacter aujourd'hui. Plus poussé que « Espaces clients », qui gère l'entreprise : ici, on suit la personne.">
             <x-slot name="actions">
+                @if ($filters->segment !== 'tous' || $filters->isFiltered())
+                    <a href="{{ route('admin.people.bulk', $filters->toQuery()) }}" class="btn-primary"><x-icon name="inbox" class="h-4 w-4" /> Écrire à cette sélection</a>
+                @endif
                 <a href="{{ route('admin.people.export', $filters->toQuery()) }}" class="btn-outline"><x-icon name="download" class="h-4 w-4" /> Exporter en CSV</a>
                 <a href="{{ route('staff.guide', 'super-admin') }}#11-les-utilisateurs-suivre-et-contacter-les-inscrits" class="btn-outline"><x-icon name="book" class="h-4 w-4" /> Comment s'en servir</a>
             </x-slot>

@@ -104,19 +104,24 @@ final class ContactTemplates
         return isset(self::ALL[$key]);
     }
 
+    /** Le texte brut d'un modèle, avec ses variables ({prenom}, {entreprise}...) : ce que l'équipe modifie pour un envoi groupé. @return array{label:string,subject:string,email:string,whatsapp:string,action:?string} */
+    public static function raw(string $key): array
+    {
+        return self::ALL[$key] ?? self::ALL['libre'];
+    }
+
     /**
-     * Le modèle rempli pour une personne.
+     * Les valeurs des variables pour une personne.
      *
      * @param  array{assistant?:?string, ends_at?:?\Illuminate\Support\Carbon}  $context
-     * @return array{label:string, subject:string, email:string, whatsapp:string, action_label:?string, action_url:?string}
+     * @return array<string,string>
      */
-    public static function render(string $key, User $customer, ?User $staff, array $context = []): array
+    public static function variables(User $customer, ?User $staff, array $context = []): array
     {
-        $template = self::ALL[$key] ?? self::ALL['libre'];
         $brand = app(\App\Services\PlatformSettings::class)->brand()['name'];
         $ends = $context['ends_at'] ?? null;
 
-        $vars = [
+        return [
             '{prenom}' => trim((string) strtok((string) $customer->name, ' ')),
             '{entreprise}' => $customer->workspace?->name ?? 'votre entreprise',
             '{assistant}' => $context['assistant'] ?? 'votre assistant',
@@ -125,22 +130,44 @@ final class ContactTemplates
             '{date_fin}' => $ends ? $ends->locale('fr')->isoFormat('D MMMM') : 'bientôt',
             '{jours}' => $ends ? (string) max(0, (int) floor(now()->diffInDays($ends, false))) : 'quelques',
         ];
+    }
 
+    /** Remplace les variables d'un texte ; une salutation sans prénom ne laisse ni espace double ni virgule orpheline. @param array<string,string> $vars */
+    public static function fill(string $text, array $vars): string
+    {
+        return trim(preg_replace('/ {2,}/', ' ', str_replace(' ,', ',', strtr($text, $vars))));
+    }
+
+    /**
+     * Le modèle rempli pour une personne.
+     *
+     * @param  array{assistant?:?string, ends_at?:?\Illuminate\Support\Carbon}  $context
+     * @return array{label:string, subject:string, email:string, whatsapp:string, action_label:?string, action_url:?string}
+     */
+    public static function render(string $key, User $customer, ?User $staff, array $context = []): array
+    {
+        $template = self::raw($key);
+        $vars = self::variables($customer, $staff, $context);
         $action = $template['action'];
 
         return [
             'label' => $template['label'],
             'subject' => strtr($template['subject'], $vars),
             'email' => strtr($template['email'], $vars),
-            'whatsapp' => trim(preg_replace('/ {2,}/', ' ', str_replace(' ,', ',', strtr($template['whatsapp'], $vars)))),
-            'action_label' => match ($action) {
-                'billing.show' => 'Voir les offres',
-                'bots.create' => 'Créer mon assistant',
-                'bots.index' => 'Ouvrir mes assistants',
-                'dashboard' => 'Ouvrir mon espace',
-                default => null,
-            },
+            'whatsapp' => self::fill($template['whatsapp'], $vars),
+            'action_label' => self::actionLabel($action),
             'action_url' => $action ? route($action) : null,
         ];
+    }
+
+    public static function actionLabel(?string $action): ?string
+    {
+        return match ($action) {
+            'billing.show' => 'Voir les offres',
+            'bots.create' => 'Créer mon assistant',
+            'bots.index' => 'Ouvrir mes assistants',
+            'dashboard' => 'Ouvrir mon espace',
+            default => null,
+        };
     }
 }

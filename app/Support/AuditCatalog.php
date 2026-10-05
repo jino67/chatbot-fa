@@ -63,6 +63,7 @@ final class AuditCatalog
         'user.viewed' => ['Fiche d\'un utilisateur consultée', self::SENSITIVE],
         'user.contacted' => ['Utilisateur contacté par l\'équipe', self::NORMAL],
         'user.crm_updated' => ['Suivi d\'un utilisateur modifié', self::NORMAL],
+        'user.bulk_contacted' => ['Envoi groupé aux inscrits', self::SENSITIVE],
         'user.exported' => ['Liste des utilisateurs exportée', self::SENSITIVE],
         'user.password_reset' => ['Mot de passe réinitialisé', self::CRITICAL],
         'settings.updated' => ['Paramètres de la plateforme modifiés', self::CRITICAL],

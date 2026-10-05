@@ -320,6 +320,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         // Les personnes inscrites : parcours, suivi et contact (voir docs/PEOPLE.md).
         Route::get('utilisateurs', [Admin\PeopleController::class, 'index'])->name('people.index');
         Route::get('utilisateurs/export', [Admin\PeopleController::class, 'export'])->middleware('throttle:10,1')->name('people.export');
+        Route::get('utilisateurs/groupe', [Admin\PeopleBulkController::class, 'show'])->name('people.bulk');
+        Route::post('utilisateurs/groupe', [Admin\PeopleBulkController::class, 'send'])->middleware('throttle:6,1')->name('people.bulk.send');
         Route::get('utilisateurs/{id}', [Admin\PeopleController::class, 'show'])->whereNumber('id')->name('people.show');
         Route::post('utilisateurs/{id}/contact', [Admin\PeopleController::class, 'contact'])->whereNumber('id')->middleware('throttle:30,1')->name('people.contact');
         Route::put('utilisateurs/{id}/suivi', [Admin\PeopleController::class, 'crm'])->whereNumber('id')->name('people.crm');
