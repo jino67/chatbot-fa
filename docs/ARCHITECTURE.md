@@ -282,7 +282,7 @@ Toutes les tables « métier » portent `workspace_id`.
 
 **Décision.** Les modèles de messages ne se rédigent plus un par un : `config/whatsapp_templates.php` en décrit 28 (français, 12 en anglais), `TemplateLibrary` les prépare (nom de l'entreprise inscrit, boutons retirés si l'adresse ou le numéro manque) et `TemplateProvisioner` les crée par paquets sur un canal, de façon rejouable (un modèle qui existe n'est jamais recréé, un refus n'arrête pas les suivants, trois refus de suite arrêtent tout). `MetaCloudGateway` crée par l'API Graph ; `TwilioGateway` crée désormais par l'API Content (contenu puis demande d'approbation, nettoyage si elle échoue). À l'activation d'un canal (`ChannelRequestController`), le paquet de base et celui du métier de l'assistant partent à l'approbation après l'envoi de la réponse, si l'offre inclut les modèles.
 
-**Garde-fous.** `WhatsAppTemplateLibraryTest` refuse tout modèle qui enfreint les règles de Meta (variables, exemples, longueurs, titre, promotion dans un modèle utilitaire, absence de mention STOP dans un modèle marketing). Les tests désactivent la création automatique (`phpunit.xml`) pour ne jamais appeler un fournisseur. Les envois automatiques déclenchés par un événement (commande confirmée) restent à faire.
+**Garde-fous.** `WhatsAppTemplateLibraryTest` refuse tout modèle qui enfreint les règles de Meta (variables, exemples, longueurs, titre, promotion dans un modèle utilitaire, absence de mention STOP dans un modèle marketing). Les tests désactivent la création automatique (`phpunit.xml`) pour ne jamais appeler un fournisseur. Les envois entièrement automatiques à la confirmation d'une demande ne sont pas faits, volontairement : voir D33.
 
 ### D25. La mesure d'audience est maison, sans adresse IP, et lit ses chiffres dans deux tables
 
@@ -321,6 +321,12 @@ Toutes les tables « métier » portent `workspace_id`.
 ### D32. Changer de domaine sans rien casser, et un expéditeur d'e-mail qui ne dépend d'aucune variable
 
 **Décision.** `RedirectLegacyHost` redirige les pages d'un ancien nom de domaine (`PLATFORM_LEGACY_HOSTS`) vers `APP_URL` et laisse servi ce que les programmes appellent (widget, API, webhooks, service worker). `MailSender` remplace tout nom d'expéditeur factice (`${APP_NAME}`) par le nom de la marque à chaque envoi, et `MailHealth` (page E-mails, `mail:check`) lit SPF, DKIM et DMARC. Détails et marche à suivre : `docs/DOMAINE.md`.
+
+### D33. Confirmer une demande au client : un bouton, pas un envoi automatique
+
+**Décision.** Les modèles de confirmation (`commande_confirmee`, `rdv_confirme`, `devis_pret`) demandent des informations que seul le propriétaire connaît (numéro de commande, montant, heure de retrait). La page Demandes affiche donc un bouton (`Lead::CONFIRMATIONS`, calculé par `LeadController::confirmable`) qui ouvre la conversation avec le modèle choisi (`?modele=`, repris par `ConversationController::show`) et le prénom du client rempli (`Conversation::firstName`, seulement si le nom commence par une lettre et si le modèle nomme sa première variable ainsi, `WhatsAppTemplate::variableLabels`). Il fonctionne aussi dans les 24 h. L'envoi (`ConversationController::template`) prend en charge les demandes ouvertes, comme une réponse libre, et revient à la conversation sans le paramètre.
+
+**Conséquences.** Le bouton ne s'affiche que pour une demande ouverte reçue sur WhatsApp, si le modèle est approuvé sur un canal actif de l'assistant et si l'offre inclut les modèles ; les modèles se lisent avec le filtre de l'entreprise (`LeadConfirmationTest`, `TenantIsolationTest`). Un envoi sans personne, déclenché par un changement d'état, reste possible plus tard pour les modèles sans variable inconnue.
 
 ## 6. Sécurité : synthèse
 

@@ -408,14 +408,17 @@ Quand un client demande une personne, la conversation passe en **À traiter** et
 
 Quand un client confirme une **commande**, prend un **rendez-vous**, demande un **devis** ou veut parler à **une personne**, l'assistant crée une demande. Elle apparaît dans **Demandes**, avec une pastille de couleur dans le menu quand il y en a de nouvelles.
 
-Pour chaque demande, vous voyez le client, le canal, l'heure, le résumé (par exemple « 2 boubous brodés : 70 000 FCFA ») et une étiquette conseillée pour votre application WhatsApp Business. Quatre actions :
+Pour chaque demande, vous voyez le client, le canal, l'heure, le résumé (par exemple « 2 boubous brodés : 70 000 FCFA ») et une étiquette conseillée pour votre application WhatsApp Business. Les actions :
 
 | Action | Effet |
 |---|---|
+| Confirmer la commande, Confirmer le rendez-vous, Envoyer le devis | Pour une demande reçue sur WhatsApp : ouvre la conversation avec le bon **modèle de message** déjà choisi et le prénom du client déjà rempli. Il ne reste qu'à compléter le numéro de commande, le montant ou l'heure, puis à envoyer |
 | Répondre | Ouvre la conversation pour écrire au client |
 | Prendre en charge | Vous indiquez que vous vous en occupez : les rappels s'arrêtent |
 | Terminer | La demande est traitée |
 | Ignorer | Elle ne demande aucune action |
+
+Le bouton de confirmation n'apparaît que si votre numéro WhatsApp est actif et que le modèle correspondant (« Commande confirmée », « Rendez-vous confirmé » ou « Devis prêt ») est **approuvé** par WhatsApp : voir « Les modèles de messages WhatsApp » plus haut. Il fonctionne aussi plus de 24 heures après le dernier message du client, ce que ne permet pas un message libre. Envoyer le modèle vous met en charge de la demande : les rappels s'arrêtent. Pensez ensuite à cliquer sur **Terminer**.
 
 L'assistant ne promet jamais un paiement ni une livraison : il dit au client que votre équipe confirme et le recontacte.
 

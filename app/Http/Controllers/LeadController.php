@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Channel;
 use App\Models\Lead;
+use App\Models\WhatsAppTemplate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,6 +25,7 @@ class LeadController extends Controller
 
         return view('leads.index', [
             'leads' => $query->paginate(30)->withQueryString(),
+            'confirmable' => $this->confirmable($request),
             'tab' => $tab,
             'counts' => [
                 'open' => Lead::open()->count(),
@@ -52,5 +55,33 @@ class LeadController extends Controller
             'dismiss' => 'Demande ignorée.',
             'reopen' => 'Demande rouverte.',
         });
+    }
+
+    /**
+     * Les assistants qui ont déjà, approuvé par WhatsApp, le modèle de confirmation d'un type de demande : le bouton
+     * « Confirmer » ne s'affiche que pour eux (sinon il mènerait à une page sans modèle). Clés « botId:nomDuModèle ».
+     *
+     * @return array<string, true>
+     */
+    private function confirmable(Request $request): array
+    {
+        if (! $request->user()->currentWorkspace()->hasFeature('templates')) {
+            return [];
+        }
+
+        $names = array_column(Lead::CONFIRMATIONS, 0);
+        $templates = WhatsAppTemplate::where('status', WhatsAppTemplate::APPROVED)->whereIn('name', $names)->get(['channel_id', 'name']);
+        $bots = Channel::whereIn('id', $templates->pluck('channel_id')->unique())
+            ->whereIn('type', [Channel::WHATSAPP_META, Channel::WHATSAPP_TWILIO])->where('status', Channel::ACTIVE)
+            ->pluck('bot_id', 'id');
+
+        $keys = [];
+        foreach ($templates as $template) {
+            if ($bot = $bots[$template->channel_id] ?? null) {
+                $keys[$bot.':'.$template->name] = true;
+            }
+        }
+
+        return $keys;
     }
 }

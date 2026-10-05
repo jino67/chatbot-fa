@@ -143,6 +143,38 @@ class TenantIsolationTest extends TestCase
         $this->assertSame(0, FacebookConnection::count());
     }
 
+    public function test_the_confirm_button_never_uses_another_workspaces_approved_template(): void
+    {
+        [, $userA, $botA] = $this->tenant('Client A', 'pro');
+        [$workspaceB, , $botB] = $this->tenant('Client B', 'pro');
+        $channelA = Channel::withoutGlobalScopes()->create([
+            'workspace_id' => $botA->workspace_id, 'bot_id' => $botA->id, 'type' => Channel::WHATSAPP_META, 'status' => Channel::ACTIVE,
+            'external_ref' => '41', 'credentials' => ['access_token' => 'jeton-de-A', 'waba_id' => '6'],
+        ]);
+        $channelB = Channel::withoutGlobalScopes()->create([
+            'workspace_id' => $workspaceB->id, 'bot_id' => $botB->id, 'type' => Channel::WHATSAPP_META, 'status' => Channel::ACTIVE,
+            'external_ref' => '42', 'credentials' => ['access_token' => 'jeton-de-B', 'waba_id' => '7'],
+        ]);
+        WhatsAppTemplate::withoutGlobalScopes()->create([
+            'workspace_id' => $workspaceB->id, 'channel_id' => $channelB->id, 'external_id' => 'tpl-b', 'name' => 'commande_confirmee',
+            'language' => 'fr', 'category' => 'UTILITY', 'status' => WhatsAppTemplate::APPROVED, 'body' => 'Bonjour {{1}}', 'variables_count' => 1,
+        ]);
+        $conversationA = Conversation::withoutGlobalScopes()->create([
+            'workspace_id' => $botA->workspace_id, 'bot_id' => $botA->id, 'channel' => 'whatsapp', 'external_id' => '22670000001', 'contact_name' => 'Awa', 'last_inbound_at' => now(),
+        ]);
+        app(\App\Leads\LeadService::class)->capture($conversationA, \App\Models\Lead::ORDER, '1 boubou');
+
+        // Le modèle approuvé de B ne fait pas apparaître le bouton chez A, et son nom ne le sélectionne pas.
+        $this->actingAs($userA)->get(route('leads.index'))->assertOk()->assertDontSee('Confirmer la commande');
+        $this->get(route('conversations.show', [$botA, $conversationA, 'modele' => 'commande_confirmee']))->assertOk()->assertDontSee('Envoyer le modèle');
+
+        WhatsAppTemplate::withoutGlobalScopes()->create([
+            'workspace_id' => $botA->workspace_id, 'channel_id' => $channelA->id, 'external_id' => 'tpl-a', 'name' => 'commande_confirmee',
+            'language' => 'fr', 'category' => 'UTILITY', 'status' => WhatsAppTemplate::APPROVED, 'body' => 'Bonjour {{1}}', 'variables_count' => 1,
+        ]);
+        $this->get(route('leads.index'))->assertSee('Confirmer la commande');
+    }
+
     public function test_the_peak_hours_card_only_counts_the_authenticated_workspaces_messages(): void
     {
         [, $userA, $botA] = $this->tenant('Client A');

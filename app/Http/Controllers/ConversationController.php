@@ -52,11 +52,15 @@ class ConversationController extends Controller
             $templates = $channel ? WhatsAppTemplate::where('channel_id', $channel->id)->where('status', WhatsAppTemplate::APPROVED)->orderBy('name')->get() : collect();
         }
 
+        // Le bouton « Confirmer » de la page Demandes arrive ici avec le nom du modèle : il est déjà choisi, et le prénom rempli.
+        $wanted = $request->query('modele');
+
         return view('conversations.show', [
             'bot' => $bot,
             'conversation' => $conversation,
             'messages' => $conversation->messages()->orderBy('id')->get(),
             'templates' => $templates,
+            'preselected' => is_string($wanted) ? $templates->firstWhere('name', $wanted) : null,
         ]);
     }
 
@@ -81,7 +85,11 @@ class ConversationController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('status', 'Modèle envoyé.');
+        // Comme une réponse libre : écrire au client, c'est prendre en charge ses demandes, les rappels s'arrêtent.
+        $conversation->leads()->where('status', Lead::NEW)->update(['status' => Lead::TAKEN, 'assigned_to' => $request->user()->id, 'taken_at' => now()]);
+
+        // Retour à la conversation sans le `?modele=` de l'adresse, sinon le formulaire resterait ouvert après l'envoi.
+        return redirect()->route('conversations.show', [$bot, $conversation])->with('status', 'Modèle envoyé.');
     }
 
     private function whatsappChannel(Bot $bot): ?Channel

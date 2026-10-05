@@ -59,8 +59,15 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2">
+                            @php
+                                $confirmation = $lead->isOpen() && $lead->conversation?->channel === 'whatsapp' ? (\App\Models\Lead::CONFIRMATIONS[$lead->kind] ?? null) : null;
+                                $confirmation = $confirmation && isset($confirmable[$lead->bot_id.':'.$confirmation[0]]) ? $confirmation : null;
+                            @endphp
+                            @if ($confirmation)
+                                <a href="{{ route('conversations.show', [$lead->bot_id, $lead->conversation_id, 'modele' => $confirmation[0]]) }}" class="btn-accent">{{ $confirmation[1] }}</a>
+                            @endif
                             @if ($lead->conversation)
-                                <a href="{{ route('conversations.show', [$lead->bot_id, $lead->conversation_id]) }}" class="btn-primary">Répondre</a>
+                                <a href="{{ route('conversations.show', [$lead->bot_id, $lead->conversation_id]) }}" class="{{ $confirmation ? 'btn-outline' : 'btn-primary' }}">Répondre</a>
                             @endif
                             @foreach ($lead->isOpen()
                                 ? array_filter([$lead->status === 'new' ? ['take', 'Prendre en charge'] : null, ['done', 'Terminer'], ['dismiss', 'Ignorer']])

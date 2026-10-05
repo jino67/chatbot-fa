@@ -3,7 +3,14 @@
         $closed = $conversation->status === 'closed';
         $isWhatsApp = $conversation->channel === 'whatsapp';
         $whatsappClosed = $isWhatsApp && ! $conversation->isWithinServiceWindow();
-        $templatePayload = $templates->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'body' => $t->body, 'vars' => (int) $t->variables_count])->values();
+        $firstName = $conversation->firstName();
+        // Le prénom ne remplit la première variable que si le modèle la nomme ainsi (modèles de la bibliothèque).
+        $templatePayload = $templates->map(fn ($t) => [
+            'id' => $t->id, 'name' => $t->name, 'body' => $t->body, 'vars' => (int) $t->variables_count,
+            'labels' => $t->variableLabels(),
+            'prefill' => $firstName && preg_match('/pr[ée]nom|first name/iu', $t->variableLabels()[0] ?? '') ? [$firstName] : [],
+        ])->values();
+        $showTemplates = $whatsappClosed || $preselected;
     @endphp
 
     <div class="mb-4">
@@ -40,11 +47,17 @@
             </div>
 
             @unless ($closed)
-                @if ($whatsappClosed)
-                    <div class="border-t border-slate-100 p-4" x-data="{ id: '', templates: @js($templatePayload), get t() { return this.templates.find(x => String(x.id) === String(this.id)); } }">
-                        <p class="mb-3 rounded-lg bg-accent-50 px-3 py-2 text-xs text-accent-800">
-                            Le client n'a pas écrit depuis plus de 24 h : WhatsApp n'autorise plus de message libre. Envoyez un modèle approuvé pour reprendre la conversation.
-                        </p>
+                @if ($showTemplates)
+                    <div class="border-t border-slate-100 p-4" x-data="{ id: '{{ $preselected?->id }}', templates: @js($templatePayload), get t() { return this.templates.find(x => String(x.id) === String(this.id)); } }">
+                        @if ($whatsappClosed)
+                            <p class="mb-3 rounded-lg bg-accent-50 px-3 py-2 text-xs text-accent-800">
+                                Le client n'a pas écrit depuis plus de 24 h : WhatsApp n'autorise plus de message libre. Envoyez un modèle approuvé pour reprendre la conversation.
+                            </p>
+                        @else
+                            <p class="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-xs text-brand-800">
+                                Le modèle « {{ config('whatsapp_templates.templates.'.$preselected->name.'.title', $preselected->name) }} » est prêt : complétez les informations puis envoyez. Vous pouvez aussi écrire librement plus bas.
+                            </p>
+                        @endif
                         @if ($templates->isEmpty())
                             <p class="text-sm text-slate-600">
                                 Aucun modèle approuvé disponible.
@@ -63,7 +76,10 @@
                                     <div class="space-y-2">
                                         <p class="whitespace-pre-line rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700" x-text="t.body"></p>
                                         <template x-for="i in t.vars" :key="t.id + '-' + i">
-                                            <input :name="'variables[' + (i - 1) + ']'" required class="field" :placeholder="'Valeur pour {{' + i + '}}'">
+                                            <label class="block text-xs font-medium text-slate-600">
+                                                <span x-text="t.labels[i - 1] || ('Valeur ' + i)"></span>
+                                                <input :name="'variables[' + (i - 1) + ']'" required class="field" :value="t.prefill[i - 1] || ''">
+                                            </label>
                                         </template>
                                     </div>
                                 </template>
@@ -71,7 +87,8 @@
                             </form>
                         @endif
                     </div>
-                @else
+                @endif
+                @unless ($whatsappClosed)
                     <form method="POST" action="{{ route('conversations.reply', [$bot, $conversation]) }}" class="border-t border-slate-100 p-3">
                         @csrf
                         <div class="flex gap-2">
@@ -79,7 +96,7 @@
                             <button class="btn-primary">Envoyer</button>
                         </div>
                     </form>
-                @endif
+                @endunless
             @endunless
         </div>
 

@@ -90,6 +90,12 @@ class Conversation extends Model
             && $this->last_inbound_at->gt(now()->subHours(config('platform.whatsapp.session_window_hours')));
     }
 
+    /** Prénom du client pour pré-remplir un modèle : seulement si le nom commence par une lettre (jamais un numéro). */
+    public function firstName(): ?string
+    {
+        return preg_match('/^\p{L}[\p{L}\'’-]*/u', trim((string) $this->contact_name), $m) ? $m[0] : null;
+    }
+
     public function displayName(): string
     {
         return $this->contact_name

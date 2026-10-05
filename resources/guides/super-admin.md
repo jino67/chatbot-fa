@@ -218,6 +218,7 @@ Si le panneau n'accepte qu'un fichier PHP, utilisez `kouma/cron.php`. Elle pilot
 | `platform:resync-due` | Toutes les heures | Relit les sites web et les pages dont la mise à jour automatique est due |
 | `platform:subscriptions` | Chaque jour à 8 h | Rappels d'échéance, période de grâce, fin des essais, retour à l'offre gratuite |
 | `leads:remind` | Toutes les 10 minutes | Relance les demandes restées sans réponse |
+| `people:remind` | Chaque jour à 8 h 30 | Prévient l'équipe des relances à faire aujourd'hui (page Utilisateurs) |
 | `platform:check-wallets` | Toutes les heures | Alerte quand le solde Twilio est bas ou qu'un client approche de son volume WhatsApp |
 | `notifications:dispatch` | Chaque minute | Envoie les campagnes de l'équipe et les notifications retardées par les heures calmes |
 | `analytics:prune` | Chaque jour | Supprime les statistiques au-delà de la durée de conservation |
@@ -407,9 +408,22 @@ Sous « Après ce contact », notez le **résultat** (a répondu, intéressé, s
 
 Le **statut** : nouveau, contacté, intéressé, en discussion, client, perdu, **ne plus contacter**. La **prochaine relance** fait apparaître la personne dans « À relancer » le jour dit. Un **responsable** peut être désigné.
 
-> **Règles à respecter :** aidez, ne harcelez pas. À la demande d'une personne, passez-la en **Ne plus contacter** : plus aucun message n'est possible depuis la fiche (seule une note). Une adresse masquée par Apple (`privaterelay.appleid.com`) ne reçoit un e-mail que si votre domaine d'envoi est déclaré chez Apple : préférez WhatsApp ou la notification. Pour une annonce à beaucoup de monde, utilisez la page **Notifications**, qui respecte les choix de chacun.
+> **Règles à respecter :** aidez, ne harcelez pas. À la demande d'une personne, passez-la en **Ne plus contacter** : plus aucun message n'est possible depuis la fiche (seule une note). Une adresse masquée par Apple (`privaterelay.appleid.com`) ne reçoit un e-mail que si votre domaine d'envoi est déclaré chez Apple : préférez WhatsApp ou la notification. Pour une annonce à tout le monde, utilisez la page **Notifications**, qui respecte les choix de chacun.
 
 **Vie privée :** chaque fiche ouverte, chaque contact, chaque changement de suivi et chaque export (CSV : nom, e-mail, téléphone, étape, suivi) est inscrit au **Journal**. Les données sont personnelles : ne les copiez pas dans un outil extérieur sans nécessité.
+
+### Écrire à un groupe
+
+Quand le segment affiché correspond à une même situation (par exemple « Sans assistant » ou « Essai bientôt fini »), le bouton **Écrire à cette sélection** envoie **le même message, personnalisé par personne** (« Bonjour Prénom, »), par e-mail ou par notification. Le modèle du segment est déjà proposé : relisez-le, puis envoyez.
+
+- **Par petits lots** (25 personnes), pour garder une bonne réputation d'envoi. Après un lot, ceux qui viennent d'être contactés sortent de la sélection : vous cliquez à nouveau pour continuer.
+- **Sont écartés automatiquement**, avec le décompte de chaque raison : ceux qui sont en « Ne plus contacter », les comptes désactivés, les personnes déjà contactées depuis moins de 7 jours et, pour l'e-mail, les adresses masquées par Apple.
+- **Plafond du jour** : 40 e-mails par jour au départ, fiches individuelles comprises. Un domaine récent qui envoie soudain beaucoup de messages est classé en courrier indésirable : montez le plafond (réglage `PEOPLE_DAILY_EMAIL_CAP` dans le fichier `.env`) peu à peu, à mesure que vos e-mails arrivent bien.
+- **Pas de WhatsApp en masse**, volontairement : WhatsApp peut bloquer un numéro qui écrit à beaucoup de personnes qui ne l'ont pas demandé. Pour WhatsApp, écrivez depuis la fiche, une personne à la fois.
+
+### Le rappel du matin
+
+Chaque jour à 8 h 30, chaque membre de l'équipe reçoit **une notification** (cloche et téléphone) avec le nombre de **relances à faire** et les premiers noms. Les personnes sans responsable sont signalées à tous les super admins. Le même nombre apparaît sur une pastille rouge à côté de « Utilisateurs » dans le menu.
 
 ## 12. Connexion avec Google, Apple, Microsoft et Facebook
 

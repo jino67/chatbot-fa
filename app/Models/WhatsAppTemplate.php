@@ -72,6 +72,19 @@ class WhatsAppTemplate extends Model
         };
     }
 
+    /**
+     * Nom de chaque variable ({{1}}, {{2}}...) quand le modèle vient de la bibliothèque : « Prénom du client », « Montant »...
+     * Vide pour un modèle écrit à la main, ou dont le nombre de variables a changé.
+     *
+     * @return list<string>
+     */
+    public function variableLabels(): array
+    {
+        $labels = config('whatsapp_templates.templates.'.$this->name.'.'.$this->language.'.vars', []);
+
+        return is_array($labels) && count($labels) === (int) $this->variables_count ? array_values($labels) : [];
+    }
+
     /** Remplace {{1}}, {{2}}... par des valeurs (apercu). */
     public function preview(array $values = []): string
     {

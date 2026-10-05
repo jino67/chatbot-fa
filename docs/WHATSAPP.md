@@ -158,7 +158,7 @@ Un modèle est un message approuvé par WhatsApp, indispensable pour écrire à 
 - L'approbation prend de quelques minutes à quelques heures. Meta peut reclasser un modèle « utilitaire » en « marketing » (plus cher) ou le refuser : le motif s'affiche après « Actualiser les statuts ». Corriger le texte, puis recréer sous un autre nom.
 - Un modèle « marketing » ne s'envoie qu'à un client qui a accepté de recevoir des offres.
 - Twilio ne permet pas de mélanger boutons de réponse rapide et boutons lien ou appel dans un même modèle. Il n'a ni titre ni pied de message : Kouma écrit le pied en italique à la fin du texte.
-- Les envois **automatiques** (par exemple « commande confirmée » qui part dès qu'une demande est traitée) ne sont pas encore branchés : aujourd'hui, un agent envoie le modèle depuis la conversation.
+- Les envois **entièrement automatiques** (par exemple « commande confirmée » qui part sans personne) ne sont pas branchés, et c'est voulu : le modèle demande un numéro de commande, un montant, une heure, que seul le commerçant connaît ; un envoi sans lui risquerait d'annoncer une information fausse. À la place, la page Demandes propose un bouton **Confirmer la commande / Confirmer le rendez-vous / Envoyer le devis** (`Lead::CONFIRMATIONS`) : la conversation s'ouvre avec le bon modèle déjà choisi (`?modele=`) et le prénom rempli ; il reste à compléter les variables et à envoyer. Le bouton n'apparaît que si le modèle est approuvé sur le canal de l'assistant.
 
 ### 9.1 Essai de l'assistant Kouma avec un sous-compte Twilio
 

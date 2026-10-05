@@ -44,6 +44,13 @@ class Lead extends Model
         self::HUMAN => 'À rappeler',
     ];
 
+    /** Modèle WhatsApp de la bibliothèque qui confirme chaque type de demande au client, et le libellé du bouton (voir `config/whatsapp_templates.php`). */
+    public const CONFIRMATIONS = [
+        self::ORDER => ['commande_confirmee', 'Confirmer la commande'],
+        self::APPOINTMENT => ['rdv_confirme', 'Confirmer le rendez-vous'],
+        self::QUOTE => ['devis_pret', 'Envoyer le devis'],
+    ];
+
     protected $fillable = [
         'workspace_id', 'bot_id', 'conversation_id', 'kind', 'status', 'title', 'summary', 'contact_name', 'contact_phone',
         'assigned_to', 'alerted_at', 'alert_log', 'reminders', 'last_reminder_at', 'taken_at', 'closed_at',
