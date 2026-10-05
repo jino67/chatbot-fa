@@ -56,12 +56,25 @@ class Message extends Model
     }
 
     /** Forme exposee au widget. */
+    /** Adresse (signée, valable une semaine) de la photo envoyée par le client, tant qu'elle est conservée. */
+    public function imageUrl(): ?string
+    {
+        if ($this->role !== self::USER || empty($this->meta['image']['path'])) {
+            return null;
+        }
+
+        $path = \Illuminate\Support\Facades\URL::temporarySignedRoute('media.chat-image', now()->addDays(7), ['message' => $this->id], absolute: false);
+
+        return rtrim((string) config('app.url'), '/').$path;
+    }
+
     public function toWidget(): array
     {
         return [
             'id' => $this->id,
             'role' => $this->role,
             'content' => $this->content,
+            'image' => $this->role === self::USER && ! empty($this->meta['image']['category']) ? ['url' => $this->imageUrl(), 'category' => $this->meta['image']['category']] : null,
             'at' => $this->created_at?->toIso8601String(),
             // Photos de produits jointes à la réponse : de quoi les afficher (adresse publique, légende).
             'media' => $this->role === self::ASSISTANT && ! empty($this->meta['media']) ? app(\App\Chat\CatalogMedia::class)->resolve($this->meta['media']) : [],

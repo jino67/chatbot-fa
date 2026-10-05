@@ -34,7 +34,22 @@
                     @endphp
                     <div class="flex {{ $isUser ? '' : 'justify-end' }}">
                         <div class="max-w-[80%]">
-                            <div class="whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm {{ $bubble }}">{{ $message->content }}</div>
+                            @php $image = $isUser ? ($message->meta['image'] ?? null) : null; @endphp
+                            @if ($image)
+                                @if ($url = $message->imageUrl())
+                                    <a href="{{ $url }}" target="_blank" rel="noopener"><img src="{{ $url }}" alt="Photo envoyée par le client" loading="lazy" class="mb-1 max-h-60 rounded-xl border border-slate-200"></a>
+                                @elseif (! empty($image['expired']))
+                                    <p class="mb-1 text-xs italic text-slate-500">Photo effacée (conservée {{ config('platform.vision.retention_days') }} jours).</p>
+                                @elseif (! empty($image['sensitive']))
+                                    <p class="mb-1 text-xs italic text-amber-700">Document confidentiel : la photo n'a pas été conservée.</p>
+                                @endif
+                                @if (! empty($image['summary']))
+                                    <p class="mb-1 text-xs text-slate-600">Lu sur la photo ({{ $image['category'] ?? 'autre' }}) : {{ $image['summary'] }}@if (! empty($image['details'])) <span class="block">{{ $image['details'] }}</span>@endif</p>
+                                @endif
+                            @endif
+                            @unless ($image && $message->content === '[Photo]')
+                                <div class="whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm {{ $bubble }}">{{ $message->content }}</div>
+                            @endunless
                             <div class="mt-1 text-[11px] text-slate-500 {{ $isUser ? '' : 'text-right' }}">
                                 {{ $isUser ? 'Client' : ($message->role === 'agent' ? 'Conseiller'.(($message->meta['agent'] ?? null) ? ' : '.$message->meta['agent'] : '') : 'Assistant'.(($message->meta['provider'] ?? null) ? ' ('.$message->meta['provider'].')' : '')) }}
                                 , {{ $message->created_at->format('d/m H:i') }}

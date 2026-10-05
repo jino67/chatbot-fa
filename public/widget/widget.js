@@ -26,9 +26,9 @@
   var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   var I18N = {
-    fr: { placeholder: 'Écrivez votre message…', send: 'Envoyer', close: 'Fermer', open: 'Ouvrir la discussion', human: 'Un conseiller a été prévenu et vous répondra ici.', error: 'Connexion impossible. Réessayez dans un instant.', name: 'Votre nom', phone: 'Votre téléphone', start: 'Démarrer la discussion', contact: 'Pour mieux vous répondre :', agent: 'Conseiller', online: 'En ligne', writing: 'écrit…', talk: 'Parler à quelqu\'un', talkText: 'Je veux parler à quelqu\'un', powered: 'Propulsé par', menu: 'Options', newChat: 'Nouvelle conversation', whatsapp: 'Continuer sur WhatsApp', waHello: 'Bonjour', language: 'Langue', copy: 'Copier', copied: 'Copié', good: 'Réponse utile', bad: 'Réponse à améliorer', thanks: 'Merci pour votre avis.', listen: 'Écouter', playing: 'Arrêter', mic: 'Message vocal', micSend: 'Envoyer le vocal', micCancel: 'Annuler', micDenied: 'Le micro est bloqué. Autorisez-le dans votre navigateur pour parler.', voiceFail: 'Le message vocal n\'a pas pu être envoyé. Écrivez votre question ou réessayez.', transcribing: 'Transcription…', reset: 'Nouvelle conversation.' },
-    en: { placeholder: 'Type your message…', send: 'Send', close: 'Close', open: 'Open chat', human: 'A team member has been notified and will reply here.', error: 'Connection failed. Please try again shortly.', name: 'Your name', phone: 'Your phone', start: 'Start chat', contact: 'So we can help you better:', agent: 'Agent', online: 'Online', writing: 'typing…', talk: 'Talk to someone', talkText: 'I want to speak to someone', powered: 'Powered by', menu: 'Options', newChat: 'New conversation', whatsapp: 'Continue on WhatsApp', waHello: 'Hello', language: 'Language', copy: 'Copy', copied: 'Copied', good: 'Helpful answer', bad: 'Answer to improve', thanks: 'Thanks for your feedback.', listen: 'Listen', playing: 'Stop', mic: 'Voice message', micSend: 'Send voice message', micCancel: 'Cancel', micDenied: 'The microphone is blocked. Allow it in your browser to speak.', voiceFail: 'The voice message could not be sent. Type your question or try again.', transcribing: 'Transcribing…', reset: 'New conversation.' },
-    ar: { placeholder: 'اكتب رسالتك…', send: 'إرسال', close: 'إغلاق', open: 'فتح المحادثة', human: 'تم إبلاغ أحد أعضاء الفريق وسيرد عليك هنا.', error: 'تعذر الاتصال. حاول مرة أخرى بعد قليل.', name: 'اسمك', phone: 'هاتفك', start: 'ابدأ المحادثة', contact: 'لنساعدك بشكل أفضل:', agent: 'مستشار', online: 'متصل', writing: 'يكتب…', talk: 'التحدث إلى شخص', talkText: 'أريد التحدث إلى شخص', powered: 'مدعوم من', menu: 'خيارات', newChat: 'محادثة جديدة', whatsapp: 'المتابعة على واتساب', waHello: 'مرحبا', language: 'اللغة', copy: 'نسخ', copied: 'تم النسخ', good: 'إجابة مفيدة', bad: 'إجابة تحتاج إلى تحسين', thanks: 'شكرا على رأيك.', listen: 'استماع', playing: 'إيقاف', mic: 'رسالة صوتية', micSend: 'إرسال الرسالة الصوتية', micCancel: 'إلغاء', micDenied: 'الميكروفون محظور. اسمح به في المتصفح للتحدث.', voiceFail: 'تعذر إرسال الرسالة الصوتية. اكتب سؤالك أو حاول مجددا.', transcribing: 'جار التفريغ…', reset: 'محادثة جديدة.' }
+    fr: { placeholder: 'Écrivez votre message…', send: 'Envoyer', close: 'Fermer', open: 'Ouvrir la discussion', human: 'Un conseiller a été prévenu et vous répondra ici.', error: 'Connexion impossible. Réessayez dans un instant.', name: 'Votre nom', phone: 'Votre téléphone', start: 'Démarrer la discussion', contact: 'Pour mieux vous répondre :', agent: 'Conseiller', online: 'En ligne', writing: 'écrit…', talk: 'Parler à quelqu\'un', talkText: 'Je veux parler à quelqu\'un', powered: 'Propulsé par', menu: 'Options', newChat: 'Nouvelle conversation', whatsapp: 'Continuer sur WhatsApp', waHello: 'Bonjour', language: 'Langue', copy: 'Copier', copied: 'Copié', good: 'Réponse utile', bad: 'Réponse à améliorer', thanks: 'Merci pour votre avis.', listen: 'Écouter', playing: 'Arrêter', mic: 'Message vocal', micSend: 'Envoyer le vocal', micCancel: 'Annuler', micDenied: 'Le micro est bloqué. Autorisez-le dans votre navigateur pour parler.', voiceFail: 'Le message vocal n\'a pas pu être envoyé. Écrivez votre question ou réessayez.', transcribing: 'Transcription…', reset: 'Nouvelle conversation.', photo: 'Envoyer une photo', photoSent: 'Photo', photoFail: 'La photo n\'a pas pu être envoyée. Réessayez ou décrivez votre demande par écrit.' },
+    en: { placeholder: 'Type your message…', send: 'Send', close: 'Close', open: 'Open chat', human: 'A team member has been notified and will reply here.', error: 'Connection failed. Please try again shortly.', name: 'Your name', phone: 'Your phone', start: 'Start chat', contact: 'So we can help you better:', agent: 'Agent', online: 'Online', writing: 'typing…', talk: 'Talk to someone', talkText: 'I want to speak to someone', powered: 'Powered by', menu: 'Options', newChat: 'New conversation', whatsapp: 'Continue on WhatsApp', waHello: 'Hello', language: 'Language', copy: 'Copy', copied: 'Copied', good: 'Helpful answer', bad: 'Answer to improve', thanks: 'Thanks for your feedback.', listen: 'Listen', playing: 'Stop', mic: 'Voice message', micSend: 'Send voice message', micCancel: 'Cancel', micDenied: 'The microphone is blocked. Allow it in your browser to speak.', voiceFail: 'The voice message could not be sent. Type your question or try again.', transcribing: 'Transcribing…', reset: 'New conversation.', photo: 'Send a photo', photoSent: 'Photo', photoFail: 'The photo could not be sent. Try again or describe your request in writing.' },
+    ar: { placeholder: 'اكتب رسالتك…', send: 'إرسال', close: 'إغلاق', open: 'فتح المحادثة', human: 'تم إبلاغ أحد أعضاء الفريق وسيرد عليك هنا.', error: 'تعذر الاتصال. حاول مرة أخرى بعد قليل.', name: 'اسمك', phone: 'هاتفك', start: 'ابدأ المحادثة', contact: 'لنساعدك بشكل أفضل:', agent: 'مستشار', online: 'متصل', writing: 'يكتب…', talk: 'التحدث إلى شخص', talkText: 'أريد التحدث إلى شخص', powered: 'مدعوم من', menu: 'خيارات', newChat: 'محادثة جديدة', whatsapp: 'المتابعة على واتساب', waHello: 'مرحبا', language: 'اللغة', copy: 'نسخ', copied: 'تم النسخ', good: 'إجابة مفيدة', bad: 'إجابة تحتاج إلى تحسين', thanks: 'شكرا على رأيك.', listen: 'استماع', playing: 'إيقاف', mic: 'رسالة صوتية', micSend: 'إرسال الرسالة الصوتية', micCancel: 'إلغاء', micDenied: 'الميكروفون محظور. اسمح به في المتصفح للتحدث.', voiceFail: 'تعذر إرسال الرسالة الصوتية. اكتب سؤالك أو حاول مجددا.', transcribing: 'جار التفريغ…', reset: 'محادثة جديدة.', photo: 'إرسال صورة', photoSent: 'صورة', photoFail: 'تعذر إرسال الصورة. حاول مرة أخرى أو اكتب طلبك.' }
   };
 
   // ---------- stockage local (identifiant visiteur, langue choisie) ----------
@@ -119,6 +119,7 @@
     down: '<path d="M7 11V4H4v7ZM7 11l3 6c1.2 0 2-.9 1.8-2L11.4 12H15a1.5 1.5 0 0 0 1.5-1.8l-1-5A1.5 1.5 0 0 0 14 4H7"/>',
     listen: '<path d="M4 8v4h3l4 3.5v-11L7 8ZM14 7.5a3.5 3.5 0 0 1 0 5M15.8 5.5a6.3 6.3 0 0 1 0 9"/>',
     stop: '<rect x="5.5" y="5.5" width="9" height="9" rx="1.5" fill="currentColor"/>',
+    image: '<rect x="3" y="4" width="14" height="12" rx="2.5"/><circle cx="7.5" cy="8.5" r="1.3"/><path d="m4 14 4-4 3 3 2-2 3 3"/>',
     mic: '<rect x="7.5" y="2.5" width="5" height="9" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/>',
     dots: '<circle cx="4.5" cy="10" r="1.3" fill="currentColor"/><circle cx="10" cy="10" r="1.3" fill="currentColor"/><circle cx="15.5" cy="10" r="1.3" fill="currentColor"/>',
     globe: '<circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2.2 2 3.2 4.4 3.2 7S12.2 15 10 17c-2.2-2-3.2-4.4-3.2-7S7.8 5 10 3Z"/>',
@@ -175,6 +176,7 @@
       '.vt{display:block;font-size:12.5px;opacity:.9;margin-top:4px;font-style:italic}' +
       '.note{align-self:center;font-size:12px;color:#64748b;text-align:center;padding:2px 8px;animation:in .3s ease-out}' +
       '.src{font-size:11.5px;color:#64748b;margin-top:7px}.src a{color:#475569}' +
+      '.pic{display:block;max-width:190px;max-height:190px;border-radius:12px;margin-bottom:6px;object-fit:cover}.pic+.cap{display:block}' +
       '.media{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.ph{display:block;width:150px;text-decoration:none;color:inherit}.ph img{display:block;width:150px;height:150px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0;background:#f1f5f9}.ph span{display:block;font-size:11.5px;line-height:1.35;margin-top:4px;color:#475569}' +
       '.tools{display:flex;gap:2px;margin-top:3px;opacity:.0;transition:opacity .2s}.row:hover .tools,.row.last .tools,.tools:focus-within{opacity:1}' +
       '.tool{border:0;background:none;color:#64748b;width:28px;height:26px;border-radius:9px 3px 9px 3px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,border-radius .3s}.tool:hover{background:#e2e8f0;color:#0b1340;border-radius:3px 9px 3px 9px}.tool.on{color:' + color + ';background:#e6ebfb}.tool.ok{color:#059669}' +
@@ -260,6 +262,21 @@
     els.sendBtn = el('button', { type: 'submit', class: 'round go', 'aria-label': t.send });
     els.sendBtn.appendChild(ico('send', 18));
     els.form = el('form', { class: 'send' }, [els.input]);
+
+    // Envoyer une photo (appareil photo ou galerie) : l'assistant la regarde et répond.
+    if (config.images) {
+      els.file = el('input', { type: 'file', accept: 'image/*', style: 'display:none', 'aria-hidden': 'true', tabindex: '-1' });
+      els.photoBtn = el('button', { type: 'button', class: 'round mic', 'aria-label': t.photo, title: t.photo });
+      els.photoBtn.appendChild(ico('image', 18));
+      els.photoBtn.addEventListener('click', function () { if (!busy) els.file.click(); });
+      els.file.addEventListener('change', function () {
+        var f = els.file.files && els.file.files[0];
+        els.file.value = '';
+        if (f) sendPhoto(f);
+      });
+      els.form.appendChild(els.file);
+      els.form.appendChild(els.photoBtn);
+    }
 
     var canListen = !!(config.voice && config.voice.listen && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
     if (canListen) {
@@ -430,7 +447,10 @@
     var row = el('div', { class: 'row ' + kind });
     var bubble = el('div', { class: 'm' });
     if (kind === 'agent') bubble.appendChild(el('span', { class: 'who', text: t.agent }));
-    renderText(bubble, msg.content);
+    if (msg.image && msg.image.url) {
+      bubble.appendChild(el('img', { class: 'pic', src: msg.image.url, alt: t.photoSent, loading: 'lazy' }));
+    }
+    if (!(msg.image && /^\[(Photo|photo)\]$/.test(msg.content))) renderText(bubble, msg.content);
     // Photos de produits jointes à la réponse : touchées, elles s'ouvrent en grand.
     if (msg.media && msg.media.length) {
       var gallery = el('div', { class: 'media' });
@@ -674,6 +694,55 @@
       typing(false);
       note(t.error);
     }).then(function () { busy = false; els.sendBtn.disabled = false; els.input.focus(); });
+  }
+
+  // ---------- photo du visiteur ----------
+  // La photo est réduite avant l'envoi (1280 px, JPEG) : plus rapide sur un réseau mobile, et sans métadonnées.
+  function shrink(file, done) {
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      var finish = function (blob) { URL.revokeObjectURL(url); done(blob || file); };
+      if (c.toBlob) c.toBlob(finish, 'image/jpeg', 0.82); else finish(null);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+    img.src = url;
+  }
+
+  function sendPhoto(file) {
+    if (busy || !conversation) return;
+    busy = true;
+    els.sendBtn.disabled = true;
+    var caption = els.input.value.trim();
+    els.input.value = '';
+
+    shrink(file, function (blob) {
+      var preview = URL.createObjectURL(blob);
+      var row = el('div', { class: 'row user' });
+      var bubble = el('div', { class: 'm' });
+      bubble.appendChild(el('img', { class: 'pic', src: preview, alt: t.photoSent }));
+      if (caption) bubble.appendChild(el('span', { class: 'cap', text: caption }));
+      row.appendChild(bubble);
+      clearChips(); els.msgs.appendChild(row); scroll();
+      typing(true);
+
+      var form = new FormData();
+      form.append('image', blob, 'photo.jpg');
+      if (caption) form.append('caption', caption);
+      if ((config.languages || []).length > 1) form.append('lang', lang);
+      var shownAt = Date.now();
+
+      upload('/conversations/' + conversation + '/image', form).then(function (data) {
+        return afterAnswer(data, shownAt);
+      }).catch(function (err) {
+        typing(false);
+        row.remove();
+        note(err && err.data && err.data.message ? err.data.message : t.photoFail);
+      }).then(function () { busy = false; els.sendBtn.disabled = false; });
+    });
   }
 
   // ---------- voix : enregistrer, envoyer, ecouter ----------

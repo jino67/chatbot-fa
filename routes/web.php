@@ -78,6 +78,8 @@ Route::get('/devise/{code}', function (Illuminate\Http\Request $request, string 
 Route::get('/sitemap.xml', [LandingController::class, 'sitemap']);
 
 // Reponse vocale que Twilio vient chercher : adresse signee (chemin relatif), valable deux heures.
+// Photo envoyée par un client : adresse signée et temporaire (le propriétaire la voit dans la boîte de réception, le client dans son chat).
+Route::get('/media/photo-client/{message}', [MediaController::class, 'chatImage'])->middleware('signed:relative')->where('message', '[0-9]+')->name('media.chat-image');
 // Photo d'un produit : adresse signée (sans date d'expiration), lisible par WhatsApp, Twilio et le widget.
 Route::get('/media/produit/{item}.jpg', [MediaController::class, 'product'])->middleware('signed:relative')->where('item', '[0-9]+')->name('media.product');
 Route::get('/media/voice/{name}', [MediaController::class, 'voice'])->middleware('signed:relative')->where('name', '[A-Za-z0-9]{40}\.(ogg|mp3|wav)')->name('media.voice');

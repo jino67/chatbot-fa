@@ -167,6 +167,7 @@ class Bot extends Model
 
         return [
             'name' => $this->name,
+            'images' => $this->acceptsImages(),
             'title' => $this->theme('title', $this->name),
             'welcome' => $this->welcome(),
             'suggested' => array_values(array_filter($this->suggested_questions ?? [])),

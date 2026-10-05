@@ -96,6 +96,14 @@ return [
         'blocked_hosts' => ['facebook.com', 'fb.com', 'fb.me', 'instagram.com', 'x.com', 'twitter.com', 'tiktok.com', 'linkedin.com'],
     ],
 
+    // Photos envoyées par les clients (voir App\Chat\CustomerImages) : taille, plafond par conversation et par jour, durée de conservation.
+    'vision' => [
+        'max_side' => 1280,
+        'max_bytes' => 8_000_000,
+        'daily_cap' => 10,
+        'retention_days' => (int) env('PLATFORM_IMAGE_RETENTION_DAYS', 30),
+    ],
+
     'uploads' => [
         'disk' => 'local',
         'max_kb' => 20480,

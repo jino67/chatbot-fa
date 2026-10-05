@@ -15,9 +15,9 @@ trait ScriptsTheAssistant
      *
      * @param  list<string>|string  $replies
      */
-    protected function scriptedAssistant(array|string $replies = 'Bien reçu.', string $vision = "CATEGORIE: autre\nRESUME: Une photo."): ScriptedLlm
+    protected function scriptedAssistant(array|string $replies = 'Bien reçu.', string $vision = "CATEGORIE: autre\nRESUME: Une photo.", bool $visionFails = false): ScriptedLlm
     {
-        $llm = new ScriptedLlm((array) $replies, $vision);
+        $llm = new ScriptedLlm((array) $replies, $vision, $visionFails);
 
         $this->app->instance(LlmClient::class, $llm);
         $this->app->forgetInstance(ChatService::class);

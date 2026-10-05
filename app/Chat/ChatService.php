@@ -97,14 +97,21 @@ class ChatService
             );
         }
 
-        $smallTalk = Text::isSmallTalk($text);
-        $chunks = $smallTalk ? [] : $this->retriever->retrieve($bot, $this->searchQuery($conversation, $userMessage));
+        // Photo envoyée par le client : sa description (lue par le modèle de vision) fait partie de sa question.
+        $image = is_array($userMessage->meta['image'] ?? null) && empty($userMessage->meta['image']['declined']) ? $userMessage->meta['image'] : null;
+        if ($image && ($image['failed'] ?? false)) {
+            return $this->store($conversation, "Je n'arrive pas à lire cette photo pour le moment. Pouvez-vous m'écrire ce qu'elle montre ou ce dont vous avez besoin ?", [], ['grounded' => true, 'llm' => false, 'reason' => 'vision_unavailable']);
+        }
+
+        $smallTalk = ! $image && Text::isSmallTalk($text);
+        $query = $this->searchQuery($conversation, $userMessage).($image ? ' '.trim(($image['summary'] ?? '').' '.($image['details'] ?? '')) : '');
+        $chunks = $smallTalk ? [] : $this->retriever->retrieve($bot, $query);
 
         // Hors salutation, sans extrait pertinent : on ne depense pas un appel LLM, on avoue ne pas savoir.
         // Exceptions : une reclamation ou une urgence merite une reponse empathique et un possible transfert ;
         // la conversation libre (réglage de l'assistant, active par défaut) laisse le modèle répondre, le prompt gardant
         // les informations de l'entreprise tirées des seuls extraits.
-        $open = $bot->allowsFreeChat();
+        $open = $bot->allowsFreeChat() || $image !== null;
         if (! $smallTalk && ! $open && $chunks === [] && ! Text::isSensitive($text)) {
             return $this->miss($conversation, $bot->fallback(), ['llm' => false, 'top_score' => 0.0, 'reason' => 'no_context']);
         }
@@ -113,7 +120,7 @@ class ChatService
             system: $this->prompts->system($bot, $conversation->channel),
             messages: [
                 ...$this->prompts->history($conversation, $userMessage->id),
-                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks, (bool) ($userMessage->meta['voice'] ?? false), $userMessage->meta['lang'] ?? null)],
+                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks, (bool) ($userMessage->meta['voice'] ?? false), $userMessage->meta['lang'] ?? null, $image)],
             ],
         );
 

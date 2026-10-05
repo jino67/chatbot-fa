@@ -17,6 +17,9 @@ Schedule::command('platform:subscriptions')->dailyAt('08:00')->withoutOverlappin
 // Lecture des sites par tranches : reprend celles que personne ne fait avancer (page fermée, requête coupée par l'hébergeur).
 Schedule::command('sources:continue')->everyFiveMinutes()->withoutOverlapping();
 
+// Photos envoyées par les clients : effacées au-delà de la durée de conservation (la description écrite reste).
+Schedule::command('images:prune')->dailyAt('03:45')->withoutOverlapping();
+
 // Photos des produits lues sur les sites : préparées à l'avance (téléchargées, remises en JPEG) pour partir sans attente.
 Schedule::command('catalog:warm-images')->everyFiveMinutes()->withoutOverlapping();
 

@@ -16,6 +16,7 @@ Route::prefix('v1/widget/{publicKey}')
         Route::post('conversations/{token}/messages', [WidgetController::class, 'send']);
         Route::get('conversations/{token}/messages', [WidgetController::class, 'poll']);
         Route::post('conversations/{token}/voice', [WidgetController::class, 'voice']);
+        Route::post('conversations/{token}/image', [WidgetController::class, 'image']);
         Route::post('conversations/{token}/speak', [WidgetController::class, 'speak']);
         Route::post('conversations/{token}/close', [WidgetController::class, 'close']);
         Route::post('conversations/{token}/messages/{message}/feedback', [WidgetController::class, 'feedback'])->whereNumber('message');

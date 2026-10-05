@@ -3,6 +3,7 @@
 namespace App\Channels\WhatsApp;
 
 use App\Chat\ChatService;
+use App\Chat\CustomerImages;
 use App\Models\Channel;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -28,6 +29,7 @@ class InboundHandler
         private readonly UsageMeter $meter,
         private readonly UsageService $usage,
         private readonly VoiceService $voice,
+        private readonly CustomerImages $images,
     ) {}
 
     public function handle(Channel $channel, InboundMessage $inbound): void
@@ -82,6 +84,10 @@ class InboundHandler
                 $reply = $this->chat->handleUserMessage($conversation, $heard->text, [
                     'channel' => 'whatsapp', 'voice' => true, 'voice_seconds' => $heard->seconds,
                 ], $inbound->providerMessageId);
+            } elseif ($inbound->type === 'image' && $inbound->mediaRef) {
+                // Photo du client : lue par le modèle de vision avec le brief du métier de l'entreprise.
+                $this->meter->whatsapp($channel, 'in', null, $bot->id);
+                $reply = $this->receiveImage($conversation, $gateway, $inbound);
             } elseif ($inbound->type !== 'text' || ! $inbound->text) {
                 $this->meter->whatsapp($channel, 'in', null, $bot->id);
                 $this->handleUnsupported($conversation, $gateway, $inbound);
@@ -99,6 +105,25 @@ class InboundHandler
         if ($reply) {
             $this->deliver($gateway, $conversation, $reply, $voiceNote);
         }
+    }
+
+    /** Télécharge la photo et la confie à CustomerImages ; si elle ne s'ouvre pas, le client est invité à la renvoyer. */
+    private function receiveImage(Conversation $conversation, WhatsAppGateway $gateway, InboundMessage $inbound): ?Message
+    {
+        try {
+            $media = $gateway->downloadMedia($inbound);
+        } catch (\Throwable $e) {
+            report($e);
+            $media = null;
+        }
+
+        if ($media === null || strlen($media['bytes']) > (int) config('platform.vision.max_bytes')) {
+            $this->handleUnsupported($conversation, $gateway, $inbound);
+
+            return null;
+        }
+
+        return $this->images->receive($conversation, $media['bytes'], $inbound->text, ['channel' => 'whatsapp'], $inbound->providerMessageId);
     }
 
     /**
@@ -233,7 +258,9 @@ class InboundHandler
             'role' => Message::ASSISTANT,
             'content' => $voiceRefusal
                 ? VoiceMessages::forRefusal($voiceRefusal, $conversation->bot()->withoutGlobalScopes()->first()?->language ?? 'fr')
-                : 'Je ne peux lire que les messages écrits pour le moment. Pouvez-vous reformuler votre demande en texte ?',
+                : ($inbound->type === 'image'
+                    ? "Je n'ai pas réussi à ouvrir votre photo. Pouvez-vous la renvoyer, ou me décrire en quelques mots ce qu'elle montre ?"
+                    : 'Je ne peux lire que les messages écrits pour le moment. Pouvez-vous reformuler votre demande en texte ?'),
             'meta' => ['grounded' => true, 'llm' => false, 'reason' => $voiceRefusal ? 'voice_'.$voiceRefusal : 'unsupported_media'],
         ]);
 

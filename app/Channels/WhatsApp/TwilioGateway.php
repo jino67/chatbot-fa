@@ -48,7 +48,7 @@ class TwilioGateway implements WhatsAppGateway
     public function downloadMedia(InboundMessage $inbound): array
     {
         if (! $inbound->mediaRef || ! str_starts_with($inbound->mediaRef, 'https://')) {
-            throw new GatewayException('Message vocal sans adresse de média.');
+            throw new GatewayException('Message sans adresse de média.');
         }
 
         // Les médias Twilio se téléchargent avec les identifiants du compte.
@@ -307,8 +307,8 @@ class TwilioGateway implements WhatsAppGateway
 
         return new InboundMessage(
             $sid, $from, $request->post('ProfileName'), $type, $body !== '' ? $body : null,
-            mediaRef: $type === 'audio' ? (string) $request->post('MediaUrl0') : null,
-            mediaMime: $type === 'audio' ? $mime : null,
+            mediaRef: in_array($type, ['audio', 'image'], true) ? (string) $request->post('MediaUrl0') : null,
+            mediaMime: in_array($type, ['audio', 'image'], true) ? $mime : null,
         );
     }
 

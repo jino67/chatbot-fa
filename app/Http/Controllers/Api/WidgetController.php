@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Chat\ChatService;
+use App\Chat\CustomerImages;
 use App\Http\Controllers\Controller;
 use App\Models\Bot;
 use App\Models\Conversation;
@@ -129,6 +130,31 @@ class WidgetController extends Controller
             'audio' => $audio?->dataUri(),
             'status' => $conversation->fresh()->status,
         ]);
+    }
+
+    /**
+     * Photo du visiteur (appareil photo ou galerie) : lue par le modèle de vision avec le brief du métier de l'entreprise,
+     * puis traitée comme un message. La légende est facultative.
+     */
+    public function image(Request $request, CustomerImages $images, string $publicKey, string $token): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'max:8192', 'mimes:jpg,jpeg,png,webp,gif,heic,heif'],
+            'caption' => ['nullable', 'string', 'max:500'],
+            'lang' => ['nullable', 'string', Rule::in($this->bot($request)->spokenLanguages())],
+        ]);
+
+        $conversation = $this->conversation($request, $token);
+        \App\Support\Runtime::allowLongRequest();
+
+        $reply = $images->receive(
+            $conversation,
+            (string) file_get_contents($request->file('image')->getRealPath()),
+            $request->input('caption'),
+            array_filter(['origin' => $request->headers->get('Origin'), 'lang' => $request->input('lang')]),
+        );
+
+        return response()->json(['message' => $reply?->toWidget(), 'status' => $conversation->fresh()->status]);
     }
 
     /** « Ecouter » sous une reponse : lit a voix haute un message de l'assistant (compte dans le volume vocal). */

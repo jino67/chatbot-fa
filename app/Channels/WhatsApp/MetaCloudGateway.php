@@ -94,7 +94,7 @@ class MetaCloudGateway implements WhatsAppGateway
     public function downloadMedia(InboundMessage $inbound): array
     {
         if (! $inbound->mediaRef) {
-            throw new GatewayException('Message vocal sans identifiant de média.');
+            throw new GatewayException('Message sans identifiant de média.');
         }
 
         // Deux temps : l'identifiant donne une adresse temporaire, qui se télécharge avec le même jeton.
@@ -324,8 +324,8 @@ class MetaCloudGateway implements WhatsAppGateway
                         type: in_array($type, ['text', 'image', 'audio', 'document', 'location'], true) ? $type : ($text ? 'text' : 'other'),
                         text: $text,
                         channelRef: $phoneNumberId,
-                        mediaRef: $type === 'audio' ? ($message['audio']['id'] ?? null) : null,
-                        mediaMime: $type === 'audio' ? ($message['audio']['mime_type'] ?? null) : null,
+                        mediaRef: in_array($type, ['audio', 'image'], true) ? ($message[$type]['id'] ?? null) : null,
+                        mediaMime: in_array($type, ['audio', 'image'], true) ? ($message[$type]['mime_type'] ?? null) : null,
                     );
                 }
             }

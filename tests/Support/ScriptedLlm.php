@@ -23,7 +23,11 @@ final class ScriptedLlm implements LlmClient
     private int $turn = 0;
 
     /** @param list<string> $replies */
-    public function __construct(private readonly array $replies = ['Bien reçu.'], private readonly string $vision = "CATEGORIE: autre\nRESUME: Une photo.") {}
+    public function __construct(
+        private readonly array $replies = ['Bien reçu.'],
+        private readonly string $vision = "CATEGORIE: autre\nRESUME: Une photo.",
+        private readonly bool $visionFails = false,
+    ) {}
 
     public function name(): string
     {
@@ -41,6 +45,10 @@ final class ScriptedLlm implements LlmClient
     public function transcribe(string $binary, string $mimeType, string $instruction): string
     {
         $this->photos[] = ['mime' => $mimeType, 'instruction' => $instruction, 'bytes' => strlen($binary)];
+
+        if ($this->visionFails) {
+            throw new \App\Ai\LlmException('Aucun modèle ne lit les photos.', kind: 'unsupported');
+        }
 
         return $this->vision;
     }
