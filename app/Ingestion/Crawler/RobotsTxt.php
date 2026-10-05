@@ -8,6 +8,18 @@ final class RobotsTxt
     /** @param list<array{type:string, pattern:string}> $rules @param list<string> $sitemaps */
     public function __construct(private readonly array $rules = [], private readonly array $sitemaps = []) {}
 
+    /** @return array{rules:list<array{type:string, pattern:string}>, sitemaps:list<string>} */
+    public function toArray(): array
+    {
+        return ['rules' => $this->rules, 'sitemaps' => $this->sitemaps];
+    }
+
+    /** @param array{rules?:list<array{type:string, pattern:string}>, sitemaps?:list<string>} $data */
+    public static function fromArray(array $data): self
+    {
+        return new self($data['rules'] ?? [], $data['sitemaps'] ?? []);
+    }
+
     public static function fetch(string $url): self
     {
         $p = parse_url($url);

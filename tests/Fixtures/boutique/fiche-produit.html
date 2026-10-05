@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb">
+  <meta name="description" content="Découvrez les produits Poupécosmetic...">
+  <meta name="keywords" content="cosmétique, produits de beauté...">
+  <title>Duo visage | Poupécosmetic</title>
+
+  <link rel="icon" type="image/png" href="https://poupecosmetic.com/images/logo-icon.png">
+
+  <!-- On précharge le logo du preloader (convertis-le en webp idéalement !) -->
+  <link rel="preload" href="https://poupecosmetic.com/images/logo.png" as="image">
+  
+  <!-- On précharge les images de tes catégories qui bloquaient -->
+  <link rel="preload" href="https://poupecosmetic.com/images/icon-skincares.webp" as="image">
+  <link rel="preload" href="https://poupecosmetic.com/images/icon-reparatricefin.webp" as="image">
+  <link rel="preload" href="https://poupecosmetic.com/images/icon-autres.webp" as="image">
+  <!-- FIN DES PRELOADS -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Outfit:wght@300..800&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="https://poupecosmetic.com/css/poupe.css">
+  <link rel="stylesheet" href="https://poupecosmetic.com/css/poupe-cards.css">
+  <link rel="stylesheet" href="https://poupecosmetic.com/css/poupe-plus.css">
+  <link rel="stylesheet" href="https://poupecosmetic.com/css/poupe-reels.css">
+  <link rel="stylesheet" href="https://poupecosmetic.com/css/poupe-nav.css">
+  </head>
+<body class="pc">
+
+
+<div class="pload" data-pload aria-hidden="true">
+  <div class="pload__in">
+    <span class="pload__ring"></span>
+    <img class="pload__logo" src="https://poupecosmetic.com/images/logo.png" alt="">
+  </div>
+  <p class="pload__tag mono">Soins naturels · Burkina&nbsp;Faso</p>
+  <span class="pload__bar"><i></i></span>
+</div>
+
+
+
+
+<nav class="nv" id="pcNav">
+  <div class="nv__in">
+
+    
+    <a class="nv__brand" href="https://poupecosmetic.com" aria-label="PoupéCosmetic, accueil">
+      <span class="nv__plate">
+        <img src="https://poupecosmetic.com/images/logo.png" alt="PoupéCosmetic">
+        <span class="nv__spark" aria-hidden="true">✦</span>
+      </span>
+      <span class="nv__lock">
+        <b>Poupé<em>cosmetic</em></b>
+        <span class="nv__tag mono">Soins naturels · Burkina&nbsp;Faso</span>
+      </span>
+    </a>
+
+    
+    <div class="nv__pill">
+      <ul class="nv__menu" id="pcMenu">
+        <li><a class="" href="https://poupecosmetic.com"><span class="nv__emo">🏠</span>Accueil</a></li>
+        <li><a class="" href="https://poupecosmetic.com/categories/glow-skin"><span class="nv__emo">✨</span>Glow Skin</a></li>
+        <li><a class="" href="https://poupecosmetic.com/categories/reparatrice"><span class="nv__emo">🌱</span>Réparatrice</a></li>
+        <li><a class="" href="https://poupecosmetic.com/categories/autres"><span class="nv__emo">🧴</span>Autres produits</a></li>
+        <li><a class="" href="https://poupecosmetic.com/faqs"><span class="nv__emo">💬</span>FAQs</a></li>
+        <li><a class="" href="https://poupecosmetic.com/contact"><span class="nv__emo">📞</span>Contact</a></li>
+
+        
+        <li class="nv__menu-acct">
+                      <a class="" href="https://poupecosmetic.com/login">
+              <span class="nv__emo">👤</span>Se connecter
+            </a>
+                  </li>
+      </ul>
+    </div>
+
+    
+    <div class="nv__acts">
+      <a class="ic" href="https://poupecosmetic.com/favoris" aria-label="Mes favoris" data-tip="Favoris">
+        <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+              </a>
+
+      <a class="ic ic--red" href="https://poupecosmetic.com/panier" aria-label="Mon panier" data-tip="Panier">
+        <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H7.5z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+              </a>
+
+              <a class="ic" href="https://poupecosmetic.com/login" aria-label="Se connecter" data-tip="Compte">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        </a>
+      
+      <a class="nv__cta" href="https://poupecosmetic.com/produits">
+        <span>Commander</span>
+        <i aria-hidden="true">🛍️</i>
+      </a>
+    </div>
+
+    <button class="nv__burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="pcMenu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  
+  <span class="nv__arc" aria-hidden="true"></span>
+  
+  <span class="nv__prog" aria-hidden="true"><i data-prog></i></span>
+</nav>
+
+
+<div class="nv__scrim" data-scrim aria-hidden="true"></div>
+
+
+
+
+<section class="sec fiche">
+    <div class="sil sil--l" data-par="-0.14" aria-hidden="true"></div>
+    <div class="wrap">
+        <nav class="fil mono rv" aria-label="Fil d'ariane">
+            <a href="https://poupecosmetic.com">Accueil</a>
+            <span>/</span>
+                            <a href="https://poupecosmetic.com/categories/reparatrice">Réparatrice</a>
+                <span>/</span>
+                        <span>Duo visage</span>
+        </nav>
+
+        <div class="fiche__in">
+            <div class="fiche__media rv">
+                                <img src="https://poupecosmetic.com/uploads/produits/70pCQeRdskXJmVkzpN8eeL4GRTcukyzU3lZOyKsH.png" alt="Duo visage">
+            </div>
+
+            <div class="fiche__info rv" data-d="1">
+                                    <p class="kick mono">Réparatrice</p>
+                
+                <h1 class="disp">Duo visage</h1>
+
+                <div class="fiche__meta">
+                    <span class="fiche__stock ">
+                        12 en stock
+                    </span>
+                    <span class="fiche__note">&#9733; 4.5/5</span>
+                </div>
+
+                                    <p class="lede">Il est très efficace pour traiter l’acné du visage (non éclaircissant)</p>
+                
+                <div class="fiche__price">
+                                        5 000<small>XOF</small>
+                </div>
+
+                                    <form action="https://poupecosmetic.com/panier/ajouter/2" method="POST" class="fiche__qty">
+                        <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                        <div class="qty">
+                            <button type="button" data-q="-" aria-label="Diminuer">&minus;</button>
+                            <input type="number" name="quantity" value="1" min="1" max="12" aria-label="Quantité">
+                            <button type="button" data-q="+" aria-label="Augmenter">+</button>
+                        </div>
+                        <button class="btn btn--g" type="submit">
+                            <span>Ajouter au panier</span>
+                        </button>
+                    </form>
+
+                    <div class="acts" style="margin-top:16px">
+                        <a class="btn" href="https://poupecosmetic.com/commander/2">
+                            <span>Commander maintenant</span>
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
+                        <form action="https://poupecosmetic.com/favoris/2" method="POST">
+                            <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                            <button class="ic " type="submit"
+                                    aria-pressed="false"
+                                    aria-label="Ajouter aux favoris" style="width:52px;height:52px">
+                                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                
+                <ul class="fiche__pts">
+                    <li><i class="fa fa-leaf"></i> Ingrédients naturels</li>
+                    <li><i class="fa fa-truck"></i> Livraison Ouaga &amp; Bobo sous 48&nbsp;h</li>
+                    <li><i class="fab fa-whatsapp"></i> Conseil personnalisé sur WhatsApp</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section class="sec sec--cream">
+    <div class="wrap">
+        <div class="sec__hd rv">
+            <div>
+                <p class="kick mono">À découvrir aussi</p>
+                <h2 class="disp">Dans la <b>même gamme</b></h2>
+            </div>
+                            <a class="btn btn--g btn--sm" href="https://poupecosmetic.com/categories/reparatrice">
+                    <span>Toute la gamme</span>
+                </a>
+                    </div>
+
+        <div class="prods">
+                            <article class="pr rv" data-d="0">
+    <div class="pr__im">
+        <span class="pr__tag ">
+            Réparatrice
+        </span>
+
+        
+        <a href="https://poupecosmetic.com/produits/lait-collagene" aria-label="Voir Lait collagène">
+            <img src="https://poupecosmetic.com/uploads/produits/VnCVssdRZx1RnpHWAs7B3fzhPsIo8LYh2jE51hNK.png" alt="Lait collagène" loading="lazy">
+        </a>
+
+        <form action="https://poupecosmetic.com/favoris/8" method="POST">
+            <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">            <button class="pr__fav " type="submit"
+                    aria-pressed="false"
+                    aria-label="Ajouter Lait collagène des favoris">
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <h3><a href="https://poupecosmetic.com/produits/lait-collagene">Lait collagène</a></h3>
+
+    <p class="pr__sub">
+                    <span class="pr__dot"></span> 10 en stock
+            </p>
+
+    <div class="pr__price">
+                8 000<small>XOF</small>
+    </div>
+
+    <div class="pr__acts">
+                    <a class="pr__buy" href="https://poupecosmetic.com/commander/8">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                Commander
+            </a>
+            <form action="https://poupecosmetic.com/panier/ajouter/8" method="POST">
+                <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                <input type="hidden" name="quantity" value="1">
+                <button class="pr__cart" type="submit" aria-label="Ajouter Lait collagène au panier">
+                    <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H7.5z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+                </button>
+            </form>
+            </div>
+</article>
+                            <article class="pr rv" data-d="1">
+    <div class="pr__im">
+        <span class="pr__tag ">
+            Réparatrice
+        </span>
+
+        
+        <a href="https://poupecosmetic.com/produits/savon-reparateur" aria-label="Voir Savon réparateur">
+            <img src="https://poupecosmetic.com/uploads/produits/vRqweGSNKcIuYyUfXS1H1xjhYAi0jnDpjp5oYVBy.png" alt="Savon réparateur" loading="lazy">
+        </a>
+
+        <form action="https://poupecosmetic.com/favoris/4" method="POST">
+            <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">            <button class="pr__fav " type="submit"
+                    aria-pressed="false"
+                    aria-label="Ajouter Savon réparateur des favoris">
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <h3><a href="https://poupecosmetic.com/produits/savon-reparateur">Savon réparateur</a></h3>
+
+    <p class="pr__sub">
+                    <span class="pr__dot"></span> 30 en stock
+            </p>
+
+    <div class="pr__price">
+                7 000<small>XOF</small>
+    </div>
+
+    <div class="pr__acts">
+                    <a class="pr__buy" href="https://poupecosmetic.com/commander/4">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                Commander
+            </a>
+            <form action="https://poupecosmetic.com/panier/ajouter/4" method="POST">
+                <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                <input type="hidden" name="quantity" value="1">
+                <button class="pr__cart" type="submit" aria-label="Ajouter Savon réparateur au panier">
+                    <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H7.5z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+                </button>
+            </form>
+            </div>
+</article>
+                            <article class="pr rv" data-d="2">
+    <div class="pr__im">
+        <span class="pr__tag ">
+            Réparatrice
+        </span>
+
+        
+        <a href="https://poupecosmetic.com/produits/mini-gamme-r" aria-label="Voir Mini gamme réparatrice">
+            <img src="https://poupecosmetic.com/uploads/produits/AyTxm3Itu7LRfhhlPqzDnBMyLOyyLQV8GluTIZ8X.png" alt="Mini gamme réparatrice" loading="lazy">
+        </a>
+
+        <form action="https://poupecosmetic.com/favoris/18" method="POST">
+            <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">            <button class="pr__fav " type="submit"
+                    aria-pressed="false"
+                    aria-label="Ajouter Mini gamme réparatrice des favoris">
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <h3><a href="https://poupecosmetic.com/produits/mini-gamme-r">Mini gamme réparatrice</a></h3>
+
+    <p class="pr__sub">
+                    <span class="pr__dot"></span> 10 en stock
+            </p>
+
+    <div class="pr__price">
+                31 000<small>XOF</small>
+    </div>
+
+    <div class="pr__acts">
+                    <a class="pr__buy" href="https://poupecosmetic.com/commander/18">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                Commander
+            </a>
+            <form action="https://poupecosmetic.com/panier/ajouter/18" method="POST">
+                <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                <input type="hidden" name="quantity" value="1">
+                <button class="pr__cart" type="submit" aria-label="Ajouter Mini gamme réparatrice au panier">
+                    <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H7.5z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+                </button>
+            </form>
+            </div>
+</article>
+                            <article class="pr rv" data-d="3">
+    <div class="pr__im">
+        <span class="pr__tag ">
+            Réparatrice
+        </span>
+
+        
+        <a href="https://poupecosmetic.com/produits/creme-hydratante" aria-label="Voir Crème visage hydratant">
+            <img src="https://poupecosmetic.com/uploads/produits/J2KqjCVxH2s9pcJJvYuuTEqOenaaZktgKwCHFqv0.png" alt="Crème visage hydratant" loading="lazy">
+        </a>
+
+        <form action="https://poupecosmetic.com/favoris/36" method="POST">
+            <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">            <button class="pr__fav " type="submit"
+                    aria-pressed="false"
+                    aria-label="Ajouter Crème visage hydratant des favoris">
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.4 5.4 0 0 0-7.7 0L12 6.7l-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7L12 21.7l8.8-8.4a5.4 5.4 0 0 0 0-7.7z"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <h3><a href="https://poupecosmetic.com/produits/creme-hydratante">Crème visage hydratant</a></h3>
+
+    <p class="pr__sub">
+                    <span class="pr__dot"></span> 15 en stock
+            </p>
+
+    <div class="pr__price">
+                3 000<small>XOF</small>
+    </div>
+
+    <div class="pr__acts">
+                    <a class="pr__buy" href="https://poupecosmetic.com/commander/36">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                Commander
+            </a>
+            <form action="https://poupecosmetic.com/panier/ajouter/36" method="POST">
+                <input type="hidden" name="_token" value="VHh8HtuzuO6UVcG7Ib77EncETvty5loyrY1EoYhb" autocomplete="off">                <input type="hidden" name="quantity" value="1">
+                <button class="pr__cart" type="submit" aria-label="Ajouter Crème visage hydratant au panier">
+                    <svg viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H7.5z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+                </button>
+            </form>
+            </div>
+</article>
+                    </div>
+    </div>
+</section>
+
+
+
+<footer class="ft">
+  <div class="sil sil--l" data-par="-0.14" aria-hidden="true"></div>
+  <div class="wrap">
+
+    
+    <div class="ft__top rv">
+      <div>
+        <h3>Votre peau mérite mieux qu'un produit au hasard</h3>
+        <p>Dites-nous ce qu'elle demande, on compose la routine avec vous. Livraison Ouaga &amp; Bobo sous 48&nbsp;h.</p>
+      </div>
+      <div class="cta__acts" style="justify-content:flex-start">
+        <a class="btn btn--ghost" href="https://wa.me/22673811650?text=Bonjour,%20j'aimerais%20des%20conseils%20pour%20ma%20routine" target="_blank" rel="noopener">
+          <span>💬 Écrire sur WhatsApp</span>
+        </a>
+        <a class="btn btn--ghost" href="https://poupecosmetic.com/produits"><span>🛍️ Voir la boutique</span></a>
+      </div>
+    </div>
+
+    <div class="ft__inner">
+      <div class="ft__grid">
+        <div class="ft__brand">
+          <img src="https://poupecosmetic.com/images/logo.png" alt="PoupéCosmetic">
+          <p>Par amour des peaux sensibles et abîmées. Des cosmétiques bio réparateurs fabriqués au Burkina Faso.</p>
+          <div class="ft__soc">
+            <a href="https://www.tiktok.com/@poupecosmetic?_t=ZM-8yqh3aSW7E5&_r=1" target="_blank" rel="noopener" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://www.snapchat.com/@poupecosmetic?invite_id=mFY9HI1n&locale=fr_BF&share_id=HoC5AouwQb6C4dBZrv---w&sid=dcc5d8100c714ba5a29ccf99ecbd8ed3&locale=fr-BF" target="_blank" rel="noopener" aria-label="Snapchat"><i class="fab fa-snapchat-ghost"></i></a>
+            <a href="https://wa.me/22673811650" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          </div>
+          <div class="ft__pay">
+            <span>🌊 Wave</span><span>🟠 Orange Money</span><span>🔵 Moov Money</span><span>💵 À la livraison</span>
+          </div>
+        </div>
+
+        <div>
+          <h4>Nos gammes</h4>
+          <ul>
+            <li><a href="https://poupecosmetic.com/categories/glow-skin">✨ Glow Skin</a></li>
+            <li><a href="https://poupecosmetic.com/categories/reparatrice">🌱 Réparatrice</a></li>
+            <li><a href="https://poupecosmetic.com/categories/autres">🧴 Autres produits</a></li>
+            <li><a href="https://poupecosmetic.com/produits">🛍️ Tout le catalogue</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Aide</h4>
+          <ul>
+            <li><a href="https://poupecosmetic.com/faqs">❓ FAQs</a></li>
+            <li><a href="https://poupecosmetic.com/contact">📞 Contact</a></li>
+            <li><a href="https://poupecosmetic.com/commande/verifier">📮 Suivre ma commande</a></li>
+            <li><a href="https://poupecosmetic.com/panier">🛒 Mon panier</a></li>
+            <li><a href="https://poupecosmetic.com/favoris">❤️ Mes favoris</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Nous joindre</h4>
+          <ul>
+            <li><a href="https://wa.me/22673811650" target="_blank" rel="noopener">+226 73 81 16 50</a></li>
+            <li><a href="mailto:contact@poupecosmetic.com">contact@poupecosmetic.com</a></li>
+            <li>Ouagadougou, Burkina Faso</li>
+            <li>Livraison Ouaga &amp; Bobo</li>
+            <li>7 j/7, de 8 h à 20 h</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ft__cr">
+        <span>© 2026 PoupeCosmetic. All rights reserved.</span>
+
+        
+        <span class="sign">
+          Crafted with <i class="fa fa-heart" aria-hidden="true"></i> by
+          <a class="sign__nom" href="https://www.snapchat.com/@j_kabore" target="_blank" rel="noopener noreferrer">Zoldyck&nbsp;👽</a>
+          <span class="sign__ct">
+            <a class="sign__ic sign__ic--snap" href="https://www.snapchat.com/@j_kabore"
+               target="_blank" rel="noopener noreferrer" data-tip="@j_kabore" aria-label="Zoldyck sur Snapchat">
+              <i class="fab fa-snapchat-ghost" aria-hidden="true"></i>
+              <span>Snap</span>
+            </a>
+            <a class="sign__ic sign__ic--wa" href="https://wa.me/22667477535?text=Bonjour%20Zoldyck,%20je%20vous%20contacte%20depuis%20poupecosmetic.com"
+               target="_blank" rel="noopener noreferrer" data-tip="+226 67 47 75 35" aria-label="Écrire à Zoldyck sur WhatsApp">
+              <i class="fab fa-whatsapp" aria-hidden="true"></i>
+              <span>WhatsApp</span>
+            </a>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<a class="wa" href="https://wa.me/22673811650?text=Bonjour,%20j'aimerais%20des%20conseils%20pour%20ma%20routine" target="_blank" rel="noopener" aria-label="Écrire sur WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4zM12 2A10 10 0 0 0 3.5 17.2L2 22l4.9-1.5A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+
+<script src="https://poupecosmetic.com/js/lenis.min.js"></script>
+<script src="https://poupecosmetic.com/js/gsap.min.js"></script>
+<script src="https://poupecosmetic.com/js/scrolltrigger.min.js"></script>
+<script src="https://poupecosmetic.com/js/poupe.js"></script>
+<script>
+document.querySelectorAll('.qty').forEach(function (b) {
+    var input = b.querySelector('input');
+    b.querySelectorAll('[data-q]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var n = parseInt(input.value, 10) || 1;
+            var max = parseInt(input.max, 10) || 999;
+            n += (btn.dataset.q === '+' ? 1 : -1);
+            input.value = Math.min(max, Math.max(1, n));
+        });
+    });
+});
+</script>
+</body>
+</html>

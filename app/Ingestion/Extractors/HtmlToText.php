@@ -21,7 +21,7 @@ class HtmlToText
     private const NOISE_CLASS = '/cookie|consent|gdpr|popup|modal|newsletter|breadcrumb|sr-only/i';
 
     /** @return array{title:?string, text:string, links:list<string>} */
-    public function convert(string $html, ?string $baseUrl = null): array
+    public function convert(string $html, ?string $baseUrl = null, ?PageTransformer $transformer = null): array
     {
         $html = $this->toUtf8($html);
         $dom = new DOMDocument;
@@ -34,6 +34,8 @@ class HtmlToText
         $title = $this->title($xpath);
         $description = $xpath->evaluate('string(//meta[@name="description"]/@content)');
 
+        $transformer?->before($dom, $xpath, $baseUrl);
+
         // On retire le bruit APRES avoir collecte liens et titre.
         foreach ($xpath->query(self::NOISE) as $node) {
             $node->parentNode?->removeChild($node);
@@ -44,6 +46,8 @@ class HtmlToText
                 $node->parentNode->removeChild($node);
             }
         }
+
+        $transformer?->after($dom, $xpath, $baseUrl);
 
         $body = $dom->getElementsByTagName('body')->item(0);
         $text = $body ? $this->render($body) : '';

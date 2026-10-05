@@ -152,6 +152,7 @@ Route::middleware(['auth', 'workspace'])->group(function () {
         Route::put('sources/{source}/content', [SourceController::class, 'content'])->name('sources.content');
         Route::delete('sources/{source}', [SourceController::class, 'destroy'])->name('sources.destroy');
         Route::post('sources/{source}/resync', [SourceController::class, 'resync'])->name('sources.resync');
+        Route::post('sources/{source}/avancer', [SourceController::class, 'advance'])->middleware('throttle:60,1')->name('sources.advance');
 
         Route::get('facebook/connect', [FacebookController::class, 'connect'])->name('facebook.connect');
         Route::post('facebook/select', [FacebookController::class, 'select'])->name('facebook.select');

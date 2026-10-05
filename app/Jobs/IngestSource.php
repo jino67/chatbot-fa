@@ -4,8 +4,10 @@ namespace App\Jobs;
 
 use App\Ingestion\IngestionPipeline;
 use App\Models\Source;
+use App\Support\Runtime;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
 
 /** Indexe (ou re-indexe) une source de connaissances. Les erreurs sont portees par le statut de la source. */
 class IngestSource implements ShouldQueue
@@ -26,7 +28,22 @@ class IngestSource implements ShouldQueue
         $source = Source::withoutGlobalScopes()->with('workspace')->find($this->sourceId);
 
         if ($source) {
-            $pipeline->run($source);
+            // Une source « en attente » (nouvelle, ou « Relire ») démarre une lecture neuve ; une source « en cours » reprend la sienne.
+            if ($source->status === Source::PENDING && $source->progress) {
+                $source->forceFill(['progress' => null])->save();
+            }
+
+            // Même verrou que la page ouverte et le planificateur : un site n'est jamais lu deux fois en même temps.
+            $lock = Cache::lock('crawl-source-'.$source->id, 900);
+            if (! $lock->get()) {
+                return;
+            }
+
+            try {
+                $pipeline->run($source, Runtime::crawlSeconds());
+            } finally {
+                $lock->release();
+            }
         }
     }
 

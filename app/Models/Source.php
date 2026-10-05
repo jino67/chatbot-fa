@@ -36,7 +36,7 @@ class Source extends Model
     public const NEEDS_CONTENT = 'needs_content';
 
     protected $fillable = [
-        'workspace_id', 'bot_id', 'type', 'name', 'status', 'payload', 'error', 'stats', 'resync', 'last_synced_at',
+        'workspace_id', 'bot_id', 'type', 'name', 'status', 'payload', 'error', 'stats', 'progress', 'resync', 'last_synced_at',
     ];
 
     protected $attributes = [
@@ -49,6 +49,7 @@ class Source extends Model
         return [
             'payload' => 'array',
             'stats' => 'array',
+            'progress' => 'array',
             'last_synced_at' => 'datetime',
         ];
     }

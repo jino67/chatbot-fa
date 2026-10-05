@@ -2,30 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Ingestion\Crawler\CrawlRun;
 use App\Ingestion\Crawler\SafeUrl;
 use App\Ingestion\Crawler\UnsafeUrlException;
 use App\Ingestion\Crawler\Url;
+use App\Ingestion\IngestionPipeline;
 use App\Jobs\IngestSource;
 use App\Models\Bot;
 use App\Models\Source;
 use App\Services\UsageService;
+use App\Support\Runtime;
 use App\Social\FacebookGraph;
 use App\Social\FacebookUrl;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SourceController extends Controller
 {
-    public function index(Bot $bot, UsageService $usage, Request $request, FacebookGraph $facebook)
+    public function index(Bot $bot, UsageService $usage, Request $request, FacebookGraph $facebook, CrawlRun $crawl)
     {
         $workspace = $request->user()->currentWorkspace();
+        $sources = $bot->sources()->latest()->get();
 
         return view('sources.index', [
             'bot' => $bot,
-            'sources' => $bot->sources()->latest()->get(),
+            'sources' => $sources,
+            // Avancement des sites en cours de lecture : pages lues sur pages trouvées.
+            'crawls' => $sources->filter(fn (Source $s) => $s->type === Source::TYPE_URL && $s->status === Source::PROCESSING && $crawl->started($s))
+                ->mapWithKeys(fn (Source $s) => [$s->id => $crawl->progress($s)]),
             'usage' => $usage->summary($workspace),
             'workspace' => $workspace,
             'facebookConnect' => $facebook->isConfigured(),
@@ -97,11 +106,42 @@ class SourceController extends Controller
         return back()->with('status', $message);
     }
 
+    /**
+     * Fait avancer la lecture d'un site d'une tranche (la page ouverte l'appelle jusqu'à la fin) et renvoie son avancement.
+     * Un verrou évite que deux onglets lisent le même site en même temps.
+     */
+    public function advance(Bot $bot, Source $source, IngestionPipeline $pipeline, CrawlRun $crawl): JsonResponse
+    {
+        abort_unless($source->type === Source::TYPE_URL, 404);
+
+        if ($source->status === Source::PROCESSING) {
+            $lock = Cache::lock('crawl-source-'.$source->id, 60);
+
+            if ($lock->get()) {
+                try {
+                    Runtime::allowLongRequest(60);
+                    $pipeline->run($source->fresh(), Runtime::crawlSeconds());
+                } finally {
+                    $lock->release();
+                }
+            }
+        }
+
+        $source->refresh();
+
+        return response()->json([
+            'status' => $source->status,
+            'error' => $source->error,
+            'progress' => $source->status === Source::PROCESSING && $crawl->started($source) ? $crawl->progress($source) : null,
+            'stats' => $source->status === Source::READY ? $source->stats : null,
+        ]);
+    }
+
     public function resync(Bot $bot, Source $source): RedirectResponse
     {
         abort_if($source->needsContent(), 422);
 
-        $source->forceFill(['status' => Source::PENDING, 'error' => null])->save();
+        $source->forceFill(['status' => Source::PENDING, 'error' => null, 'progress' => null])->save();
         IngestSource::dispatch($source->id);
 
         return back()->with('status', 'Nouvelle indexation lancée.');

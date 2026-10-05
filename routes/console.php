@@ -14,6 +14,9 @@ Schedule::command('platform:resync-due')->hourly()->withoutOverlapping();
 // Echeances des abonnements : rappels, periode de grace, retour a l'offre gratuite.
 Schedule::command('platform:subscriptions')->dailyAt('08:00')->withoutOverlapping();
 
+// Lecture des sites par tranches : reprend celles que personne ne fait avancer (page fermée, requête coupée par l'hébergeur).
+Schedule::command('sources:continue')->everyFiveMinutes()->withoutOverlapping();
+
 // Demandes (commandes, rendez-vous, devis, personne demandée) restées sans réponse : rappels au propriétaire.
 Schedule::command('leads:remind')->everyTenMinutes()->withoutOverlapping();
 

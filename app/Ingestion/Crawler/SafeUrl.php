@@ -13,10 +13,14 @@ final class SafeUrl
 {
     private static ?Closure $resolver = null;
 
+    /** @var array<string, array{at:int, ips:list<string>}> */
+    private static array $cache = [];
+
     /** Permet aux tests de simuler la resolution DNS. */
     public static function useResolver(?Closure $resolver): void
     {
         self::$resolver = $resolver;
+        self::$cache = [];
     }
 
     /**
@@ -70,11 +74,21 @@ final class SafeUrl
             return (self::$resolver)($host);
         }
 
+        // Les adresses validées sont gardées une minute : chaque page d'un même site n'a pas à refaire la résolution.
+        if (isset(self::$cache[$host]) && time() - self::$cache[$host]['at'] < 60) {
+            return self::$cache[$host]['ips'];
+        }
+
         $ips = [];
         foreach (@dns_get_record($host, DNS_A | DNS_AAAA) ?: [] as $record) {
             $ips[] = $record['ip'] ?? $record['ipv6'] ?? null;
         }
+        $ips = array_values(array_filter($ips));
 
-        return array_values(array_filter($ips));
+        if ($ips !== []) {
+            self::$cache[$host] = ['at' => time(), 'ips' => $ips];
+        }
+
+        return $ips;
     }
 }

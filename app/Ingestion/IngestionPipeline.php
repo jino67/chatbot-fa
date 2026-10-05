@@ -3,12 +3,14 @@
 namespace App\Ingestion;
 
 use App\Ai\Embeddings\EmbeddingClient;
-use App\Ingestion\Crawler\SiteCrawler;
+use App\Ingestion\Catalog\ProductSheet;
+use App\Ingestion\Crawler\CrawlRun;
 use App\Ingestion\Extractors\FileExtractor;
 use App\Ingestion\Extractors\ImageReader;
 use App\Models\Chunk;
 use App\Models\Document;
 use App\Models\Source;
+use App\Services\ProductCatalog;
 use App\Retrieval\Vector;
 use App\Support\Text;
 use Illuminate\Support\Facades\DB;
@@ -27,15 +29,33 @@ class IngestionPipeline
         private readonly EmbeddingClient $embeddings,
         private readonly FileExtractor $files,
         private readonly ImageReader $images,
-        private readonly SiteCrawler $crawler,
+        private readonly CrawlRun $crawl,
+        private readonly ProductCatalog $catalog,
     ) {}
 
-    public function run(Source $source): void
+    /**
+     * Indexe une source. Un site se lit par tranches : avec `$seconds`, la lecture s'arrête au bout de ce temps, la source
+     * reste « en cours » et la tranche suivante (page ouverte, planificateur) reprend où celle-ci s'est arrêtée. Sans limite
+     * (ligne de commande, tests), tout se fait d'un coup.
+     */
+    public function run(Source $source, ?float $seconds = null): void
     {
         $source->forceFill(['status' => Source::PROCESSING, 'error' => null])->save();
 
         try {
-            $documents = $this->dropBoilerplate($this->collect($source));
+            $crawled = null;
+
+            if ($source->type === Source::TYPE_URL) {
+                $crawled = $this->crawlSite($source, $seconds);
+                if ($crawled === null) {
+                    return; // lecture en cours, reprise à la prochaine tranche
+                }
+                // Les menus et pieds de page se répètent d'une page à l'autre : ils sont retirés des pages, pas des fiches produit
+                // (leurs lignes « Disponibilité : En stock » se répètent aussi, et doivent rester dans chaque fiche).
+                $documents = [...$this->dropBoilerplate($crawled['documents']), ...$crawled['sheets']];
+            } else {
+                $documents = $this->dropBoilerplate($this->collect($source));
+            }
 
             if ($documents === []) {
                 throw new IngestionException("Aucun contenu exploitable n'a été trouvé.");
@@ -43,17 +63,27 @@ class IngestionPipeline
 
             $stats = $this->store($source, $documents);
 
+            if ($crawled !== null) {
+                $stats = $this->withCrawlStats($stats, $crawled);
+            }
+
             $source->forceFill([
                 'status' => Source::READY,
                 'stats' => $stats,
+                'progress' => null,
                 'error' => null,
                 'last_synced_at' => now(),
             ])->save();
+
+            if ($crawled !== null) {
+                $this->crawl->release($source);
+            }
         } catch (\Throwable $e) {
             $expected = $e instanceof IngestionException;
 
             $source->forceFill([
                 'status' => Source::FAILED,
+                'progress' => null,
                 'error' => $expected ? $e->getMessage() : 'Erreur technique : '.Str::limit($e->getMessage(), 240),
             ])->save();
 
@@ -76,7 +106,6 @@ class IngestionPipeline
                 $source->workspace?->currency,
             )],
             Source::TYPE_IMAGE => [$this->images->read($this->path($payload), $source->name)],
-            Source::TYPE_URL => $this->crawlSite($source),
             Source::TYPE_TEXT, Source::TYPE_FACEBOOK => [new ExtractedDocument(
                 $source->name,
                 Text::clean((string) ($payload['content'] ?? '')),
@@ -90,17 +119,72 @@ class IngestionPipeline
         };
     }
 
-    /** @return list<ExtractedDocument> */
-    private function crawlSite(Source $source): array
+    /**
+     * Lit des pages du site pendant `$seconds`. Rend null tant que la lecture n'est pas finie ; sinon les pages, les
+     * produits (déjà enregistrés au catalogue de l'assistant, avec leur fiche écrite) et le bilan de la lecture.
+     *
+     * @return array{documents:list<ExtractedDocument>, sheets:list<ExtractedDocument>, products:int, photos:int, stats:array<string,mixed>}|null
+     */
+    private function crawlSite(Source $source, ?float $seconds): ?array
     {
-        $payload = $source->payload;
-        $limit = $source->workspace?->limits()['pages_per_crawl'] ?? 20;
-        $max = min($limit, (int) ($payload['max_pages'] ?? $limit));
+        if (! $this->crawl->started($source)) {
+            $this->crawl->start($source);
+            $source->refresh();
+        }
 
-        return iterator_to_array(
-            $this->crawler->crawl($payload['url'], $max, singlePage: ($payload['mode'] ?? 'site') === 'page'),
-            false
-        );
+        $progress = $this->crawl->step($source, $seconds ?? 900.0);
+        if (! $progress['finished']) {
+            return null;
+        }
+
+        $harvest = $this->crawl->harvest($source);
+        if ($harvest['documents'] === [] && $harvest['products'] === []) {
+            throw new IngestionException('Aucun texte exploitable sur ce site. Il est peut-être entièrement construit en JavaScript : collez son contenu ou importez un document.');
+        }
+
+        $sheets = [];
+        $photos = 0;
+
+        // Chaque produit a sa fiche écrite (nom, prix et disponibilité dans le même extrait) et une référence pour sa photo.
+        foreach ($this->catalog->sync($source, $harvest['products']) as ['product' => $product, 'item' => $item]) {
+            $sheets[] = ProductSheet::document($product, $item->ref());
+            $photos += $product->image ? 1 : 0;
+        }
+        if ($overview = ProductSheet::overview($harvest['products'], $source->name)) {
+            $sheets[] = $overview;
+        }
+
+        return ['documents' => $harvest['documents'], 'sheets' => $sheets, 'products' => count($harvest['products']), 'photos' => $photos, 'stats' => $harvest['stats']];
+    }
+
+    /**
+     * Le bilan d'un site : pages lues sur pages trouvées, produits et photos, pages ignorées, et si la limite de l'offre
+     * a empêché de tout lire.
+     *
+     * @param  array<string,mixed>  $stats
+     * @param  array{documents:list<ExtractedDocument>, sheets:list<ExtractedDocument>, products:int, photos:int, stats:array<string,mixed>}  $crawled
+     * @return array<string,mixed>
+     */
+    private function withCrawlStats(array $stats, array $crawled): array
+    {
+        $progress = $crawled['stats'];
+
+        $stats['pages'] = $progress['read'];
+        $stats['found'] = $progress['found'];
+        $stats['limit'] = $progress['limit'];
+        $stats['plan_limit'] = $progress['plan_limit'];
+        $stats['truncated'] = $progress['truncated'];
+        $stats['ignored'] = $progress['utility'] + $progress['duplicates'];
+        $stats['failed'] = $progress['failed'];
+
+        if ($crawled['products'] > 0) {
+            $stats['products'] = $crawled['products'];
+            $stats['photos'] = $crawled['photos'];
+        } else {
+            unset($stats['products']);
+        }
+
+        return $stats;
     }
 
     private function path(array $payload): string
@@ -261,6 +345,9 @@ class IngestionPipeline
 
         // Un tableau lu comme un catalogue : combien de produits, et ce qui mérite l'attention du client.
         $products = array_sum(array_map(fn ($item) => (int) ($item['document']->meta['products'] ?? 0), $prepared));
+        if ($source->type === Source::TYPE_URL) {
+            $products = 0; // le nombre de produits d'un site est celui du catalogue (voir withCrawlStats)
+        }
         $notes = [];
         foreach ($prepared as $item) {
             array_push($notes, ...($item['document']->meta['notes'] ?? []));

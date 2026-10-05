@@ -227,8 +227,17 @@
                             @if ($source->payload['connected'] ?? false) <x-badge tone="brand">Page connectée</x-badge> @endif
                         </div>
                         <div class="mt-1 text-sm text-slate-600">
-                            @if ($source->status === 'ready' && $source->stats)
-                                @if (! empty($source->stats['products']))
+                            @if ($source->status === 'processing' && isset($crawls[$source->id]))
+                                @php $crawl = $crawls[$source->id]; @endphp
+                                <span data-crawl="{{ $source->id }}"><strong class="text-brand-900">{{ $crawl['read'] }} page(s) lue(s)</strong> sur {{ max($crawl['found'], $crawl['read']) }} trouvée(s)<span class="text-slate-500"> : la lecture continue toute seule, vous pouvez rester sur cette page.</span></span>
+                            @elseif ($source->status === 'ready' && $source->stats)
+                                @if ($source->type === 'url' && isset($source->stats['found']))
+                                    <strong class="text-brand-900">{{ $source->stats['pages'] }} page(s) lue(s)</strong>@if ($source->stats['found'] > $source->stats['pages']) sur {{ $source->stats['found'] }} trouvée(s)@endif
+                                    @if (! empty($source->stats['products']))
+                                        , <strong class="text-brand-900">{{ $source->stats['products'] }} produit(s)</strong>@if (! empty($source->stats['photos'])) dont {{ $source->stats['photos'] }} avec photo @endif
+                                    @endif
+                                    , {{ $source->stats['chunks'] }} extrait(s)
+                                @elseif (! empty($source->stats['products']))
                                     <strong class="text-brand-900">{{ $source->stats['products'] }} produit(s) lu(s)</strong>, {{ $source->stats['chunks'] }} extrait(s)
                                 @else
                                     {{ $source->stats['pages'] }} page(s), {{ $source->stats['chunks'] }} extrait(s), environ {{ number_format($source->stats['tokens'], 0, ',', ' ') }} jetons
@@ -238,6 +247,14 @@
                                 {{ $source->payload['url'] }}
                             @endif
                         </div>
+                        @if ($source->status === 'ready' && $source->type === 'url' && ! empty($source->stats['truncated']))
+                            <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                Votre offre lit au plus <strong>{{ $source->stats['plan_limit'] ?? $source->stats['limit'] }} pages par site</strong> : la lecture s'est arrêtée avant d'avoir tout vu. Les pages d'information (contact, livraison, FAQ), les catégories et les produits sont lus en premier. Pour lire le reste, passez à l'offre supérieure puis cliquez sur « Relire ».
+                            </p>
+                        @endif
+                        @if ($source->status === 'ready' && $source->type === 'url' && ! empty($source->stats['ignored']))
+                            <p class="mt-1 text-xs text-slate-500">{{ $source->stats['ignored'] }} page(s) sans contenu utile (panier, connexion, formulaires de commande, doublons) ont été ignorées : elles ne comptent pas dans votre limite.</p>
+                        @endif
                         @if ($source->status === 'ready' && ! empty($source->stats['notes']))
                             <ul class="mt-2 space-y-1 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
                                 @foreach ($source->stats['notes'] as $note)
@@ -270,6 +287,28 @@
     </div>
 
     @if ($busy)
-        <script>setTimeout(() => location.reload(), 4000);</script>
+        @php $advance = $sources->filter(fn ($s) => $s->type === 'url' && $s->status === 'processing')->map(fn ($s) => ['id' => $s->id, 'url' => route('sources.advance', [$bot, $s])])->values(); @endphp
+        <script>
+            (function () {
+                // Un site se lit par tranches de quelques secondes : cette page demande la suivante tant que la lecture n'est pas finie.
+                var sites = @json($advance);
+                var token = document.querySelector('meta[name=csrf-token]');
+                function reload() { location.reload(); }
+                if (!sites.length) { setTimeout(reload, 4000); return; }
+
+                function next() {
+                    fetch(sites[0].url, { method: 'POST', headers: { 'X-CSRF-TOKEN': token ? token.content : '', 'Accept': 'application/json' } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            if (data.status !== 'processing') { return reload(); }
+                            var el = document.querySelector('[data-crawl="' + sites[0].id + '"] strong');
+                            if (el && data.progress) { el.textContent = data.progress.read + ' page(s) lue(s)'; }
+                            setTimeout(next, 300);
+                        })
+                        .catch(function () { setTimeout(next, 4000); });
+                }
+                next();
+            })();
+        </script>
     @endif
 </x-bot-layout>
