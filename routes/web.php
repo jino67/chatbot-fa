@@ -78,6 +78,8 @@ Route::get('/devise/{code}', function (Illuminate\Http\Request $request, string 
 Route::get('/sitemap.xml', [LandingController::class, 'sitemap']);
 
 // Reponse vocale que Twilio vient chercher : adresse signee (chemin relatif), valable deux heures.
+// Photo d'un produit : adresse signée (sans date d'expiration), lisible par WhatsApp, Twilio et le widget.
+Route::get('/media/produit/{item}.jpg', [MediaController::class, 'product'])->middleware('signed:relative')->where('item', '[0-9]+')->name('media.product');
 Route::get('/media/voice/{name}', [MediaController::class, 'voice'])->middleware('signed:relative')->where('name', '[A-Za-z0-9]{40}\.(ogg|mp3|wav)')->name('media.voice');
 
 // Page de demonstration partageable : le widget d'un assistant sur une page vierge.

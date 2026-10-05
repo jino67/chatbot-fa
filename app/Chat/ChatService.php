@@ -28,6 +28,7 @@ class ChatService
         private readonly UsageService $usage,
         private readonly UsageMeter $meter,
         private readonly LeadService $leads,
+        private readonly CatalogMedia $media,
     ) {}
 
     /**
@@ -151,6 +152,16 @@ class ChatService
         // Reponses rapides proposees au visiteur (touches du widget, boutons WhatsApp).
         if ($parsed['suggestions'] && $grounded && ! $parsed['handoff']) {
             $meta['suggestions'] = $parsed['suggestions'];
+        }
+
+        // Photos des produits : celles que l'assistant propose, plus celle que le client a demandée et que l'assistant a oublié de joindre.
+        if ($grounded && ! $parsed['handoff'] && ! $smallTalk) {
+            $asked = Text::wantsPhoto($text);
+            $refs = $parsed['photos'] !== [] || ! $asked ? $parsed['photos'] : $this->media->refsFromContext($chunks, $answer);
+            $items = $this->media->pick($bot, $conversation, $refs, $asked);
+            if ($items !== []) {
+                $meta['media'] = $this->media->describe($items);
+            }
         }
 
         if ($parsed['handoff']) {

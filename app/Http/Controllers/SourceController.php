@@ -9,6 +9,7 @@ use App\Ingestion\Crawler\Url;
 use App\Ingestion\IngestionPipeline;
 use App\Jobs\IngestSource;
 use App\Models\Bot;
+use App\Models\CatalogItem;
 use App\Models\Source;
 use App\Services\UsageService;
 use App\Support\Runtime;
@@ -32,6 +33,9 @@ class SourceController extends Controller
         return view('sources.index', [
             'bot' => $bot,
             'sources' => $sources,
+            // Les produits que l'assistant connaît (lus sur le site) : nom, prix, photo.
+            'items' => CatalogItem::where('bot_id', $bot->id)->orderBy('name')->limit(60)->get(),
+            'itemsTotal' => CatalogItem::where('bot_id', $bot->id)->count(),
             // Avancement des sites en cours de lecture : pages lues sur pages trouvées.
             'crawls' => $sources->filter(fn (Source $s) => $s->type === Source::TYPE_URL && $s->status === Source::PROCESSING && $crawl->started($s))
                 ->mapWithKeys(fn (Source $s) => [$s->id => $crawl->progress($s)]),

@@ -63,6 +63,8 @@ class Message extends Model
             'role' => $this->role,
             'content' => $this->content,
             'at' => $this->created_at?->toIso8601String(),
+            // Photos de produits jointes à la réponse : de quoi les afficher (adresse publique, légende).
+            'media' => $this->role === self::ASSISTANT && ! empty($this->meta['media']) ? app(\App\Chat\CatalogMedia::class)->resolve($this->meta['media']) : [],
             // Reponses rapides : le widget les affiche sous le dernier message de l'assistant.
             'suggestions' => $this->role === self::ASSISTANT ? array_values($this->meta['suggestions'] ?? []) : [],
             'sources' => collect($this->sources ?? [])

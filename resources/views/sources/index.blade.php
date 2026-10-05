@@ -286,6 +286,32 @@
         </section>
     </div>
 
+    @if ($items->isNotEmpty())
+        <section class="surface mx-auto mt-6 max-w-5xl">
+            <div class="border-b border-slate-100 px-6 py-4">
+                <h2 class="font-display text-lg font-bold">Produits reconnus ({{ $itemsTotal }})</h2>
+                <p class="mt-1 text-sm text-slate-600">Lus sur votre site : l'assistant connaît leur prix et peut envoyer leur photo sur le chat et sur WhatsApp. Un produit mal lu se corrige sur votre site, puis « Relire ».</p>
+            </div>
+            <ul class="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ($items->take(24) as $item)
+                    @php $photo = app(\App\Services\ProductImages::class)->publicUrl($item); @endphp
+                    <li class="min-w-0">
+                        @if ($photo)
+                            <img src="{{ $photo }}" alt="{{ $item->name }}" loading="lazy" class="aspect-square w-full rounded-xl border border-slate-200 bg-slate-100 object-cover">
+                        @else
+                            <div class="grid aspect-square w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-2 text-center text-xs text-slate-500">Pas de photo</div>
+                        @endif
+                        <p class="mt-2 truncate text-sm font-semibold text-brand-950" title="{{ $item->name }}">{{ $item->name }}</p>
+                        <p class="text-xs text-slate-600">{{ $item->price_text ?: 'Prix non indiqué' }}@if ($item->availability) · {{ $item->availability }}@endif</p>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($itemsTotal > 24)
+                <p class="px-6 pb-5 text-xs text-slate-500">Et {{ $itemsTotal - 24 }} autre(s) produit(s).</p>
+            @endif
+        </section>
+    @endif
+
     @if ($busy)
         @php $advance = $sources->filter(fn ($s) => $s->type === 'url' && $s->status === 'processing')->map(fn ($s) => ['id' => $s->id, 'url' => route('sources.advance', [$bot, $s])])->values(); @endphp
         <script>

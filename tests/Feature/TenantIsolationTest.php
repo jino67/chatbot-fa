@@ -175,6 +175,24 @@ class TenantIsolationTest extends TestCase
         $this->get(route('leads.index'))->assertSee('Confirmer la commande');
     }
 
+    public function test_product_catalog_and_crawled_pages_are_filtered_by_workspace_when_authenticated(): void
+    {
+        [, $userA, $botA] = $this->tenant('Client A');
+        [$workspaceB, , $botB] = $this->tenant('Client B');
+        $itemB = \App\Models\CatalogItem::withoutGlobalScopes()->create(['workspace_id' => $workspaceB->id, 'bot_id' => $botB->id, 'item_key' => sha1('b'), 'name' => 'Produit de B']);
+        $sourceB = \App\Models\Source::withoutGlobalScopes()->create(['workspace_id' => $workspaceB->id, 'bot_id' => $botB->id, 'type' => 'url', 'name' => 'site-b', 'payload' => ['url' => 'https://b.test']]);
+        $pageB = \App\Models\SourcePage::withoutGlobalScopes()->create(['workspace_id' => $workspaceB->id, 'bot_id' => $botB->id, 'source_id' => $sourceB->id, 'url' => 'https://b.test/', 'url_hash' => sha1('b')]);
+
+        $this->actingAs($userA);
+
+        $this->assertNull(\App\Models\CatalogItem::find($itemB->id));
+        $this->assertNull(\App\Models\SourcePage::find($pageB->id));
+        $this->assertSame(0, \App\Models\CatalogItem::count());
+        // La page des sources d'un autre client est introuvable, et ses produits ne s'y affichent pas.
+        $this->get(route('sources.index', $botB))->assertNotFound();
+        $this->post(route('sources.advance', [$botB, $sourceB]))->assertNotFound();
+    }
+
     public function test_the_peak_hours_card_only_counts_the_authenticated_workspaces_messages(): void
     {
         [, $userA, $botA] = $this->tenant('Client A');

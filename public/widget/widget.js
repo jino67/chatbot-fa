@@ -175,6 +175,7 @@
       '.vt{display:block;font-size:12.5px;opacity:.9;margin-top:4px;font-style:italic}' +
       '.note{align-self:center;font-size:12px;color:#64748b;text-align:center;padding:2px 8px;animation:in .3s ease-out}' +
       '.src{font-size:11.5px;color:#64748b;margin-top:7px}.src a{color:#475569}' +
+      '.media{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.ph{display:block;width:150px;text-decoration:none;color:inherit}.ph img{display:block;width:150px;height:150px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0;background:#f1f5f9}.ph span{display:block;font-size:11.5px;line-height:1.35;margin-top:4px;color:#475569}' +
       '.tools{display:flex;gap:2px;margin-top:3px;opacity:.0;transition:opacity .2s}.row:hover .tools,.row.last .tools,.tools:focus-within{opacity:1}' +
       '.tool{border:0;background:none;color:#64748b;width:28px;height:26px;border-radius:9px 3px 9px 3px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,border-radius .3s}.tool:hover{background:#e2e8f0;color:#0b1340;border-radius:3px 9px 3px 9px}.tool.on{color:' + color + ';background:#e6ebfb}.tool.ok{color:#059669}' +
       '.chips{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;margin-top:2px}' +
@@ -430,6 +431,19 @@
     var bubble = el('div', { class: 'm' });
     if (kind === 'agent') bubble.appendChild(el('span', { class: 'who', text: t.agent }));
     renderText(bubble, msg.content);
+    // Photos de produits jointes à la réponse : touchées, elles s'ouvrent en grand.
+    if (msg.media && msg.media.length) {
+      var gallery = el('div', { class: 'media' });
+      msg.media.forEach(function (m) {
+        var link = el('a', { class: 'ph', href: m.url, target: '_blank', rel: 'noopener noreferrer' });
+        var img = el('img', { src: m.url, alt: m.name || '', loading: 'lazy' });
+        img.addEventListener('load', scroll);
+        link.appendChild(img);
+        if (m.caption) link.appendChild(el('span', { text: m.caption }));
+        gallery.appendChild(link);
+      });
+      bubble.appendChild(gallery);
+    }
     if (msg.sources && msg.sources.length) {
       var src = el('div', { class: 'src' });
       msg.sources.slice(0, 3).forEach(function (s, i) {

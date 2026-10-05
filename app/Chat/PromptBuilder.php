@@ -142,6 +142,15 @@ FLOW;
             $voice = ['listen' => false, 'speak' => false];
         }
 
+        // Photos de produits : seulement si l'assistant en a vraiment (il ne doit jamais promettre une photo qu'il ne peut pas envoyer).
+        $policy = $bot->photoPolicy();
+        if ($policy !== 'off' && app(CatalogMedia::class)->hasPhotos($bot)) {
+            $when = $policy === 'ask'
+                ? 'seulement quand le client demande à voir un produit (photo, image, « montre-moi »)'
+                : 'quand tu présentes, recommandes ou compares un produit précis, et toujours quand le client demande à voir';
+            $lines[] = "Les extraits de produits portent une ligne « Photo : Pn ». Tu peux joindre la photo d'un produit avec le marqueur [[PHOTO: Pn]] : {$when}. Un marqueur par produit, deux au plus par réponse (trois si le client demande à voir). Ne joins pas deux fois la même photo dans une conversation, n'écris jamais d'adresse d'image, et ne cite que des références présentes dans les extraits. Si le client demande une photo qui n'est pas indiquée, dis-le simplement et propose de la lui faire envoyer par l'équipe.";
+        }
+
         if ($voice['listen']) {
             $lines[] = 'Tu comprends les messages vocaux du client : ils te parviennent transcrits.';
         }
@@ -259,7 +268,7 @@ FLOW;
     /**
      * Separe la reponse du modele de ses marqueurs.
      *
-     * @return array{text:string, no_answer:bool, handoff:bool, suggestions:list<string>, lead:?array{kind:string,summary:string,name:?string,phone:?string}}
+     * @return array{text:string, no_answer:bool, handoff:bool, suggestions:list<string>, lead:?array{kind:string,summary:string,name:?string,phone:?string}, photos:list<string>}
      */
     public function parse(string $raw): array
     {
@@ -278,6 +287,15 @@ FLOW;
 
         $lead = $this->parseLead($raw);
 
+        $photos = [];
+        if (preg_match_all('/\[\[\s*PHOTOS?\s*:([^\]]*)\]\]/iu', $raw, $markers)) {
+            foreach ($markers[1] as $list) {
+                if (preg_match_all('/\bP\d{1,9}\b/i', $list, $refs)) {
+                    array_push($photos, ...array_map('strtoupper', $refs[0]));
+                }
+            }
+        }
+
         // Retire les marqueurs connus, puis tout marqueur mal forme que le modele aurait invente.
         $text = str_replace([self::NO_ANSWER, self::HANDOFF], '', $raw);
         $text = preg_replace('/\[\[\s*REPLIES\s*:.*?\]\]/isu', '', $text);
@@ -289,6 +307,7 @@ FLOW;
             'handoff' => $handoff,
             'suggestions' => $suggestions,
             'lead' => $lead,
+            'photos' => array_values(array_unique($photos)),
         ];
     }
 

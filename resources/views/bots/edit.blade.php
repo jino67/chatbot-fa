@@ -92,6 +92,34 @@
         </section>
 
         <section class="surface space-y-5 p-6">
+            <h2 class="font-display text-lg font-bold">Photos</h2>
+            <input type="hidden" name="photos_shown" value="1">
+            <div>
+                <x-input-label for="photos" value="Photos de vos produits dans les réponses" />
+                <select id="photos" name="photos" class="field">
+                    @foreach (['auto' => 'Automatique : l\'assistant joint la photo quand il présente un produit', 'ask' => 'Seulement quand le client demande à voir', 'off' => 'Jamais'] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('photos', $bot->photoPolicy()) === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-slate-500">Les photos viennent de votre site web (lu dans « Connaissances ») et partent sur le chat du site et sur WhatsApp. Chaque photo envoyée sur WhatsApp compte comme un message de votre volume.</p>
+            </div>
+            <div>
+                <label class="flex items-start gap-2 text-sm">
+                    <input type="checkbox" name="images" value="1" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @checked(old('images', $bot->profile('images', true)))>
+                    <span>
+                        <span class="font-medium">L'assistant lit les photos envoyées par vos clients</span>
+                        <span class="block text-xs text-slate-500">Un client peut envoyer la photo d'un article, d'un problème ou une capture de paiement : l'assistant la regarde et répond en conséquence. Une photo reçue compte comme une réponse de votre volume mensuel.</span>
+                    </span>
+                </label>
+            </div>
+            <div>
+                <x-input-label for="image_brief" value="Que doit faire l'assistant d'une photo reçue ? (facultatif)" />
+                <textarea id="image_brief" name="image_brief" rows="3" maxlength="700" class="field" placeholder="Exemple : si le client envoie la photo d'un boubou, cherche le modèle le plus proche dans le catalogue ; si c'est une capture de paiement Wave, relève le montant et la référence.">{{ old('image_brief', $bot->profile('image_brief', '')) }}</textarea>
+                <p class="mt-1 text-xs text-slate-500">Ces consignes s'ajoutent à celles de votre métier, déjà prévues par la plateforme.</p>
+            </div>
+        </section>
+
+        <section class="surface space-y-5 p-6">
             <h2 class="font-display text-lg font-bold">Apparence du widget</h2>
             <div class="grid gap-5 sm:grid-cols-3">
                 <div>

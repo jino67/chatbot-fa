@@ -104,6 +104,9 @@ class BotController extends Controller
             'collect_contact' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'open_chat' => ['nullable', 'boolean'],
+            'photos' => ['nullable', Rule::in(['auto', 'ask', 'off'])],
+            'images' => ['nullable', 'boolean'],
+            'image_brief' => ['nullable', 'string', 'max:700'],
         ]);
 
         // La liste envoyée est la liste voulue ; sans liste (ancien formulaire), la langue principale reste seule choisie.
@@ -115,8 +118,18 @@ class BotController extends Controller
             'voice_style' => $data['voice_style'] ?? $bot->voice_style,
         ] : [];
 
-        // La conversation libre vit dans le profil (JSON) ; elle ne bouge que si la case était dans le formulaire.
-        $chat = $request->has('open_chat_shown') ? ['profile' => array_replace($bot->profile ?? [], ['open_chat' => $request->boolean('open_chat')])] : [];
+        // Conversation libre, photos des produits et photos des clients vivent dans le profil (JSON) ; chaque réglage ne bouge que
+        // si sa section était dans le formulaire.
+        $profile = $bot->profile ?? [];
+        if ($request->has('open_chat_shown')) {
+            $profile['open_chat'] = $request->boolean('open_chat');
+        }
+        if ($request->has('photos_shown')) {
+            $profile['photos'] = $data['photos'] ?? 'auto';
+            $profile['images'] = $request->boolean('images');
+            $profile['image_brief'] = trim((string) ($data['image_brief'] ?? ''));
+        }
+        $chat = $profile !== ($bot->profile ?? []) ? ['profile' => $profile] : [];
 
         $bot->update($chat + $voice + [
             'name' => $data['name'],

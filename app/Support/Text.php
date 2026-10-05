@@ -143,6 +143,44 @@ final class Text
     }
 
     /**
+     * Le client demande à VOIR un produit (photo, image, « montre-moi »). Détection sans modèle : une photo promise doit partir
+     * même si l'assistant a oublié de la joindre. Un client qui annonce SA photo (« voici la photo de mon visage ») ne la demande pas.
+     */
+    public static function wantsPhoto(string $text): bool
+    {
+        // Apostrophes et traits d'union deviennent des espaces : « montre-moi », « j'aimerais voir », « y a-t-il ».
+        $folded = str_replace(['’', "'", '-'], ' ', self::fold($text));
+
+        if (preg_match('/\b(voici|ci joint|ci-joint|je vous (envoie|ai envoye)|j ai envoye|je t envoie|here is|attached)\b/u', $folded)) {
+            return false;
+        }
+
+        foreach ([
+            '/\b(montr\w+|envo[iy]\w*|donn\w+|pass\w+|voir|voyez|voyons|vois|show|send)\b.{0,40}\b(photos?|images?|pics?|pictures?)\b/u',
+            '/\b(photos?|images?)\b.{0,25}\b(du|de la|des|de l|d)\b.{0,50}\?/u',
+            '/\ba quoi (ca|il|elle|ils|elles)\b.{0,12}\bressembl/u',
+            '/\b(montre|montrez)[ -]?(moi|nous)\b/u',
+            '/\b(je veux|j aimerais|je voudrais|puis je|peux je|on peut|je peux) voir\b/u',
+            '/\b(vous avez|t as|tu as|y a t il|avez vous|as tu) (une |des |la |les )?(photos?|images?)\b/u',
+        ] as $pattern) {
+            if (preg_match($pattern, $folded)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Le client demande une réponse en audio (« explique-moi en audio », « envoie-moi un vocal »). */
+    public static function wantsAudio(string $text): bool
+    {
+        $folded = str_replace(['’', "'", '-'], ' ', self::fold($text));
+
+        return (bool) preg_match('/\b(en audio|en vocal|par vocal|par audio|message vocal|un vocal|a voix haute|voice (message|note)|in audio)\b/u', $folded)
+            || (bool) preg_match('/\b(audio|vocal)\b.{0,20}\b(svp|stp|please|s il (te|vous) plait)\b/u', $folded);
+    }
+
+    /**
      * Message de reclamation ou d'urgence : meme sans extrait pertinent, on laisse le LLM
      * repondre avec empathie et decider d'un transfert (marqueur [[HANDOFF]]).
      */

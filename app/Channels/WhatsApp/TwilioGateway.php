@@ -33,6 +33,12 @@ class TwilioGateway implements WhatsAppGateway
         return $this->post(['Body' => $text], $to);
     }
 
+    /** Twilio va chercher la photo à l'adresse donnée : elle doit être joignable publiquement. */
+    public function sendImage(string $to, string $url, ?string $caption = null): string
+    {
+        return $this->post(array_filter(['MediaUrl' => $url, 'Body' => $caption]), $to);
+    }
+
     /** Twilio va chercher le fichier lui-même : il doit être joignable publiquement (adresse signée et temporaire). */
     public function sendAudio(string $to, SpeechAudio $audio): string
     {

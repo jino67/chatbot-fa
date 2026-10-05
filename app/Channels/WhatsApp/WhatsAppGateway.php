@@ -35,6 +35,15 @@ interface WhatsAppGateway
     public function sendAudio(string $to, \App\Speech\SpeechAudio $audio): string;
 
     /**
+     * Envoie une photo (jpeg) que le fournisseur va chercher à l'adresse publique donnée, avec une légende facultative.
+     *
+     * @return string identifiant du message chez le fournisseur
+     *
+     * @throws GatewayException
+     */
+    public function sendImage(string $to, string $url, ?string $caption = null): string;
+
+    /**
      * Telecharge le message vocal recu.
      *
      * @return array{bytes:string, mime:string}

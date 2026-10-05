@@ -94,6 +94,20 @@ class Bot extends Model
         return $this->isShowcase() || (bool) $this->profile('open_chat', true);
     }
 
+    /** L'assistant lit-il les photos envoyées par les clients ? (actif par défaut) */
+    public function acceptsImages(): bool
+    {
+        return $this->isShowcase() ? false : (bool) $this->profile('images', true);
+    }
+
+    /** Photos des produits : « auto » (l'assistant en joint quand il présente un produit), « ask » (seulement si le client demande à voir), « off ». */
+    public function photoPolicy(): string
+    {
+        $policy = (string) $this->profile('photos', 'auto');
+
+        return in_array($policy, ['auto', 'ask', 'off'], true) ? $policy : 'auto';
+    }
+
     /**
      * L'assistant de la page d'accueil de la plateforme (réglage « marketing.landing_bot_key »). Il parle de la
      * plateforme elle-même et ne peut pas être cantonné : sa conversation libre est toujours active.

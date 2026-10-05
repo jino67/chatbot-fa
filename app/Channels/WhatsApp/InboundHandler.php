@@ -138,6 +138,12 @@ class InboundHandler
             $this->sendVoiceReply($gateway, $conversation, $message, $inboundWasVoice);
         }
 
+        // Photos de produits : elles partent d'abord (avec leur légende), la réponse écrite ensuite. Une photo qui ne part pas
+        // ne retarde jamais la réponse.
+        if ($message->role === Message::ASSISTANT && ! empty($message->meta['media'])) {
+            $this->sendPhotos($gateway, $conversation, $message);
+        }
+
         try {
             $providerId = null;
             $parts = WhatsAppFormatter::parts($message->content);
@@ -154,6 +160,23 @@ class InboundHandler
             report($e);
             $message->forceFill(['meta' => array_merge($message->meta ?? [], ['delivery_error' => mb_substr($e->getMessage(), 0, 300)])])->save();
         }
+    }
+
+    private function sendPhotos(WhatsAppGateway $gateway, Conversation $conversation, Message $message): void
+    {
+        $sent = 0;
+
+        foreach (app(\App\Chat\CatalogMedia::class)->resolve($message->meta['media']) as $photo) {
+            try {
+                $gateway->sendImage($conversation->external_id, $photo['url'], $photo['caption']);
+                $this->meter->whatsapp($gateway->channel(), 'out', null, $conversation->bot_id);
+                $sent++;
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        $message->forceFill(['meta' => array_merge($message->meta ?? [], ['media_sent' => $sent])])->save();
     }
 
     private function sendVoiceReply(WhatsAppGateway $gateway, Conversation $conversation, Message $message, bool $inboundWasVoice): void

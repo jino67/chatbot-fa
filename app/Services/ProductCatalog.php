@@ -60,6 +60,8 @@ class ProductCatalog
                 $gone->delete();
             });
 
+        cache()->forget('catalog-photos:'.$source->bot_id);
+
         return $out;
     }
 

@@ -61,6 +61,17 @@ class MetaCloudGateway implements WhatsAppGateway
         return $this->send($payload);
     }
 
+    public function sendImage(string $to, string $url, ?string $caption = null): string
+    {
+        return $this->send([
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => ltrim($to, '+'),
+            'type' => 'image',
+            'image' => array_filter(['link' => $url, 'caption' => $caption !== null ? mb_substr($caption, 0, 1000) : null]),
+        ]);
+    }
+
     public function sendAudio(string $to, SpeechAudio $audio): string
     {
         // Le fichier est d'abord déposé chez Meta, puis envoyé par son identifiant.

@@ -77,7 +77,7 @@ class InstructionController extends Controller
         $profile = self::profileFrom($data);
         $profile['languages'] = $bot->spokenLanguages();
         // Le style importé du WhatsApp et le réglage de conversation libre se règlent ailleurs : on les garde.
-        $profile += array_intersect_key($bot->profile ?? [], array_flip(['imported', 'open_chat']));
+        $profile += array_intersect_key($bot->profile ?? [], array_flip(['imported', 'open_chat', 'photos', 'images', 'image_brief']));
         $updates = ['sector' => $data['sector'], 'profile' => $profile];
 
         if ($request->boolean('regenerate')) {
