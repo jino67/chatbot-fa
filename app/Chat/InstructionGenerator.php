@@ -73,7 +73,22 @@ class InstructionGenerator
                 ."\nCes informations valent même sans extrait. Pour tout détail (prix, disponibilité, conditions), appuie-toi sur les extraits.";
         }
 
-        $sections[] = "## Parcours à suivre\n".$this->bullets($s['parcours']);
+        $sections[] = "## Parcours à suivre\n".$this->bullets($s['parcours'])."\n".$this->bullets([
+            'Coordonnées : sur WhatsApp, le numéro du client est déjà connu, ne le demande jamais. Sur le site web, demande un numéro de téléphone (de préférence WhatsApp) avant de conclure.',
+            'Ne redemande jamais une information que le client a déjà donnée dans la conversation.',
+            "Quand le client répond à tes questions (nom, quartier, paiement), poursuis le parcours : ce ne sont pas des questions sur l'entreprise.",
+        ]);
+
+        $sections[] = "## Conseil et vente\n".$this->bullets(array_merge([
+            'Comprends avant de proposer : une seule question ciblée quand le besoin est flou, jamais un questionnaire.',
+            'Recommande peu, mais bien : un ou deux choix précis avec la raison, plutôt qu\'une liste complète.',
+            'Rassure : rappelle ce qui est inclus ou garanti seulement si les extraits le disent.',
+            'Termine par un pas concret (voir une photo, commander, réserver) sans insister.',
+        ], $s['conseil'] ?? []));
+
+        $sections[] = "## Photos envoyées par le client\nLe client peut t'envoyer une photo : elle te parvient décrite. Selon le métier :\n".$this->bullets(array_merge($s['images'] ?? [], [
+            'Ne prétends jamais voir ce que la description ne mentionne pas ; si la photo est floue ou sans rapport, demande poliment une autre photo.',
+        ]));
 
         $rules = array_merge($s['regles'], $this->lines((string) $profile['extra_rules']));
         $sections[] = "## Règles propres à ce métier\n".$this->bullets($rules);
@@ -133,8 +148,8 @@ class InstructionGenerator
         $system = "Tu es un expert en conception d'assistants conversationnels pour de petites entreprises d'Afrique francophone. "
             ."On te donne la consigne d'un assistant. Améliore-la : rends-la plus précise, plus naturelle pour le métier et l'entreprise décrits, "
             .'ajoute des parcours et des exemples de forme pertinents, corrige les ambiguïtés. '
-            ."Règles strictes : conserve toutes les sections et tous les interdits ; n'ajoute AUCUN fait sur l'entreprise (prix, horaires, adresses) qui ne figure pas dans la consigne ; "
-            .'garde le tutoiement ou le vouvoiement demandé ; reste sous 900 mots ; réponds uniquement par la consigne améliorée, en français, sans commentaire.';
+            ."Règles strictes : conserve toutes les sections (rôle, mission, ton, parcours, conseil et vente, photos du client, règles, interdits, passage de main, exemples) et tous les interdits ; garde la règle sur le numéro de téléphone (jamais demandé sur WhatsApp, demandé sur le site web) ; n'ajoute AUCUN fait sur l'entreprise (prix, horaires, adresses) qui ne figure pas dans la consigne ; "
+            .'garde le tutoiement ou le vouvoiement demandé ; reste sous 1400 mots (la consigne ne doit pas dépasser 11 000 caractères) ; réponds uniquement par la consigne améliorée, en français, sans commentaire.';
 
         $context = 'Entreprise : '.$company.'. Secteur : '.$this->sector($sector)['label'].'.';
 
@@ -146,7 +161,7 @@ class InstructionGenerator
 
         $text = trim($response->text);
 
-        return (! $response->refused && mb_strlen($text) > 400 && mb_strlen($text) < 9000 && str_contains($text, '## ')) ? Text::clean($text) : $draft;
+        return (! $response->refused && mb_strlen($text) > 400 && mb_strlen($text) < 11500 && str_contains($text, '## ')) ? Text::clean($text) : $draft;
     }
 
     /** @param array<string,mixed> $profile @return list<string> */

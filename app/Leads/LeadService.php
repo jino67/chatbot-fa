@@ -14,8 +14,14 @@ class LeadService
 {
     public function __construct(private readonly LeadNotifier $notifier) {}
 
-    public function capture(Conversation $conversation, string $kind, string $summary = '', ?string $title = null): Lead
+    /**
+     * @param  array{name?:?string, phone?:?string}  $contact  coordonnées que le client a données dans la conversation (utile sur le site web, où on ne connaît pas son numéro)
+     */
+    public function capture(Conversation $conversation, string $kind, string $summary = '', ?string $title = null, array $contact = []): Lead
     {
+        $name = $contact['name'] ?? null;
+        $phone = $contact['phone'] ?? null;
+
         $summary = Text::limit(trim(preg_replace('/\s+/u', ' ', $summary)), 400);
         $title = Text::limit($title ?: ($summary !== '' ? $summary : Lead::KINDS[$kind]), 160);
 
@@ -27,7 +33,12 @@ class LeadService
             ->first();
 
         if ($existing) {
-            $existing->forceFill(['title' => $title, 'summary' => $summary ?: $existing->summary])->save();
+            $existing->forceFill([
+                'title' => $title,
+                'summary' => $summary ?: $existing->summary,
+                'contact_name' => $name ?: $existing->contact_name,
+                'contact_phone' => $phone ?: $existing->contact_phone,
+            ])->save();
 
             return $existing;
         }
@@ -39,8 +50,8 @@ class LeadService
             'kind' => $kind,
             'title' => $title,
             'summary' => $summary !== '' ? $summary : null,
-            'contact_name' => $conversation->contact_name,
-            'contact_phone' => $conversation->contact_phone,
+            'contact_name' => $name ?: $conversation->contact_name,
+            'contact_phone' => $phone ?: $conversation->contact_phone,
         ]);
 
         // Une alerte perdue ne doit jamais faire perdre la demande, ni la réponse au client.

@@ -117,7 +117,7 @@ class LeadsTest extends TestCase
 
         $parsed = $prompts->parse("Merci Fatou ! L'équipe confirme votre commande.\n[[LEAD: commande | 2 boubous brodés, 70 000 FCFA, livraison à Bobo]]\n[[REPLIES: Merci | Autre chose]]");
 
-        $this->assertSame(['kind' => 'order', 'summary' => '2 boubous brodés, 70 000 FCFA, livraison à Bobo'], $parsed['lead']);
+        $this->assertSame(['kind' => 'order', 'summary' => '2 boubous brodés, 70 000 FCFA, livraison à Bobo', 'name' => null, 'phone' => null], $parsed['lead']);
         $this->assertStringNotContainsString('LEAD', $parsed['text']);
         $this->assertStringNotContainsString('[[', $parsed['text']);
         $this->assertSame("Merci Fatou ! L'équipe confirme votre commande.", $parsed['text']);
@@ -140,7 +140,7 @@ class LeadsTest extends TestCase
     {
         $prompt = app(PromptBuilder::class)->system($this->bot);
 
-        $this->assertStringContainsString('[[LEAD: commande | résumé]]', $prompt);
+        $this->assertStringContainsString('[[LEAD: commande | résumé | nom | téléphone]]', $prompt);
         $this->assertStringContainsString('sans promettre toi-même un paiement ni une livraison', $prompt);
     }
 

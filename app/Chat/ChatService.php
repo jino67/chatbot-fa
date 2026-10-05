@@ -159,7 +159,8 @@ class ChatService
 
         // Commande, rendez-vous ou devis confirmé par le client : une demande à traiter, et le propriétaire est prévenu.
         if ($parsed['lead'] && $grounded && ! $parsed['handoff']) {
-            $this->leads->capture($conversation, $parsed['lead']['kind'], $parsed['lead']['summary'], $parsed['lead']['summary'] ?: null);
+            $contact = $this->contactGiven($conversation, $parsed['lead']);
+            $this->leads->capture($conversation, $parsed['lead']['kind'], $parsed['lead']['summary'], $parsed['lead']['summary'] ?: null, $contact);
         }
 
         if (! $grounded && ! $parsed['handoff']) {
@@ -172,6 +173,32 @@ class ChatService
             $grounded ? array_map(fn (RetrievedChunk $c) => $c->toReference(), $chunks) : [],
             $meta
         );
+    }
+
+    /**
+     * Nom et téléphone que le client a donnés pour sa commande. Sur WhatsApp le numéro est déjà connu (celui de la
+     * conversation) : on ne le remplace jamais par un numéro écrit par le modèle. Sur le site web, un numéro donné est
+     * gardé sur la conversation, pour que le propriétaire puisse rappeler depuis la boîte de réception.
+     *
+     * @param  array{kind:string,summary:string,name:?string,phone:?string}  $lead
+     * @return array{name:?string, phone:?string}
+     */
+    private function contactGiven(Conversation $conversation, array $lead): array
+    {
+        $phone = $conversation->channel === 'whatsapp' ? null : $lead['phone'];
+
+        $updates = [];
+        if ($lead['name'] && ! $conversation->contact_name) {
+            $updates['contact_name'] = $lead['name'];
+        }
+        if ($phone && ! $conversation->contact_phone) {
+            $updates['contact_phone'] = $phone;
+        }
+        if ($updates !== []) {
+            $conversation->forceFill($updates)->save();
+        }
+
+        return ['name' => $lead['name'], 'phone' => $phone];
     }
 
     /**
