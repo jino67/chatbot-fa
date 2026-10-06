@@ -252,6 +252,9 @@
                                 Votre offre lit au plus <strong>{{ $source->stats['plan_limit'] ?? $source->stats['limit'] }} pages par site</strong> : la lecture s'est arrêtée avant d'avoir tout vu. Les pages d'information (contact, livraison, FAQ), les catégories et les produits sont lus en premier. Pour lire le reste, passez à l'offre supérieure puis cliquez sur « Relire ».
                             </p>
                         @endif
+                        @if ($source->status === 'ready' && $source->type === 'url' && ! empty($source->stats['failed']))
+                            <p class="mt-1 text-xs text-slate-500">{{ $source->stats['failed'] }} adresse(s) du plan de votre site ne répondent plus (page supprimée ou protégée) : elles sont ignorées. Mettez à jour le plan de votre site si ce sont d'anciennes pages.</p>
+                        @endif
                         @if ($source->status === 'ready' && $source->type === 'url' && ! empty($source->stats['ignored']))
                             <p class="mt-1 text-xs text-slate-500">{{ $source->stats['ignored'] }} page(s) sans contenu utile (panier, connexion, formulaires de commande, doublons) ont été ignorées : elles ne comptent pas dans votre limite.</p>
                         @endif

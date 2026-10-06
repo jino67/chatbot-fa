@@ -328,6 +328,37 @@ Toutes les tables « métier » portent `workspace_id`.
 
 **Conséquences.** Le bouton ne s'affiche que pour une demande ouverte reçue sur WhatsApp, si le modèle est approuvé sur un canal actif de l'assistant et si l'offre inclut les modèles ; les modèles se lisent avec le filtre de l'entreprise (`LeadConfirmationTest`, `TenantIsolationTest`). Un envoi sans personne, déclenché par un changement d'état, reste possible plus tard pour les modèles sans variable inconnue.
 
+### D34. Un site se lit par tranches, l'état de la lecture vit en base
+
+**Décision.** `CrawlRun` ne garde rien en mémoire : la table `source_pages` porte chaque adresse (à lire, lue, ignorée, en échec), `sources.progress` la limite de l'offre et le `robots.txt`. Une tranche (`step`) lit des pages pendant quelques secondes puis rend la main ; la suivante repart de la première page « à lire », classée par priorité (page de départ, pages d'information, catégories, produits, reste, blog). Qui fait avancer ? La page ouverte du client (`POST sources/{id}/avancer`), le planificateur (`sources:continue`, toutes les 5 minutes) et, en ligne de commande ou en file, une seule tranche de 14 minutes. Un verrou (`crawl-source-{id}`) évite qu'un site soit lu deux fois en même temps. `UrlRules` écarte les pages sans contenu utile (panier, connexion, `/commander/N`) et les variantes (casse, `www`, barre finale) : elles ne comptent pas dans `pages_per_crawl`.
+
+**Pourquoi.** Chez LWS, une requête web est coupée longtemps avant la fin d'un site de 60 pages à 4 secondes la page : la lecture entière en mémoire perdait tout. La limite de l'offre est lue au démarrage d'une lecture : après un changement d'offre, « Relire » est nécessaire.
+
+### D35. Un produit est lu avec son prix, dans une fiche écrite
+
+**Décision.** `ProductScanner` repère les produits d'une page (JSON-LD, Open Graph, puis la forme de la page : une fiche est un titre avec UN prix autour ; une liste est une suite de blocs frères avec chacun UN prix). Une fiche produit perd ses « produits de la même gamme » (leurs prix se mélangeaient à ceux du produit : un Duo visage à 5 000 s'est retrouvé à 31 000) ; une liste devient une ligne « Nom : prix, disponibilité » par produit. Chaque produit a sa fiche (`ProductSheet`) : un extrait autonome, avec une référence de photo. Les fiches ne passent pas par le retrait des lignes répétées (« Disponibilité : En stock » se répète sur chaque fiche) ; les pages, si. Le texte d'un élément se lit avec une espace entre les morceaux : un HTML sans espace entre les balises (« En stock<div>5 000 ») cachait ses prix.
+
+**Conséquences.** Les produits vivent dans `catalog_items` (identité = adresse de la page, sinon nom) : un produit déjà connu garde son identifiant, donc sa référence `P12`, d'une lecture à l'autre ; un produit disparu du site quitte le catalogue (`ProductCatalog::sync`).
+
+### D36. Les photos de produits partent par un marqueur, la plateforme décide
+
+**Décision.** L'assistant propose `[[PHOTO: P12]]` ; `CatalogMedia::pick` décide (produits de CET assistant seulement, jamais deux fois la même photo dans une conversation sauf si le client la redemande, deux au plus, trois sur demande, rien si le propriétaire a réglé « jamais »). Une demande « montre-moi » sans marqueur est rattrapée (`Text::wantsPhoto`, `refsFromContext`). Les images sont téléchargées par `SafeHttp`, remises en JPEG de 1000 px (`ImageTools`, WhatsApp ne lit pas le webp), gardées dans `storage` et servies par une adresse signée sans expiration (`/media/produit/{id}.jpg`, liée à l'image courante). WhatsApp : la photo part avant le texte, avec une légende « Nom : prix » ; une photo qui échoue ne retarde jamais le texte. Chat du site : `message.media`, galerie sous la réponse.
+
+### D37. La photo d'un client est une donnée décrite, jamais une consigne
+
+**Décision.** `CustomerImages` : photo vérifiée et allégée (métadonnées effacées), gardée en privé 30 jours (`images:prune`), lue par `LlmClient::transcribe` avec le brief du métier (`VisionBrief` : règles de la plateforme + `config/sectors.php` `images` + consigne du propriétaire). `VisionAnalyzer::parse` borne et nettoie ce que le modèle rend (marqueurs `[[...]]`, balises). Dans le prompt, la description est balisée `<image_client>` (neutralisée) et le prompt dit de ne jamais suivre un texte lu sur une photo. Pièce d'identité ou carte bancaire (`SENSIBLE: oui`) : rien n'est conservé. Une capture de paiement n'est jamais confirmée par l'assistant (l'équipe vérifie). Pas d'appel au modèle quand une personne a la main ou que le volume est atteint ; dix photos par jour et par conversation.
+
+### D38. Le prompt de la plateforme conduit la vente, selon le canal
+
+**Décision.** `PromptBuilder` porte, au-dessus des consignes du client : l'art du vendeur-conseil (une question ciblée, un ou deux produits, jamais de remise inventée, chaque produit garde ses caractéristiques), le parcours de commande (réponses du client ne sont jamais des « questions sans réponse », récapitulatif puis `[[LEAD: type | résumé | nom | téléphone]]`) et ce que le canal permet (audio, photos, lecture des photos). Le téléphone : jamais demandé sur WhatsApp (connu), toujours demandé sur le site web ; celui d'un client WhatsApp n'est jamais remplacé par un numéro écrit par le modèle. L'audio demandé par écrit (`Text::wantsAudio`) part en vocal sur WhatsApp et se lit dans le widget, sauf réglage « jamais ». `config/sectors.php` ajoute à chaque métier `conseil` et `images`.
+
+### D39. Remettre les données de test à zéro : choix explicite, copie, journal
+
+**Décision.** `TestDataReset` (page Données de test, commande `platform:reset-test-data`) : espaces cochés un par un, options séparées (paiements, crédit WhatsApp, offre, consommation, demandes d'offre), confirmation écrite, copie JSON de ce qui disparaît dans `storage/app/backups`, entrée `payment.test_reset` au Journal.
+
+### D40. « Je ne vois pas la bulle » : un contrôle plutôt qu'une devinette
+
+**Décision.** `WidgetInstallCheck` ouvre une page du site comme un visiteur (`SafeHttp`) et distingue : script absent, en commentaire, autre clé, adresse de test, assistant désactivé, origine non autorisée. L'origine ignore `www`. Le widget écrit la raison d'un échec dans la console, et `widget-seen:{bot}` (cache) garde le dernier site qui a chargé la bulle.
 ## 6. Sécurité : synthèse
 
 | Menace | Mesure | Où |

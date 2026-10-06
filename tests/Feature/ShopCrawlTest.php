@@ -265,6 +265,15 @@ class ShopCrawlTest extends TestCase
             ->assertSee('8 page(s) lue(s)')->assertSee('4 produit(s)')->assertSee('4 avec photo')->assertSee('ont été ignorées');
     }
 
+    public function test_the_sources_page_tells_which_addresses_of_the_site_map_no_longer_answer(): void
+    {
+        $source = $this->source();
+        $source->forceFill(['status' => Source::READY, 'stats' => ['pages' => 36, 'found' => 43, 'limit' => 200, 'plan_limit' => 200, 'truncated' => false, 'ignored' => 36, 'failed' => 7, 'chunks' => 46, 'tokens' => 8000]])->save();
+
+        $this->actingAs($this->owner)->get(route('sources.index', $this->bot))->assertOk()
+            ->assertSee('36 page(s) lue(s)')->assertSee('sur 43 trouvée(s)')->assertSee('7 adresse(s) du plan de votre site ne répondent plus');
+    }
+
     public function test_the_scheduler_resumes_a_site_nobody_is_advancing(): void
     {
         $this->fakeShop();
@@ -294,6 +303,33 @@ class ShopCrawlTest extends TestCase
         $this->assertSame(Source::READY, $source->status, (string) $source->error);
         $this->assertSame(8, $source->stats['pages']);
         $this->assertSame(4, CatalogItem::withoutGlobalScopes()->where('bot_id', $this->bot->id)->count(), 'les produits ne sont pas dupliqués');
+    }
+
+    public function test_two_products_with_the_same_name_stay_two_products_told_apart_by_their_category(): void
+    {
+        $cards = fn (string $link, string $price) => '<div class="prods"><article><a href="'.$link.'"><img src="/img/duo.jpg" alt="Duo visage"></a><h3>Duo visage</h3><span>En stock</span><div>'.$price.'<small>XOF</small></div></article>'
+            .'<article><a href="/produits/savon"><img src="/img/savon.jpg" alt="Savon"></a><h3>Savon</h3><span>En stock</span><div>2 000<small>XOF</small></div></article></div>';
+
+        Http::fake([
+            self::SHOP.'/robots.txt' => fn () => Http::response('', 404),
+            self::SHOP.'/sitemap.xml' => fn () => Http::response('', 404),
+            self::SHOP.'/sitemap_index.xml' => fn () => Http::response('', 404),
+            self::SHOP.'/' => $this->page('Accueil', '<main><h1>Boutique</h1><p>Des soins naturels faits à Ouagadougou depuis 2015, livrés chez vous.</p><a href="/categories/reparatrice">Réparatrice</a><a href="/categories/glow">Glow Skin</a></main>'),
+            self::SHOP.'/categories/reparatrice' => $this->page('Réparatrice', '<main><h1>Gamme Réparatrice</h1>'.$cards('/produits/duo-visage', '5 000').'</main>'),
+            self::SHOP.'/categories/glow' => $this->page('Glow', '<main><h1>Gamme Glow Skin</h1>'.$cards('/produits/duo-visage-glow-skin', '7 000').'</main>'),
+            self::SHOP.'/*' => fn () => Http::response('', 404),
+        ]);
+        $source = $this->source();
+
+        app(IngestionPipeline::class)->run($source);
+
+        $names = CatalogItem::withoutGlobalScopes()->where('bot_id', $this->bot->id)->orderBy('name')->pluck('price_text', 'name')->all();
+        $this->assertSame([
+            'Duo visage (Glow Skin)' => $this->money(7000),
+            'Duo visage (Réparatrice)' => $this->money(5000),
+            'Savon' => $this->money(2000),
+        ], $names, 'chaque Duo visage garde son prix et son nom précis');
+        $this->assertSame(3, $source->fresh()->stats['products']);
     }
 
     /* ---------- Le catalogue ---------- */

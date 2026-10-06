@@ -219,6 +219,9 @@ Si le panneau n'accepte qu'un fichier PHP, utilisez `kouma/cron.php`. Elle pilot
 | `platform:subscriptions` | Chaque jour à 8 h | Rappels d'échéance, période de grâce, fin des essais, retour à l'offre gratuite |
 | `leads:remind` | Toutes les 10 minutes | Relance les demandes restées sans réponse |
 | `people:remind` | Chaque jour à 8 h 30 | Prévient l'équipe des relances à faire aujourd'hui (page Utilisateurs) |
+| `sources:continue` | Toutes les 5 minutes | Reprend la lecture des sites que personne ne fait avancer (page fermée, requête coupée par l'hébergeur) |
+| `catalog:warm-images` | Toutes les 5 minutes | Prépare à l'avance les photos des produits lus sur les sites (téléchargées, remises en JPEG) |
+| `images:prune` | Chaque jour à 3 h 45 | Efface les photos envoyées par les clients au-delà de 30 jours (`PLATFORM_IMAGE_RETENTION_DAYS`) ; la description écrite reste |
 | `platform:check-wallets` | Toutes les heures | Alerte quand le solde Twilio est bas ou qu'un client approche de son volume WhatsApp |
 | `notifications:dispatch` | Chaque minute | Envoie les campagnes de l'équipe et les notifications retardées par les heures calmes |
 | `analytics:prune` | Chaque jour | Supprime les statistiques au-delà de la durée de conservation |
@@ -524,6 +527,17 @@ Chaque ligne porte un **nom lisible** (« Rôle d'un membre changé », « Conve
 
 Consultez-le après tout incident, et régulièrement pour repérer une action inhabituelle (connexion à une heure inattendue, nombreux changements d'offre, une personne de l'équipe qui lit beaucoup de conversations).
 
+### Données de test : remettre les paiements simulés à zéro
+
+Pendant vos essais, vous avez enregistré des paiements, ajouté du crédit WhatsApp et donné une offre payante à des espaces de test. Avant d'accueillir de vrais clients, remettez-les à zéro : **Données de test** dans le menu.
+
+1. La page liste les espaces qui contiennent quelque chose : offre, nombre et total des paiements, crédit WhatsApp, mesures de consommation, demandes d'offre.
+2. **Cochez un à un les espaces de test.** Ne cochez jamais l'espace d'un vrai client : ses paiements sont la trace de ce qu'il a payé.
+3. Choisissez ce qui disparaît : paiements, crédit WhatsApp, retour à l'offre Découverte, consommation mesurée, demandes d'offre.
+4. Écrivez **REMETTRE A ZERO** puis validez.
+
+Avant l'effacement, une copie de tout ce qui disparaît est écrite dans le dossier `storage/app/backups` du site (un fichier daté), et l'action est inscrite au Journal. La vue d'ensemble (chiffre d'affaires du mois) se recalcule toute seule.
+
 ## 15. WhatsApp : mise en place complète
 
 ### Meta direct (cas général)
@@ -640,6 +654,8 @@ Ces commandes se lancent avec `php artisan` dans un environnement avec accès au
 | `platform:make-admin` | Crée ou promeut un compte du personnel |
 | `platform:mail-test` | Envoie un e-mail d'essai et explique la panne |
 | `platform:reindex` | Recalcule les vecteurs après un changement de moteur |
+| `platform:reset-test-data --workspace=3 --payments --credit --plan` | Remet à zéro les paiements simulés d'un espace (sans `--force`, simulation : montre seulement ce qui serait effacé) |
+| `sources:continue`, `catalog:warm-images`, `images:prune` | Lecture des sites, photos des produits, nettoyage des photos des clients (planifiées) |
 | `whatsapp:templates --liste` | Montre la bibliothèque de modèles et les paquets |
 | `whatsapp:templates {id} --pack=essentiel` | Crée un paquet de modèles sur le canal d'un assistant |
 | `guides:build --url=https://kouma.site --email=contact@votre-domaine --whatsapp=22670000000` | Fabrique les guides en PDF (A4, couverture, sommaire, signature). À lancer **sur un ordinateur qui a Chrome ou Edge**, pas sur le serveur (il n'en a pas) : la commande le dit. L'adresse publique est obligatoire (une adresse locale est refusée) ; `--email` et `--whatsapp` imposent les coordonnées imprimées, car les Paramètres de l'ordinateur ne sont pas ceux du site. Puis envoyer les PDF de `public/documents/` et `resources/guides/pdf/` avec la mise à jour |

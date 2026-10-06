@@ -150,6 +150,30 @@ class SalesConversationTest extends TestCase
         $this->assertSame('Jures', $lead->contact_name);
     }
 
+    public function test_the_business_phone_written_by_the_model_is_never_taken_for_the_customers(): void
+    {
+        $this->bot->forceFill(['profile' => ['phone' => '+226 73 81 16 50']])->save();
+        $this->scriptedAssistant([
+            "Merci Jures !
+[[LEAD: commande | Duo visage x1 | Jures | +226 73 81 16 50]]",
+            "Merci pour votre numéro !
+[[LEAD: commande | Duo visage x1 | Jures | +22673811650]]",
+        ]);
+        $conversation = $this->conversation('web');
+        $chat = app(ChatService::class);
+
+        // Le modèle a recopié le numéro de la boutique : refusé, et le client n'a encore rien donné.
+        $chat->handleUserMessage($conversation, 'Jures, 1200 logements, je paie à la livraison');
+        $lead = Lead::withoutGlobalScopes()->firstOrFail();
+        $this->assertNull($lead->contact_phone);
+        $this->assertNull($conversation->fresh()->contact_phone);
+
+        // Le client écrit son numéro : c'est lui qu'on garde, même si le modèle recopie encore celui de la boutique.
+        $chat->handleUserMessage($conversation->fresh(), 'Mon numéro c\'est le 70 12 34 56');
+        $this->assertSame('70123456', $lead->fresh()->contact_phone);
+        $this->assertSame('70123456', $conversation->fresh()->contact_phone);
+    }
+
     public function test_a_corrected_order_updates_the_open_lead_and_its_contact(): void
     {
         $this->scriptedAssistant([
@@ -166,6 +190,70 @@ class SalesConversationTest extends TestCase
         $lead = Lead::withoutGlobalScopes()->firstOrFail();
         $this->assertStringContainsString('x2', $lead->summary);
         $this->assertSame('70123456', $lead->contact_phone);
+    }
+
+    public function test_an_order_reply_without_a_product_name_still_finds_the_product_and_is_not_refused(): void
+    {
+        $llm = $this->scriptedAssistant([
+            'Quelle quantité, quel nom, quel quartier et quel paiement ? Pouvez-vous me les donner ?',
+            "Je suis désolée, mais je ne peux pas vous aider avec cette demande.
+[[NO_ANSWER]]",
+            "Merci Jures ! Récapitulatif : Duo visage x1, 5 000 FCFA, livraison 1200 logements, espèces. Votre numéro de téléphone, de préférence WhatsApp ?",
+        ]);
+        $conversation = $this->conversation('web');
+        $chat = app(ChatService::class);
+
+        $chat->handleUserMessage($conversation, 'D\'accord, je vais prendre le duo visage');
+        $reply = $chat->handleUserMessage($conversation->fresh(), 'Jures.. 1200 logements je vais régler en espèces à la livraison.');
+
+        // Le modèle a d'abord refusé : une relance avec le rappel de la commande en cours, et c'est elle qui est gardée.
+        $this->assertCount(3, $llm->requests);
+        $this->assertStringContainsString('Récapitulatif', $reply->content);
+        $this->assertStringNotContainsString('ne peux pas vous aider', $reply->content);
+        $this->assertTrue($reply->meta['grounded'], 'une réponse de commande n\'est pas une question sans réponse');
+        $this->assertStringContainsString('Rappel : tu es en train de prendre la commande', json_encode($llm->requests[2]->messages, JSON_UNESCAPED_UNICODE));
+
+        // Le message du client ne nomme pas le produit : la recherche a repris ce que l'assistant venait de dire, et le modèle en est averti.
+        $turn = implode("
+", array_map(fn ($m) => is_string($m['content']) ? $m['content'] : '', $llm->requests[1]->messages));
+        $this->assertStringContainsString('Duo visage : 5 000 XOF', $turn);
+        $this->assertStringContainsString('Contexte de la conversation : tu es en train de prendre la commande de ce client', $turn);
+    }
+
+    public function test_a_real_question_during_an_order_is_not_treated_as_an_order_answer(): void
+    {
+        $llm = $this->scriptedAssistant(['Quel est votre nom ?', 'La livraison se fait sous 48 h.']);
+        $conversation = $this->conversation('web');
+        $chat = app(ChatService::class);
+
+        $chat->handleUserMessage($conversation, 'Je veux commander le duo visage');
+        $chat->handleUserMessage($conversation->fresh(), 'Vous livrez en combien de temps ?');
+
+        $this->assertStringNotContainsString('Contexte de la conversation', $llm->lastUserTurn());
+    }
+
+    public function test_markdown_images_written_by_the_model_never_reach_the_customer(): void
+    {
+        $parsed = app(PromptBuilder::class)->parse("Voici le Duo visage.
+
+![Duo Visage](https://poupecosmetic.com/produits/Duo-visage)
+
+Souhaitez-vous commander ?");
+
+        $this->assertStringNotContainsString('![', $parsed['text']);
+        $this->assertStringNotContainsString('poupecosmetic.com', $parsed['text']);
+        $this->assertStringContainsString('Souhaitez-vous commander', $parsed['text']);
+    }
+
+    public function test_the_prompt_forbids_stating_that_there_is_no_discount_and_asks_at_most_two_questions(): void
+    {
+        $system = app(PromptBuilder::class)->system($this->bot, 'web');
+
+        $this->assertStringContainsString('n\'affirme jamais non plus « il n\'y a pas de réduction »', $system);
+        $this->assertStringContainsString('au plus DEUX questions à la fois', $system);
+        $this->assertStringContainsString('prends 1 et dis-le dans le récapitulatif', $system);
+        $this->assertStringContainsString('Commander en ligne', $system);
+        $this->assertStringContainsString('ne demande pas de confirmation supplémentaire', $system, 'la demande est enregistrée dès que tout est réuni');
     }
 
     public function test_the_order_details_reach_the_model_as_an_answer_with_the_conversation_history(): void

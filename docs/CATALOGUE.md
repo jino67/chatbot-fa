@@ -40,6 +40,10 @@ Le client envoie son catalogue, sa carte ou sa liste de prix dans « Documents �
 - La mise à jour n'est pas automatique : le client renvoie le fichier (ou « Relancer la lecture » ne suffit pas, le fichier reste l'ancien). C'est ce que l'étape 2 remplace.
 - Tests : `tests/Feature/CatalogTest.php`.
 
+## 1 bis. Les produits d'un site web
+
+Un site de boutique n'a pas besoin d'un tableau : `ProductScanner` lit les produits directement sur les pages (voir D34 à D36 de `docs/ARCHITECTURE.md`). Chaque produit devient une fiche (nom, catégorie, prix, disponibilité, description, photo, lien de commande) et une ligne de `catalog_items`, avec une référence `P12` que l'assistant utilise pour joindre la photo. Les colonnes d'achat ne concernent que les tableaux ; un site n'en montre pas. Un prix sans monnaie (« 5000 ») n'est pas lu comme un prix.
+
 ## 2. Étape 2 (à l'étude) : lire le catalogue Meta par l'API
 
 Un catalogue WhatsApp Business vit dans le **Commerce Manager** de Meta (le catalogue créé dans l'application WhatsApp Business y est rattaché au compte Meta Business du client) et se lit avec l'API Graph. La lecture suivrait, d'après la documentation générale :

@@ -190,6 +190,14 @@ Indiquez l'adresse de votre site ou d'une page :
 
 Cliquez sur **Lire le site**. Kouma respecte les règles de lecture de votre site (fichier robots.txt) et le lit poliment. Un site construit entièrement en JavaScript peut ne rien renvoyer : dans ce cas, utilisez l'onglet Texte.
 
+**La lecture se fait par tranches, et continue toute seule.** Un site de plusieurs dizaines de pages prend quelques minutes. Vous voyez « 23 pages lues sur 65 trouvées » avancer ; vous pouvez rester sur la page ou la quitter, la lecture reprend là où elle s'est arrêtée.
+
+**Ce que Kouma lit en premier, et ce qu'il ignore.** Pour que votre offre serve à l'essentiel, Kouma lit d'abord votre page d'accueil, vos pages d'information (contact, livraison, FAQ), vos catégories, puis vos produits. Il ignore les pages qui ne disent rien à un client : panier, connexion, formulaires de commande, doublons. Elles ne comptent pas dans votre limite de pages.
+
+**Vos produits sont reconnus un par un.** Quand votre site présente des produits avec un prix, Kouma en fait une fiche par produit : nom, catégorie, prix, disponibilité, description, **photo** et lien pour commander. Le prix reste toujours collé au bon produit. La liste apparaît sous vos sources, dans « Produits reconnus » : vérifiez-la, un produit mal lu se corrige sur votre site puis **Relire**.
+
+**Si votre offre ne suffit pas pour tout lire**, un encadré orange le dit : « Votre offre lit au plus N pages par site ». Après un changement d'offre, cliquez sur **Relire** pour que la nouvelle limite s'applique : la lecture déjà faite n'est pas recommencée toute seule.
+
 ### Facebook et Instagram
 
 Meta interdit aux services comme Kouma de lire automatiquement une page Facebook ou Instagram. Voici la méthode, qui prend deux minutes :
@@ -264,6 +272,15 @@ Un compteur vous indique les messages vocaux utilisés ce mois-ci sur ceux inclu
 - **Questions suggérées à l'ouverture** : jusqu'à quatre, une par ligne. Elles s'affichent comme des boutons pour guider le client.
 - **Autoriser la conversation libre** : l'assistant peut alors échanger aimablement sur autre chose que vos documents (salutations, nouvelles, questions simples) et dit qui l'a conçu quand on le lui demande. Vos prix, horaires et adresses ne viennent toujours que de vos sources. Chaque réponse compte dans votre volume mensuel ; décochez cette case pour qu'il ne réponde qu'à partir de vos sources.
 
+#### Photos
+
+Deux réglages, dans les Réglages de l'assistant :
+
+- **Photos de vos produits dans les réponses** : **Automatique** (l'assistant joint la photo quand il présente un produit, deux au plus par réponse, jamais deux fois la même dans une conversation), **Seulement quand le client demande à voir**, ou **Jamais**. Les photos viennent de votre site web et partent sur le chat du site et sur WhatsApp. Sur WhatsApp, chaque photo envoyée compte comme un message de votre volume.
+- **L'assistant lit les photos envoyées par vos clients** : un client peut envoyer la photo d'un article, d'un problème ou une capture de paiement ; l'assistant la regarde et répond. Une photo reçue compte comme une réponse de votre volume mensuel. Le champ **Que doit faire l'assistant d'une photo reçue ?** vous laisse ajouter votre propre consigne (exemple : « si c'est une capture de paiement Wave, relève le montant et la référence »). Votre métier est déjà prévu : boutique, salon, garage, restaurant, immobilier, etc. ont chacun leurs règles.
+
+> **Ce que l'assistant ne fait jamais avec une photo :** confirmer lui-même qu'un paiement est reçu (votre équipe vérifie), poser un diagnostic médical, ou garder une pièce d'identité ou une carte bancaire : ces photos ne sont pas conservées. Les autres photos sont gardées en privé 30 jours, pour que vous puissiez les voir dans la conversation, puis effacées ; la description écrite reste.
+
 #### Apparence du widget
 
 - **Titre de la fenêtre**, **couleur** et **position** (en bas à droite ou en bas à gauche).
@@ -333,6 +350,21 @@ Où coller la ligne selon votre outil :
 
 Un lien **Ouvrir la page de démonstration à partager** vous donne une page vierge avec votre assistant, que vous pouvez montrer à un collègue avant de modifier votre site. Votre webmaster peut aussi s'appuyer sur le guide du développeur.
 
+#### Je ne vois pas la bulle sur mon site
+
+Dans le bloc **Votre site web**, saisissez l'adresse d'une page de votre site et cliquez sur **Vérifier mon site** : Kouma ouvre la page comme un visiteur et vous dit pourquoi la bulle n'apparaît pas. Les cas les plus fréquents :
+
+| Verdict | Que faire |
+|---|---|
+| Le script n'est pas dans la page | Il est collé dans un fichier que cette page n'utilise pas, ou il n'a pas été mis en ligne sur le serveur (il n'existe que sur votre ordinateur), ou une version en mémoire de la page est encore servie : collez la ligne avant `</body>` du modèle commun à toutes les pages, mettez en ligne, videz le cache de votre site |
+| Le script est en commentaire | Retirez les marques `<!--` et `-->` autour de la ligne |
+| Le script est celui d'un autre assistant | Remplacez-le par la ligne affichée sur cette page |
+| Le script pointe vers une adresse de test | L'adresse de test de votre ordinateur (au lieu de celle de Kouma) a été copiée : collez la ligne de cette page |
+| L'adresse n'est pas autorisée | Ajoutez-la dans Réglages, « Sites autorisés » (peu importe avec ou sans `www`) |
+| L'assistant est désactivé | Cochez « Assistant actif » dans les Réglages |
+
+Sous le bouton, « Dernier chargement de la bulle » indique quel site l'a affichée en dernier, et quand : c'est la preuve que le script fonctionne.
+
 ### Partager le lien de discussion de votre assistant
 
 Pas de site web ? Pas besoin : votre assistant a **son propre lien**, à donner à vos clients. Ils l'ouvrent sur leur téléphone, la discussion démarre, rien à installer.
@@ -389,6 +421,10 @@ L'onglet **Conversations** liste toutes les discussions de vos clients, sur votr
 | Clôturées | Conversations terminées |
 
 Chaque ligne indique le client, le canal (WhatsApp ou site), l'état, et les demandes ouvertes (rendez-vous à confirmer, commande à confirmer, demande de personne).
+
+### Les photos envoyées par vos clients
+
+Quand un client envoie une photo, elle apparaît dans la conversation, avec sous elle **ce que l'assistant y a lu** (catégorie, résumé, détails comme le montant et la référence d'une capture de paiement). Touchez la photo pour l'agrandir. Elle est conservée 30 jours. Si vous avez pris la main sur la conversation, l'assistant ne l'analyse pas : vous la regardez vous-même.
 
 ### Lire et répondre
 
@@ -619,6 +655,18 @@ Il répond d'après vos documents. S'ils sont exacts et à jour, ses réponses l
 
 **Que se passe-t-il quand l'assistant ne sait pas ?**
 Il le dit simplement, propose de joindre votre équipe, enregistre la question dans « Questions restées sans réponse » et, après deux questions sans réponse de suite, transmet la conversation à votre équipe.
+
+**L'assistant peut-il envoyer les photos de mes produits ?**
+Oui, quand votre site les montre : il joint la photo du produit dont il parle, sur le chat du site comme sur WhatsApp, avec le nom et le prix en légende. Réglage dans les Réglages de l'assistant, rubrique Photos.
+
+**Mon client peut-il envoyer une photo à l'assistant ?**
+Oui, sur WhatsApp et sur le chat du site (bouton photo à côté du champ de saisie). L'assistant la lit et répond d'après vos produits, vos règles et votre métier.
+
+**Pourquoi l'assistant disait-il qu'il ne pouvait pas répondre en audio ?**
+L'audio dépend de votre offre (option Voix) et du réglage de l'assistant. Par défaut, il répond en audio **aux messages vocaux**. Depuis la dernière mise à jour, un client qui **demande** une réponse en audio (« explique-moi en audio ») l'obtient, sauf si vous avez coupé les réponses audio dans les Réglages. L'assistant sait maintenant ce que son offre lui permet, et ne promet plus ce qu'il ne peut pas faire.
+
+**L'assistant demande-t-il le numéro de téléphone du client ?**
+Sur **WhatsApp**, jamais : il le connaît déjà. Sur le **site web**, oui, avant de conclure une commande, pour que votre équipe puisse rappeler le client ; le nom et le numéro donnés apparaissent dans la demande.
 
 **Puis-je répondre moi-même à un client ?**
 Oui, à tout moment : ouvrez la conversation et cliquez sur **Prendre la main**. Pensez à **Rendre à l'assistant** ensuite.

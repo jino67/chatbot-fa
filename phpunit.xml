@@ -18,6 +18,8 @@
         </include>
     </source>
     <php>
+        <!-- La suite tourne dans un seul processus : 128 Mo ne suffisent plus avec les tests de photos. -->
+        <ini name="memory_limit" value="768M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

@@ -61,7 +61,7 @@ class CustomerPhotosTest extends TestCase
         ]);
     }
 
-    private function photo(int $w = 1600, int $h = 1000): string
+    private function photo(int $w = 1400, int $h = 900): string
     {
         $image = imagecreatetruecolor($w, $h);
         imagefill($image, 0, 0, imagecolorallocate($image, 120, 90, 200));
@@ -180,7 +180,7 @@ class CustomerPhotosTest extends TestCase
         $this->scriptedAssistant('Bien reçu.', self::PRODUCT_PHOTO);
         $conversation = $this->conversation();
 
-        app(CustomerImages::class)->receive($conversation, $this->photo(3000, 2000), null);
+        app(CustomerImages::class)->receive($conversation, $this->photo(1800, 1200), null);
 
         $customer = $this->lastCustomerMessage();
         [$width, $height] = getimagesizefromstring(Storage::disk('local')->get($customer->meta['image']['path']));

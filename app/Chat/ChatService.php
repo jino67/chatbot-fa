@@ -104,7 +104,11 @@ class ChatService
         }
 
         $smallTalk = ! $image && Text::isSmallTalk($text);
-        $query = $this->searchQuery($conversation, $userMessage).($image ? ' '.trim(($image['summary'] ?? '').' '.($image['details'] ?? '')) : '');
+        // Une commande en cours : le client répond aux questions de l'assistant (nom, quartier, paiement). Ce message ne dit rien du
+        // produit ; la recherche reprend donc ce que l'assistant vient de dire, et le modèle sait qu'il ne s'agit pas d'une question
+        // sans réponse (sinon il répond « je ne peux pas vous aider » faute d'extrait).
+        $order = $image ? null : $this->orderInProgress($conversation, $userMessage);
+        $query = ($order ? Text::limit($order, 200).' '.$this->recentCustomerText($conversation, $userMessage).' ' : '').$this->searchQuery($conversation, $userMessage).($image ? ' '.trim(($image['summary'] ?? '').' '.($image['details'] ?? '')) : '');
         $chunks = $smallTalk ? [] : $this->retriever->retrieve($bot, $query);
 
         // Hors salutation, sans extrait pertinent : on ne depense pas un appel LLM, on avoue ne pas savoir.
@@ -120,7 +124,7 @@ class ChatService
             system: $this->prompts->system($bot, $conversation->channel),
             messages: [
                 ...$this->prompts->history($conversation, $userMessage->id),
-                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks, (bool) ($userMessage->meta['voice'] ?? false), $userMessage->meta['lang'] ?? null, $image)],
+                ['role' => 'user', 'content' => $this->prompts->userTurn($text, $chunks, (bool) ($userMessage->meta['voice'] ?? false), $userMessage->meta['lang'] ?? null, $image, $order ? self::ORDER_NOTE : null)],
             ],
         );
 
@@ -137,6 +141,27 @@ class ChatService
         }
 
         $parsed = $this->prompts->parse($response->text);
+
+        // Malgré la consigne, le modèle refuse parfois en pleine commande : une seule relance, avec le rappel en tête.
+        if ($order && preg_match('/ne peux pas vous aider|ne trouve pas d.informations|je n.ai pas cette information/iu', $parsed['text'])) {
+            try {
+                $retry = $this->llm->complete(new LlmRequest(
+                    system: $request->system,
+                    messages: [...$request->messages, ['role' => 'assistant', 'content' => $parsed['text']], ['role' => 'user', 'content' => "Rappel : tu es en train de prendre la commande de ce client, et son dernier message répond à tes questions. Accepte ce qu'il vient de donner, reprends ce qu'il t'a déjà dit, et pose la question suivante ou fais le récapitulatif. Ne refuse pas."]],
+                ));
+                if (! $retry->refused && trim($retry->text) !== '') {
+                    $response = $retry;
+                    $parsed = $this->prompts->parse($retry->text);
+                }
+            } catch (LlmException $e) {
+                report($e);
+            }
+        }
+
+        if ($order) {
+            $parsed['no_answer'] = false; // une réponse de commande n'est pas une question sans réponse
+        }
+
         $answer = $parsed['text'] !== '' ? $parsed['text'] : $bot->fallback();
         $grounded = ! $parsed['no_answer'] && ($smallTalk || $open || $chunks !== []);
 
@@ -182,7 +207,7 @@ class ChatService
 
         // Commande, rendez-vous ou devis confirmé par le client : une demande à traiter, et le propriétaire est prévenu.
         if ($parsed['lead'] && $grounded && ! $parsed['handoff']) {
-            $contact = $this->contactGiven($conversation, $parsed['lead']);
+            $contact = $this->contactGiven($conversation, $parsed['lead'], $userMessage);
             $this->leads->capture($conversation, $parsed['lead']['kind'], $parsed['lead']['summary'], $parsed['lead']['summary'] ?: null, $contact);
         }
 
@@ -198,6 +223,34 @@ class ChatService
         );
     }
 
+    private const ORDER_NOTE = "tu es en train de prendre la commande de ce client. Son message répond à ta dernière question (nom, quartier, paiement, quantité, numéro, « oui ») : accepte-le, reprends tout ce qu'il t'a déjà donné plus haut, puis pose la question suivante ou fais le récapitulatif. Ce n'est pas une question sur l'entreprise : ne refuse pas et n'ajoute pas [[NO_ANSWER]].";
+
+    /** Ce que le client a demandé juste avant (le produit dont il parle), pour retrouver sa fiche pendant une commande. */
+    private function recentCustomerText(Conversation $conversation, Message $current): string
+    {
+        return $conversation->messages()->where('role', Message::USER)->where('id', '<', $current->id)->latest('id')->limit(3)->pluck('content')
+            ->map(fn ($text) => Text::limit($text, 150))->reverse()->implode(' ');
+    }
+
+    /**
+     * Le dernier message de l'assistant demandait-il des informations de commande (nom, quartier, paiement, quantité...) ? Un
+     * message du client sans point d'interrogation est alors sa réponse, et non une question sur l'entreprise. Rend le texte de
+     * l'assistant (pour retrouver le produit), ou null.
+     */
+    private function orderInProgress(Conversation $conversation, Message $current): ?string
+    {
+        if (str_contains($current->content, '?')) {
+            return null;
+        }
+
+        $last = $conversation->messages()->where('role', Message::ASSISTANT)->where('id', '<', $current->id)->latest('id')->first();
+        if (! $last || ! str_contains($last->content, '?')) {
+            return null;
+        }
+
+        return preg_match('/\b(votre nom|quartier|adresse de livraison|moyen de paiement|mode de paiement|quantite|numero de telephone|votre numero|passer commande|commander)\b/u', Text::fold($last->content)) ? $last->content : null;
+    }
+
     /**
      * Nom et téléphone que le client a donnés pour sa commande. Sur WhatsApp le numéro est déjà connu (celui de la
      * conversation) : on ne le remplace jamais par un numéro écrit par le modèle. Sur le site web, un numéro donné est
@@ -206,9 +259,18 @@ class ChatService
      * @param  array{kind:string,summary:string,name:?string,phone:?string}  $lead
      * @return array{name:?string, phone:?string}
      */
-    private function contactGiven(Conversation $conversation, array $lead): array
+    private function contactGiven(Conversation $conversation, array $lead, Message $current): array
     {
         $phone = $conversation->channel === 'whatsapp' ? null : $lead['phone'];
+
+        // Le modèle met parfois le numéro de l'entreprise (lu dans ses consignes) à la place de celui du client : refusé. Le numéro que
+        // le client a écrit lui-même, dans ce message ou les précédents, est alors celui qu'on garde.
+        if ($phone && $this->isBusinessNumber($conversation, $phone)) {
+            $phone = null;
+        }
+        if ($conversation->channel !== 'whatsapp' && ! $phone) {
+            $phone = $this->phoneWrittenByCustomer($conversation, $current);
+        }
 
         $updates = [];
         if ($lead['name'] && ! $conversation->contact_name) {
@@ -222,6 +284,44 @@ class ChatService
         }
 
         return ['name' => $lead['name'], 'phone' => $phone];
+    }
+
+    /** Le numéro est-il l'un de ceux de l'entreprise (sa fiche, ses consignes, la plateforme) ? Comparaison sur les 8 derniers chiffres. */
+    private function isBusinessNumber(Conversation $conversation, string $phone): bool
+    {
+        $bot = $conversation->bot()->withoutGlobalScopes()->with('workspace')->first();
+        $brand = app(\App\Services\PlatformSettings::class)->brand();
+        $sources = [(string) ($bot?->profile('phone') ?? ''), (string) ($bot?->workspace?->phone ?? ''), (string) ($bot?->instructions ?? ''), (string) ($brand['whatsapp'] ?? '')];
+
+        $business = [];
+        foreach ($sources as $source) {
+            if (preg_match_all('/\+?\d[\d\s().-]{6,18}\d/', $source, $m)) {
+                foreach ($m[0] as $found) {
+                    $business[] = substr(preg_replace('/\D+/', '', $found), -8);
+                }
+            }
+        }
+
+        return in_array(substr(preg_replace('/\D+/', '', $phone), -8), $business, true);
+    }
+
+    /** Le numéro que le client a écrit lui-même (message courant, puis les trois précédents), hors numéros de l'entreprise. */
+    private function phoneWrittenByCustomer(Conversation $conversation, Message $current): ?string
+    {
+        $texts = [$current->content, ...$conversation->messages()->where('role', Message::USER)->where('id', '<', $current->id)->latest('id')->limit(3)->pluck('content')->all()];
+
+        foreach ($texts as $text) {
+            if (preg_match_all('/\+?\d[\d\s().-]{6,18}\d/', (string) $text, $m)) {
+                foreach (array_reverse($m[0]) as $found) {
+                    $digits = preg_replace('/\D+/', '', $found);
+                    if (strlen($digits) >= 8 && strlen($digits) <= 15 && ! $this->isBusinessNumber($conversation, $found)) {
+                        return (str_starts_with(trim($found), '+') ? '+' : '').$digits;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

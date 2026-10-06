@@ -249,17 +249,24 @@ Parcourez cette liste dans l'ordre, dans l'espace du client :
 4. **Le quota de réponses du mois est-il atteint ?** Tableau de bord, « Consommation du mois ». Proposez une offre supérieure.
 5. **Un fournisseur d'IA est-il en difficulté ?** La vue d'ensemble affiche un bandeau rouge. Prévenez le super admin.
 6. **Pour WhatsApp** : le canal est-il actif ? la conversation est-elle en « prise en main » (l'assistant se tait) ? la fenêtre de 24 heures est-elle fermée (seul un modèle approuvé peut partir) ? le webhook est-il bien configuré ?
-7. **Pour le widget** : la ligne de code est-elle bien placée avant `</body>` ? le domaine est-il dans les **sites autorisés** ? l'assistant est-il actif ?
+7. **Pour le widget** : utilisez le bouton **Vérifier mon site** de la page Canaux du client (adresse d'une page de son site) : il dit si le script est dans la page que le site envoie vraiment, s'il est en commentaire, s'il porte la bonne clé, s'il pointe vers une adresse de test de l'ordinateur du client ou si l'adresse n'est pas dans les **sites autorisés** (avec ou sans `www`, c'est la même). « Dernier chargement de la bulle » prouve qu'un site l'a bien affichée.
 
 ### Diagnostic : une source en « Échec »
 
 Le motif est affiché sur la source. Causes courantes : fichier illisible ou protégé par mot de passe, format ancien (`.xls` : demander un `.xlsx` ou CSV), site qui bloque la lecture ou construit en JavaScript (utiliser l'onglet Texte), délai dépassé sur un très gros fichier (le découper). Cliquez sur **Relire** après correction.
 
+### Diagnostic : « le site n'est pas lu en entier »
+
+1. **L'offre limite-t-elle les pages ?** Sous la source, un encadré orange « Votre offre lit au plus N pages par site » le dit. Après un changement d'offre, cliquez sur **Relire** : la nouvelle limite ne s'applique qu'à la lecture suivante.
+2. **La lecture est-elle encore en cours ?** « 23 pages lues sur 65 trouvées » : elle continue toute seule (page ouverte, ou toutes les 5 minutes par la tâche planifiée).
+3. **Pages ignorées** : panier, connexion, formulaires de commande et doublons ne sont jamais lus et ne comptent pas dans la limite.
+4. **Un produit manque ou a un mauvais prix** : voir « Produits reconnus » sous les sources ; un site dont les prix sont écrits sans monnaie (« 5000 » sans FCFA) n'est pas lu comme un produit.
+
 ### Diagnostic : « l'assistant se trompe »
 
 1. Ouvrez l'onglet **Tester** et reproduisez la question : le panneau « Comment l'assistant a répondu » montre les extraits utilisés.
 2. Si l'information est **absente** : ajoutez-la (document, texte, question / réponse).
-3. Si l'information est **périmée** : supprimez ou remplacez la source.
+3. Si l'information est **périmée** : supprimez ou remplacez la source. Pour un site web, cliquez sur **Relire** : un produit dont le prix est faux apparaît dans « Produits reconnus » avec le prix lu sur le site (corrigez-le sur le site, puis relisez).
 4. Si l'information est **bonne mais mal formulée** : ajustez la consigne.
 5. Regardez les **questions sans réponse** de l'onglet Analytique et répondez-y avec le client.
 

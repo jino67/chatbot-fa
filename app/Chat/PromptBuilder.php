@@ -89,6 +89,7 @@ Forme des réponses (adapte la forme au contenu de chaque réponse)
 - Prix ou liste d'articles : une ligne par élément, « • Article : **prix** ». Étapes d'une démarche : liste numérotée. Horaires : une ligne par période. Question fermée : commence par « Oui » ou « Non », puis précise. Coordonnées : une information par ligne (adresse, téléphone, lien). Information simple : une à trois phrases.
 - Mets en **gras** les prix, dates, horaires et noms importants, sans en abuser. Une liste ne dépasse pas six éléments : au-delà, propose de préciser.
 - Pose au plus une question de suivi, et seulement si elle fait avancer le visiteur.
+- N'écris jamais d'image au format Markdown ni d'adresse d'image : une photo se joint avec le marqueur prévu, quand il existe.
 - Quand des choix évidents se présentent (voir un tarif, commander, prendre rendez-vous, parler à quelqu'un), termine par une dernière ligne [[REPLIES: choix 1 | choix 2 | choix 3]] : deux ou trois réponses très courtes (20 caractères maximum) que le visiteur peut toucher. N'en ajoute pas quand la suite n'est pas évidente, ni après un transfert.
 - {$channelRule}
 
@@ -109,7 +110,7 @@ PROMPT;
 - Quand le client demande une gamme, une catégorie ou « vos produits », donne un aperçu court (cinq éléments au plus, avec leur prix) puis une question pour affiner.
 - Chaque produit garde ses propres caractéristiques : ne mélange jamais les prix, les effets ou la composition de deux produits, même quand leurs noms se ressemblent. Si plusieurs produits portent un nom voisin, nomme-les précisément ou demande lequel intéresse le client. Reprends ce que dit l'extrait (par exemple « non éclaircissant ») sans l'inverser.
 - Au plus un conseil complémentaire à la fois (produit associé, quantité supérieure), seulement s'il figure dans les extraits et que le client semble décidé.
-- Objection (« c'est cher », « je vais réfléchir », « il n'y a pas de réduction ? ») : reste positif et rappelle en une phrase ce que le client y gagne d'après les extraits. N'invente jamais une remise, un code promo ou un prix spécial. Sans promotion dans les extraits, dis-le simplement et propose de noter la demande pour que l'équipe de {$company} puisse y répondre (ajoute-la au résumé de la commande si le client commande).
+- Objection (« c'est cher », « je vais réfléchir », « il n'y a pas de réduction ? ») : reste positif et rappelle en une phrase ce que le client y gagne d'après les extraits. N'invente jamais une remise, un code promo ou un prix spécial, et n'affirme jamais non plus « il n'y a pas de réduction » : tu ne connais que ce que disent les extraits. Sans promotion dans les extraits, dis que tu n'en as pas connaissance et propose de noter la demande pour que l'équipe de {$company} puisse y répondre (ajoute-la au résumé de la commande si le client commande).
 - Le client dit merci, ok ou « je réfléchis » : réponds brièvement, laisse la porte ouverte, ne relance pas.
 - Tu peux additionner les prix des extraits pour donner un total (montre le calcul), jamais estimer un prix absent.
 CRAFT;
@@ -123,11 +124,12 @@ CRAFT;
             : "- Sur le site web, tu ne connais pas le numéro du client : avant de conclure, demande-lui un numéro de téléphone, de préférence WhatsApp, pour que l'équipe puisse le recontacter. Sans numéro, la commande ne peut pas être traitée. Même si les consignes de l'entreprise ne le prévoient pas, demande-le.";
 
         return <<<FLOW
-- Dès que le client veut acheter, réserver ou demande un devis, confirme l'article ou la prestation (nom et prix exacts des extraits), puis réunis ce qui manque, une ou deux questions à la fois : quantité ou date, nom, quartier ou adresse de livraison, moyen de paiement (ceux des extraits). Reprends ce que le client a déjà dit : ne redemande jamais une information donnée plus haut dans la conversation.
+- Dès que le client veut acheter, réserver ou demande un devis, confirme l'article ou la prestation (nom et prix exacts des extraits), puis réunis ce qui manque, au plus DEUX questions à la fois (jamais une liste de quatre) : nom, quartier ou adresse de livraison, moyen de paiement (ceux des extraits), date pour un rendez-vous. Quantité non précisée : prends 1 et dis-le dans le récapitulatif, sans la demander. Reprends ce que le client a déjà dit : ne redemande jamais une information donnée plus haut dans la conversation.
 {$contact}
 - Les réponses du client à tes questions (nom, quartier, mode de paiement, quantité, numéro, « oui », « d'accord ») ne sont pas des questions sur {$company} : accepte-les, remercie, passe à la suite. Ne réponds jamais « je ne peux pas vous aider » à ce moment-là, et n'ajoute pas [[NO_ANSWER]].
-- Une fois tout réuni, fais un récapitulatif court (articles, total calculé avec les prix des extraits, adresse, paiement), ajoute le marqueur [[LEAD: ...]] et annonce que l'équipe confirme la commande et recontacte le client. Ne promets ni date de livraison, ni frais, ni paiement reçu qui ne figurent pas dans les extraits.
+- Une fois tout réuni (article, nom, adresse, paiement, et sur le site web le téléphone), fais un récapitulatif court (articles, total calculé avec les prix des extraits, adresse, paiement) ET ajoute le marqueur [[LEAD: ...]] dans ce même message : ne demande pas de confirmation supplémentaire, l'équipe confirme la commande de son côté. Annonce que l'équipe confirme et recontacte le client, et termine par « Dites-moi si vous voulez modifier quelque chose ». Si le client dit « oui » ou « d'accord » et que tu n'as pas encore ajouté le marqueur, ajoute-le maintenant. Ne promets ni date de livraison, ni frais, ni paiement reçu qui ne figurent pas dans les extraits.
 - Si le client change d'avis ou complète sa commande plus tard, renvoie le marqueur avec le résumé à jour.
+- Si le client préfère commander lui-même et qu'un extrait donne « Commander en ligne : » suivi d'un lien, donne ce lien tel quel ; n'en invente jamais un.
 FLOW;
     }
 
@@ -211,7 +213,7 @@ FLOW;
     }
 
     /** @param list<RetrievedChunk> $chunks */
-    public function userTurn(string $question, array $chunks, bool $voice = false, ?string $language = null, ?array $image = null): string
+    public function userTurn(string $question, array $chunks, bool $voice = false, ?string $language = null, ?array $image = null, ?string $note = null): string
     {
         $budget = (int) config('platform.rag.max_context_chars');
         $blocks = [];
@@ -227,7 +229,7 @@ FLOW;
             $blocks[] = '<extrait id="'.($i + 1).'" source="'.str_replace('"', "'", $label).'">'."\n".$body."\n</extrait>";
         }
 
-        $context = $blocks === [] ? '(aucun extrait pertinent)' : implode("\n", $blocks);
+        $context = $blocks === [] ? '(aucun extrait pertinent pour ce message : ce n\'est pas une raison de refuser, voir le contexte de la conversation)' : implode("\n", $blocks);
         $now = now()->locale('fr')->translatedFormat('l j F Y, H\hi');
 
         $origin = $voice
@@ -237,7 +239,7 @@ FLOW;
         // Langue choisie dans le sélecteur du widget : une consigne de la plateforme, jamais un texte du visiteur.
         $chosen = Languages::has($language) ? 'Langue choisie par le visiteur : '.mb_strtolower(Languages::name($language)).'. Réponds '.Languages::in($language).".\n\n" : '';
 
-        return "<contexte>\n{$context}\n</contexte>\n\nDate et heure : {$now}\n\n".$this->imageBlock($image).$chosen.$origin.$this->neutralize($question);
+        return "<contexte>\n{$context}\n</contexte>\n\nDate et heure : {$now}\n\n".$this->imageBlock($image).($note !== null ? "Contexte de la conversation : {$note}\n\n" : '').$chosen.$origin.$this->neutralize($question);
     }
 
     /**
@@ -336,6 +338,8 @@ FLOW;
         // Retire les marqueurs connus, puis tout marqueur mal forme que le modele aurait invente.
         $text = str_replace([self::NO_ANSWER, self::HANDOFF], '', $raw);
         $text = preg_replace('/\[\[\s*REPLIES\s*:.*?\]\]/isu', '', $text);
+        // Une image Markdown ne s'affiche pas (et son adresse serait celle d'une page) : les photos passent par [[PHOTO: ...]].
+        $text = preg_replace('/!\[[^\]]*\]\([^)]*\)/u', '', $text);
         $text = preg_replace('/\[\[[A-Z_]{3,}[^\]]*\]\]/u', '', $text);
 
         return [

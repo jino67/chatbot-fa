@@ -150,7 +150,10 @@ class PeopleBulkTest extends TestCase
         Mail::assertSent(Notice::class, 3);
 
         // Le lendemain, le compteur repart de zéro.
-        Carbon::setTestNow(now()->addDay());
+        // Les envois portent l'horloge réelle (celle des horodatages de la base), pas l'horloge figée du test : on les ramène au jour figé,
+        // sinon le test ne tient que le jour où l'horloge réelle tombe sur le 5 octobre.
+        CustomerContact::query()->update(['created_at' => now()]);
+        Carbon::setTestNow(now()->addDay()->addMinutes(5));
         $this->send()->assertSessionHas('status');
         Mail::assertSent(Notice::class, 5);
     }

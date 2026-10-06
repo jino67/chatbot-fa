@@ -340,7 +340,9 @@ final class CrawlRun
 
     /**
      * Le même produit lu sur plusieurs pages (fiche, liste, accueil) devient un seul produit : la fiche, lue la première,
-     * l'emporte, et les listes complètent ce qui lui manque (catégorie, photo).
+     * l'emporte, et les listes complètent ce qui lui manque (catégorie, photo). Deux produits qui ont chacun leur page restent
+     * deux produits même s'ils portent le même nom (« Duo visage » existe en Réparatrice et en Glow Skin, à deux prix) : leurs
+     * noms sont alors précisés par leur catégorie, pour que l'assistant ne les confonde jamais.
      *
      * @param  list<CatalogProduct>  $products
      * @return list<CatalogProduct>
@@ -352,18 +354,84 @@ final class CrawlRun
 
         foreach ($products as $product) {
             $key = CatalogItem::keyFor($product);
-            $nameKey = trim(preg_replace('/\s+/', ' ', Text::fold($product->name)));
+            $nameKey = $this->nameKey($product->name);
 
             if (isset($byKey[$key])) {
                 $byKey[$key] = $byKey[$key]->mergedWith($product);
-            } elseif (isset($byName[$nameKey]) && isset($byKey[$byName[$nameKey]])) {
-                $byKey[$byName[$nameKey]] = $byKey[$byName[$nameKey]]->mergedWith($product);
-            } else {
+
+                continue;
+            }
+
+            // Un produit sans adresse (une carte vue dans une liste) rejoint le produit de même nom, et un produit avec adresse
+            // rejoint celui qui n'en avait pas encore ; deux produits qui ont chacun leur adresse ne se rejoignent jamais.
+            $target = null;
+            foreach ($byName[$nameKey] ?? [] as $candidate) {
+                if ($product->link === null || $byKey[$candidate]->link === null) {
+                    $target = $candidate;
+                    break;
+                }
+            }
+
+            if ($target === null) {
                 $byKey[$key] = $product;
-                $byName[$nameKey] = $key;
+                $byName[$nameKey][] = $key;
+
+                continue;
+            }
+
+            $merged = $byKey[$target]->mergedWith($product);
+            if ($byKey[$target]->link === null && $product->link !== null) {
+                unset($byKey[$target]);
+                $byName[$nameKey] = array_values(array_diff($byName[$nameKey], [$target]));
+                $key = CatalogItem::keyFor($merged);
+                $byName[$nameKey][] = $key;
+                $byKey[$key] = $merged;
+            } else {
+                $byKey[$target] = $merged;
             }
         }
 
-        return array_values($byKey);
+        return $this->disambiguate(array_values($byKey));
+    }
+
+    /** @param list<CatalogProduct> $products @return list<CatalogProduct> */
+    private function disambiguate(array $products): array
+    {
+        $groups = [];
+        foreach ($products as $i => $product) {
+            $groups[$this->nameKey($product->name)][] = $i;
+        }
+
+        foreach ($groups as $indexes) {
+            if (count($indexes) < 2) {
+                continue;
+            }
+
+            $categories = array_map(fn ($i) => $products[$i]->category, $indexes);
+            $byCategory = count(array_filter($categories)) === count($indexes) && count(array_unique($categories)) === count($indexes);
+
+            foreach ($indexes as $i) {
+                $product = $products[$i];
+                $label = $byCategory ? $product->category : $this->slug($product->link);
+                if ($label !== null && $label !== '') {
+                    $products[$i] = new CatalogProduct(...[...$product->toArray(), 'name' => $product->name.' ('.$label.')']);
+                }
+            }
+        }
+
+        return $products;
+    }
+
+    private function nameKey(string $name): string
+    {
+        return trim(preg_replace('/\s+/', ' ', Text::fold($name)));
+    }
+
+    /** « /produits/Duo-visage-glow-skin » donne « duo visage glow skin ». */
+    private function slug(?string $link): ?string
+    {
+        $last = $link ? basename(rawurldecode((string) parse_url($link, PHP_URL_PATH))) : '';
+
+        return $last !== '' ? mb_strtolower(trim(str_replace(['-', '_'], ' ', $last))) : null;
     }
 }

@@ -140,6 +140,12 @@ Meta fournit un numéro d'essai et une liste de destinataires autorisés : suffi
 **À votre charge** : servir l'application en HTTPS ; limiter l'accès au back-office ; sauvegarder `APP_KEY` (sans elle, les identifiants chiffrés sont illisibles) ; faire tourner les jetons en cas de départ d'un membre de l'équipe ; suivre la note de qualité des numéros.
 
 
+## 8 bis. Photos et vocaux
+
+- **Photos de produits envoyées au client** : `WhatsAppGateway::sendImage` (Meta : message `image` avec `link` et légende ; Twilio : `MediaUrl` et `Body`). L'adresse est celle de la plateforme (`/media/produit/{id}.jpg`, signée) : Meta et Twilio doivent pouvoir la joindre, donc `APP_URL` en HTTPS public (ou `TWILIO_WEBHOOK_BASE_URL`). La photo part avant le texte ; chaque photo compte comme un message sortant du volume de l'offre.
+- **Photos reçues du client** : Meta donne un identifiant de média (téléchargé avec le jeton du canal), Twilio une adresse (téléchargée avec les identifiants du compte). Elles passent par `CustomerImages` (lecture par le modèle de vision, brief du métier, conservation 30 jours).
+- **Réponse en audio demandée par écrit** (« explique-moi en audio ») : le vocal part si l'offre inclut la voix et si les réponses audio ne sont pas coupées (réglage `voice_out` différent de « never »).
+
 ## 9. Modèles de messages : bibliothèque et création automatique
 
 Un modèle est un message approuvé par WhatsApp, indispensable pour écrire à un client au-delà de 24 heures sans réponse de sa part (rappel de rendez-vous, suivi de commande, relance). Kouma les crée **sans passer par la console du fournisseur**.

@@ -89,8 +89,9 @@ return [
         'user_agent' => env('PLATFORM_CRAWLER_UA', 'KoumaBot/1.0'),
         'timeout' => 12,
         'max_bytes' => 2_000_000,
-        'delay_ms' => 250,
-        'max_depth' => 2,
+        'delay_ms' => 150,
+        // Accueil, catégorie, page de liste suivante, produit : trois clics depuis la page de départ suffisent pour une boutique.
+        'max_depth' => 3,
         'respect_robots' => true,
         // Reseaux sociaux : jamais crawles (conditions d'utilisation de Meta), import assiste uniquement.
         'blocked_hosts' => ['facebook.com', 'fb.com', 'fb.me', 'instagram.com', 'x.com', 'twitter.com', 'tiktok.com', 'linkedin.com'],

@@ -186,11 +186,24 @@ class WhatsAppTest extends TestCase
         $this->metaChannel();
         $this->fakeGraph();
 
-        $this->postMeta($this->metaPayload('', 'wamid.IMG1', 'image'))->assertOk();
+        $this->postMeta($this->metaPayload('', 'wamid.DOC1', 'document'))->assertOk();
 
         $sent = $this->textMessagesSent();
         $this->assertCount(1, $sent);
         $this->assertStringContainsString('messages écrits', $sent[0]['text']['body']);
+    }
+
+    public function test_a_photo_that_cannot_be_opened_asks_to_be_resent_instead_of_claiming_text_only(): void
+    {
+        $this->metaChannel();
+        $this->fakeGraph();
+
+        // Photo sans identifiant de média : impossible à télécharger.
+        $this->postMeta($this->metaPayload('', 'wamid.IMG1', 'image'))->assertOk();
+
+        $sent = $this->textMessagesSent();
+        $this->assertCount(1, $sent);
+        $this->assertStringContainsString('renvoyer', $sent[0]['text']['body']);
     }
 
     public function test_the_bot_stays_silent_on_whatsapp_when_a_human_has_taken_over(): void

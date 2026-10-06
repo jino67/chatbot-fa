@@ -71,7 +71,7 @@ class ProductPhotosTest extends TestCase
         ]);
     }
 
-    private function png(int $w = 1600, int $h = 1200): string
+    private function png(int $w = 1400, int $h = 1100): string
     {
         $image = imagecreatetruecolor($w, $h);
         imagefill($image, 0, 0, imagecolorallocate($image, 190, 110, 80));

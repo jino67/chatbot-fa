@@ -70,6 +70,10 @@ Le serveur intégré est **mono-processus** : une requête à la fois. Une répo
 | `php artisan platform:resync-due` | Relance les sites à mise à jour automatique (planifié toutes les heures) |
 | `php artisan leads:remind` | Relance le propriétaire pour les demandes sans réponse (planifié toutes les 10 minutes) |
 | `php artisan platform:check-wallets` | Alerte quand le solde Twilio est bas ou qu'un client approche son volume (planifié toutes les heures) |
+| `php artisan sources:continue` | Reprend la lecture des sites restés en cours (planifié toutes les 5 minutes) |
+| `php artisan catalog:warm-images` | Prépare les photos des produits lus sur les sites (planifié toutes les 5 minutes) |
+| `php artisan images:prune` | Efface les photos de clients conservées plus de 30 jours (planifié chaque jour) |
+| `php artisan platform:reset-test-data --workspace=3 --payments` | Remet à zéro les paiements simulés d'un espace (simulation sans `--force`) |
 | `php artisan queue:work` | Worker de la file (obligatoire si `QUEUE_CONNECTION` n'est pas `sync`) |
 
 ## Installer le widget sur un site

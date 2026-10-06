@@ -42,6 +42,7 @@ final class ImageTools
         ob_start();
         imagejpeg($canvas, null, $quality);
         $bytes = (string) ob_get_clean();
+        unset($source, $canvas);
 
         return $bytes !== '' ? ['bytes' => $bytes, 'width' => $newWidth, 'height' => $newHeight] : null;
     }

@@ -153,6 +153,10 @@ final class ProductScanner implements PageTransformer
                 if ($main->category === null && $this->crumbs !== [] && Text::fold(end($this->crumbs)) !== Text::fold($name)) {
                     $main = new CatalogProduct(...[...$main->toArray(), 'category' => end($this->crumbs)]);
                 }
+                // La fiche se désigne elle-même : son adresse est celle de la page (un lien du bloc pourrait être celui d'un fil d'Ariane).
+                if ($baseUrl) {
+                    $main = new CatalogProduct(...[...$main->toArray(), 'link' => $baseUrl]);
+                }
                 $found[] = $this->main = $main;
             }
         }
@@ -290,20 +294,18 @@ final class ProductScanner implements PageTransformer
             return $found;
         }
 
-        $merged = [];
-        foreach ($structured as $product) {
-            $merged[$this->key($product->name)] = $product;
-        }
-        foreach ($found as $product) {
-            $key = $this->key($product->name);
-            $merged[$key] = isset($merged[$key]) ? $merged[$key]->mergedWith($product) : $product;
-        }
+        $merged = $this->unique([...$structured, ...$found]);
 
         if ($this->main) {
-            $this->main = $merged[$this->key($this->main->name)] ?? $this->main;
+            foreach ($merged as $product) {
+                if ($this->same($product, $this->main)) {
+                    $this->main = $product;
+                    break;
+                }
+            }
         }
 
-        return array_values($merged);
+        return $merged;
     }
 
     /* ---------- Analyse de la page ---------- */
@@ -803,10 +805,28 @@ final class ProductScanner implements PageTransformer
     {
         $unique = [];
         foreach ($products as $product) {
-            $key = $this->key($product->name);
-            $unique[$key] = isset($unique[$key]) ? $unique[$key]->mergedWith($product) : $product;
+            foreach ($unique as $k => $existing) {
+                if ($this->same($existing, $product)) {
+                    $unique[$k] = $existing->mergedWith($product);
+                    continue 2;
+                }
+            }
+            $unique[] = $product;
         }
 
-        return array_values($unique);
+        return $unique;
+    }
+
+    /**
+     * Le même produit ? Même nom, et pas deux adresses différentes : « Duo visage » en Réparatrice et « Duo visage » en Glow
+     * Skin portent le même nom sur le site, mais ce sont deux produits à deux prix.
+     */
+    private function same(CatalogProduct $a, CatalogProduct $b): bool
+    {
+        if ($this->key($a->name) !== $this->key($b->name)) {
+            return false;
+        }
+
+        return $a->link === null || $b->link === null || \App\Ingestion\Crawler\UrlRules::dedupeKey($a->link) === \App\Ingestion\Crawler\UrlRules::dedupeKey($b->link);
     }
 }
