@@ -74,6 +74,8 @@ class Message extends Model
             'id' => $this->id,
             'role' => $this->role,
             'content' => $this->content,
+            // Le client a demandé une réponse en audio : le widget la lit à voix haute (si l'offre le permet).
+            'wants_audio' => $this->role === self::ASSISTANT && ! empty($this->meta['audio_requested']),
             'image' => $this->role === self::USER && ! empty($this->meta['image']['category']) ? ['url' => $this->imageUrl(), 'category' => $this->meta['image']['category']] : null,
             'at' => $this->created_at?->toIso8601String(),
             // Photos de produits jointes à la réponse : de quoi les afficher (adresse publique, légende).

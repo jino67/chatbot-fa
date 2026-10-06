@@ -228,6 +228,12 @@ class Bot extends Model
 
         return $origins;
     }
+    /** Origine sans barre finale ni « www. » : https://www.exemple.com et https://exemple.com sont le même site pour un visiteur. */
+    private static function bareOrigin(string $origin): string
+    {
+        return preg_replace('#^(https?://)www\.#', '$1', rtrim(strtolower($origin), '/'));
+    }
+
     /** Une origine est autorisee si la liste est vide (mode ouvert) ou la contient. */
     public function allowsOrigin(?string $origin): bool
     {
@@ -237,7 +243,7 @@ class Bot extends Model
             return true;
         }
 
-        $origin = rtrim(strtolower($origin), '/');
+        $origin = self::bareOrigin($origin);
 
         // Les pages de la plateforme elle-même (lien de discussion à partager, démonstration) ne dépendent pas du site du client.
         if (in_array($origin, $this->platformOrigins(), true)) {
@@ -245,7 +251,7 @@ class Bot extends Model
         }
 
         foreach ($allowed as $candidate) {
-            $candidate = rtrim(strtolower(trim($candidate)), '/');
+            $candidate = self::bareOrigin(trim($candidate));
 
             if ($candidate === $origin) {
                 return true;

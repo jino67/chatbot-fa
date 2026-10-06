@@ -29,6 +29,31 @@
                         class="absolute right-2 top-2 rounded bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20" x-text="copied ? 'Copié' : 'Copier'"></button>
             </div>
 
+            @php $check = session('install_check'); @endphp
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-sm font-semibold text-brand-950">Vérifier que la bulle est bien installée</h3>
+                <p class="mt-1 text-xs text-slate-600">Indiquez l'adresse d'une page de votre site : nous l'ouvrons comme un visiteur et vous disons si le script y est, et sinon pourquoi.</p>
+                <form method="POST" action="{{ route('channels.check-install', $bot) }}" class="mt-3 flex flex-wrap gap-2">
+                    @csrf
+                    <input name="url" type="text" required maxlength="300" value="{{ old('url', $check['url'] ?? '') }}" placeholder="https://votre-site.com" class="field !mt-0 min-w-0 flex-1" aria-label="Adresse de votre site">
+                    <button class="btn-primary">Vérifier mon site</button>
+                </form>
+                <x-input-error :messages="$errors->get('url')" class="mt-1" />
+                @if ($check)
+                    <div @class(['mt-3 rounded-lg px-4 py-3 text-sm', 'bg-emerald-50 text-emerald-900' => $check['ok'], 'bg-red-50 text-red-900' => ! $check['ok']])>
+                        <p class="font-semibold">{{ $check['ok'] ? '✓' : '✗' }} {{ $check['title'] }}</p>
+                        <p class="mt-1">{{ $check['help'] }}</p>
+                    </div>
+                @endif
+                <p class="mt-3 text-xs text-slate-500">
+                    @if ($widgetSeen)
+                        Dernier chargement de la bulle : <strong>{{ $widgetSeen['origin'] ?: 'un site' }}</strong>, {{ \Illuminate\Support\Carbon::parse($widgetSeen['at'])->diffForHumans() }}.
+                    @else
+                        Aucun chargement de la bulle détecté pour l'instant : une fois le script en ligne, ouvrez une page de votre site et revenez ici.
+                    @endif
+                </p>
+            </div>
+
             <ul class="list-disc space-y-1 ps-5 text-sm text-slate-600">
                 <li><strong>WordPress</strong> : extension « Insert Headers and Footers », zone « Footer ».</li>
                 <li><strong>Shopify</strong> : Boutique en ligne, Thèmes, Modifier le code, <code>theme.liquid</code>.</li>

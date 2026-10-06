@@ -684,4 +684,73 @@ class VoiceTest extends TestCase
         $this->assertSame(0, $usage->voiceAllowance($this->workspace->fresh()));
         $this->assertFalse($usage->canUseVoice($this->workspace->fresh()));
     }
+    /* ---------- Réponse en audio demandée par écrit ---------- */
+
+    private function metaText(string $body, string $id): array
+    {
+        $payload = $this->metaAudio();
+        $payload['entry'][0]['changes'][0]['value']['messages'][0] = ['from' => self::CUSTOMER, 'id' => $id, 'timestamp' => (string) time(), 'type' => 'text', 'text' => ['body' => $body]];
+
+        return $payload;
+    }
+
+    public function test_a_written_request_for_audio_gets_a_spoken_answer_even_in_mirror_mode(): void
+    {
+        $this->metaChannel();
+        $this->setVoiceOut('mirror');
+        $this->fakeMeta();
+
+        $this->postMeta($this->metaText("Explique-moi en audio les horaires d'ouverture de la boutique le samedi", 'wamid.ASK1'))->assertOk();
+
+        $answer = Message::withoutGlobalScopes()->where('role', 'assistant')->firstOrFail();
+        $this->assertTrue($answer->meta['audio_requested']);
+        $this->assertTrue($answer->meta['voice_reply'], 'le vocal est parti');
+        $this->assertCount(1, $this->sentToMeta('audio'));
+        $this->assertCount(1, $this->sentToMeta('text'), 'le texte part aussi');
+    }
+
+    public function test_an_ordinary_written_question_is_still_not_spoken_in_mirror_mode(): void
+    {
+        $this->metaChannel();
+        $this->setVoiceOut('mirror');
+        $this->fakeMeta();
+
+        $this->postMeta($this->metaText(self::QUESTION, 'wamid.ASK2'))->assertOk();
+
+        $this->assertCount(0, $this->sentToMeta('audio'));
+    }
+
+    public function test_the_owner_who_switched_audio_replies_off_is_respected_even_when_asked(): void
+    {
+        $this->metaChannel();
+        $this->setVoiceOut('never');
+        $this->fakeMeta();
+
+        $this->postMeta($this->metaText("Explique-moi en audio les horaires d'ouverture de la boutique le samedi", 'wamid.ASK3'))->assertOk();
+
+        $this->assertCount(0, $this->sentToMeta('audio'));
+        $this->assertCount(1, $this->sentToMeta('text'));
+    }
+
+    public function test_on_the_website_the_widget_is_told_to_read_the_answer_aloud(): void
+    {
+        $this->setVoiceOut('mirror');
+        $token = $this->postJson('/api/v1/widget/'.$this->bot->public_key.'/conversations', ['visitor_id' => 'visiteur-audio-1'])->assertOk()->json('token');
+
+        $this->postJson('/api/v1/widget/'.$this->bot->public_key."/conversations/{$token}/messages", ['content' => "Explique-moi en audio les horaires d'ouverture de la boutique le samedi"])
+            ->assertOk()->assertJsonPath('message.wants_audio', true);
+
+        $this->postJson('/api/v1/widget/'.$this->bot->public_key."/conversations/{$token}/messages", ['content' => self::QUESTION])
+            ->assertOk()->assertJsonPath('message.wants_audio', false);
+    }
+
+    public function test_requests_for_audio_are_recognised_in_french_and_english(): void
+    {
+        foreach (['Explique-moi en audio', 'Tu peux m\'envoyer un vocal ?', 'réponds par vocal svp', 'Send me a voice message', 'Dis-le à voix haute', 'en audio stp'] as $yes) {
+            $this->assertTrue(\App\Support\Text::wantsAudio($yes), $yes);
+        }
+        foreach (['Quels sont vos horaires ?', 'Je vous envoie un message vocal demain', 'Merci', 'Vous avez des audios de démonstration ?'] as $no) {
+            $this->assertFalse(\App\Support\Text::wantsAudio($no), $no);
+        }
+    }
 }

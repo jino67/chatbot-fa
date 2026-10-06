@@ -161,6 +161,11 @@ class ChatService
             $meta['suggestions'] = $parsed['suggestions'];
         }
 
+        // Le client demande une réponse en audio : la réponse l'indique, le canal l'envoie (vocal WhatsApp, lecture dans le widget).
+        if (Text::wantsAudio($text)) {
+            $meta['audio_requested'] = true;
+        }
+
         // Photos des produits : celles que l'assistant propose, plus celle que le client a demandée et que l'assistant a oublié de joindre.
         if ($grounded && ! $parsed['handoff'] && ! $smallTalk) {
             $asked = Text::wantsPhoto($text);

@@ -83,7 +83,13 @@
     build();
     built = true;
     if (autoOpen || wantOpen) toggle(true); else scheduleTeaser();
-  }).catch(function () { /* widget desactive ou origine refusee : on n'affiche rien */ });
+  }).catch(function (err) {
+    // Widget desactive ou origine refusee : le visiteur ne voit rien, mais le proprietaire du site peut lire la raison dans la console.
+    var why = err && err.data && err.data.error;
+    var msg = why === 'origin_not_allowed' ? 'l\'adresse ' + location.origin + ' n\'est pas autorisee pour cet assistant (Reglages, Sites autorises).'
+      : (err && err.status === 404 ? 'assistant introuvable ou desactive (verifiez la cle data-bot).' : 'impossible de joindre ' + base + '.');
+    if (window.console && console.warn) console.warn('[Kouma] La bulle de discussion ne s\'affiche pas : ' + msg);
+  });
 
   // ---------- construction de l'interface ----------
   function el(tag, attrs, children) {
@@ -669,7 +675,11 @@
       status = d.status;
       var handed = !d.message || (!wasHuman && (status === 'needs_human' || status === 'human'));
       if (d.message) {
-        addMessage(d.message, { write: true, after: function (row) { if (d.audio) playData(d.audio, row); } });
+        addMessage(d.message, { write: true, after: function (row) {
+          if (d.audio) { playData(d.audio, row); return; }
+          // Le visiteur a demandé une réponse en audio : on la lit à voix haute (le bouton haut-parleur reste là pour la relire).
+          if (d.message.wants_audio && config.voice && config.voice.speak && row._listen) listenTo(d.message, row._listen);
+        } });
       }
       if (handed) handoffNote();
       schedulePoll();

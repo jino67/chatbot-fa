@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Bot;
 use App\Models\Channel;
+use App\Ingestion\Crawler\SafeHttp;
+use App\Ingestion\Crawler\SafeUrl;
+use App\Ingestion\Crawler\UnsafeUrlException;
 use App\Models\ChannelRequest;
+use App\Support\WidgetInstallCheck;
 use App\Services\PlatformSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +28,7 @@ class ChannelController extends Controller
                 ->latest()->first(),
             'request' => ChannelRequest::where('bot_id', $bot->id)->latest()->first(),
             'snippet' => $this->snippet($bot),
+            'widgetSeen' => cache()->get('widget-seen:'.$bot->id),
             'whatsappAllowed' => $workspace->hasFeature('whatsapp'),
             'templatesAllowed' => $workspace->hasFeature('templates'),
         ]);
@@ -56,6 +61,31 @@ class ChannelController extends Controller
         app(\App\Notify\Events::class)->whatsappRequested($channelRequest, $bot);
 
         return back()->with('status', "Demande envoyée. Notre équipe technique vous contactera pour finaliser l'activation.");
+    }
+
+    /**
+     * « Je ne vois pas la bulle sur mon site » : ouvre la page indiquée comme le ferait un visiteur et dit pourquoi le script
+     * n'y est pas, ou n'agit pas (voir WidgetInstallCheck). L'adresse passe par la protection habituelle contre les adresses internes.
+     */
+    public function checkInstall(Request $request, Bot $bot): RedirectResponse
+    {
+        $data = $request->validate(['url' => ['required', 'string', 'max:300']]);
+        $url = trim($data['url']);
+        $url = preg_match('#^https?://#i', $url) ? $url : 'https://'.$url;
+
+        try {
+            SafeUrl::assertPublic($url);
+            $response = SafeHttp::get($url, 3, 1_500_000);
+            $result = $response['status'] === 200
+                ? WidgetInstallCheck::analyze($response['body'], $response['url'], $bot)
+                : WidgetInstallCheck::unreachable("Le site a répondu HTTP {$response['status']} : vérifiez l'adresse de la page.");
+        } catch (UnsafeUrlException $e) {
+            $result = WidgetInstallCheck::unreachable($e->getMessage());
+        } catch (\Throwable) {
+            $result = WidgetInstallCheck::unreachable("Le site ne répond pas pour le moment. Vérifiez l'adresse, puis réessayez.");
+        }
+
+        return back()->with('install_check', $result + ['url' => $url])->withInput();
     }
 
     private function snippet(Bot $bot): string

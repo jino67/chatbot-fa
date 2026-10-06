@@ -208,7 +208,8 @@ class InboundHandler
     {
         try {
             $bot = \App\Models\Bot::withoutGlobalScopes()->with('workspace')->find($conversation->bot_id);
-            if (! $bot || ! $this->voice->wantsAudioReply($bot, $inboundWasVoice) || ($message->meta['reason'] ?? null) === 'human_requested') {
+            $asked = (bool) ($message->meta['audio_requested'] ?? false);
+            if (! $bot || ! $this->voice->wantsAudioReply($bot, $inboundWasVoice, $asked) || ($message->meta['reason'] ?? null) === 'human_requested') {
                 return;
             }
 

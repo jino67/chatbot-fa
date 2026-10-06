@@ -182,6 +182,7 @@ Route::middleware(['auth', 'workspace'])->group(function () {
 
         Route::get('channels', [ChannelController::class, 'show'])->name('channels.show');
         Route::post('channels/whatsapp-request', [ChannelController::class, 'requestWhatsApp'])->name('channels.whatsapp-request');
+        Route::post('channels/verifier-installation', [ChannelController::class, 'checkInstall'])->middleware('throttle:10,1')->name('channels.check-install');
 
         Route::get('import', [ChatImportController::class, 'show'])->name('import.show');
         Route::post('import', [ChatImportController::class, 'upload'])->name('import.upload');
@@ -308,6 +309,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('team', [Admin\TeamController::class, 'index'])->name('team.index');
         Route::post('team', [Admin\TeamController::class, 'store'])->name('team.store');
         Route::put('team/{user}', [Admin\TeamController::class, 'update'])->name('team.update');
+
+        // Données de test : remise à zéro des paiements simulés et des compteurs d'essai (confirmation écrite, copie avant effacement).
+        Route::get('donnees-de-test', [Admin\TestDataController::class, 'index'])->name('test-data.index');
+        Route::post('donnees-de-test', [Admin\TestDataController::class, 'reset'])->middleware('throttle:6,1')->name('test-data.reset');
 
         Route::get('audit', [Admin\AuditController::class, 'index'])->name('audit.index');
         Route::get('audit/export', [Admin\AuditController::class, 'export'])->middleware('throttle:10,1')->name('audit.export');

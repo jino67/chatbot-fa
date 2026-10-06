@@ -147,9 +147,17 @@ class VoiceService
         return preg_match_all('/(?:'.$foreign.')/u', $text) / $letters > 0.5;
     }
 
-    /** L'assistant doit-il repondre en audio, compte tenu de son reglage et du message recu ? */
-    public function wantsAudioReply(Bot $bot, bool $inboundWasVoice): bool
+    /**
+     * L'assistant doit-il repondre en audio, compte tenu de son reglage et du message recu ? Un client qui le demande
+     * (« explique-moi en audio ») l'obtient dès que les réponses audio ne sont pas coupées : le réglage « en miroir » ne
+     * répond sinon qu'à un message vocal, et le client n'a pas à le savoir.
+     */
+    public function wantsAudioReply(Bot $bot, bool $inboundWasVoice, bool $asked = false): bool
     {
+        if ($asked && $bot->voice_out !== 'never') {
+            return true;
+        }
+
         return match ($bot->voice_out) {
             'always' => true,
             'mirror' => $inboundWasVoice,

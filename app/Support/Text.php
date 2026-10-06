@@ -176,6 +176,11 @@ final class Text
     {
         $folded = str_replace(['’', "'", '-'], ' ', self::fold($text));
 
+        // Un client qui annonce SON message vocal ne demande pas une réponse en audio.
+        if (preg_match('/\b(je vous envoie|je t envoie|je vais (vous |t )?envoyer|voici|ci joint|j ai envoye|here is)\b/u', $folded)) {
+            return false;
+        }
+
         return (bool) preg_match('/\b(en audio|en vocal|par vocal|par audio|message vocal|un vocal|a voix haute|voice (message|note)|in audio)\b/u', $folded)
             || (bool) preg_match('/\b(audio|vocal)\b.{0,20}\b(svp|stp|please|s il (te|vous) plait)\b/u', $folded);
     }

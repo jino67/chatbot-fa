@@ -33,6 +33,7 @@
         ['Paramètres', 'admin.settings.edit', 'cog', 'admin.settings.*'],
         ['E-mails', 'admin.emails.index', 'inbox', 'admin.emails.*'],
         ['Journal', 'admin.audit.index', 'scroll', 'admin.audit.*'],
+        ['Données de test', 'admin.test-data.index', 'shield', 'admin.test-data.*'],
     ];
 
     $link = function (array $item) {

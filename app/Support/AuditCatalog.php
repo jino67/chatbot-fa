@@ -42,6 +42,7 @@ final class AuditCatalog
         'subscription.expired' => ['Abonnement expiré', self::NORMAL],
         'payment.recorded' => ['Paiement enregistré', self::SENSITIVE],
         'wallet.topup' => ['Portefeuille rechargé', self::SENSITIVE],
+        'payment.test_reset' => ['Données de test remises à zéro', self::CRITICAL],
         'billing.plan_requested' => ['Changement d\'offre demandé par un client', self::NORMAL],
         'plan.created' => ['Offre créée', self::SENSITIVE],
         'plan.updated' => ['Offre ou prix modifié', self::SENSITIVE],

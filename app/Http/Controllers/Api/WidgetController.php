@@ -20,7 +20,16 @@ class WidgetController extends Controller
 {
     public function config(Request $request): JsonResponse
     {
-        return response()->json($this->bot($request)->publicConfig());
+        $bot = $this->bot($request);
+
+        // Preuve que le script est bien installé : quel site a chargé la bulle, et quand (visible sur la page Canaux).
+        try {
+            cache()->put('widget-seen:'.$bot->id, ['origin' => Str::limit((string) $request->headers->get('Origin'), 200, ''), 'at' => now()->toIso8601String()], now()->addDays(60));
+        } catch (\Throwable) {
+            // une mesure ne casse jamais le widget
+        }
+
+        return response()->json($bot->publicConfig());
     }
 
     /**
@@ -119,7 +128,7 @@ class WidgetController extends Controller
             'origin' => $request->headers->get('Origin'), 'voice' => true, 'voice_seconds' => $heard->seconds, 'lang' => $request->input('lang'),
         ]));
 
-        $audio = $reply && $voice->wantsAudioReply($bot, true) ? $voice->speak($bot, $reply->content) : null;
+        $audio = $reply && $voice->wantsAudioReply($bot, true, (bool) ($reply->meta['audio_requested'] ?? false)) ? $voice->speak($bot, $reply->content) : null;
         if ($audio) {
             $reply->forceFill(['meta' => array_merge($reply->meta ?? [], ['voice_reply' => true, 'voice_seconds' => $audio->seconds])])->save();
         }
